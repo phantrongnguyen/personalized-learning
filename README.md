@@ -354,8 +354,8 @@ flowchart TD
 
 ```bash
 # Clone repository
-git clone https://github.com/username/kltn13-personalized-learning-recommendation.git
-cd kltn13-personalized-learning-recommendation
+git clone git@github.com:phantrongnguyen/personalized-learning.git
+cd personalized-learning
 
 # Đổi tên file cấu hình mẫu
 cp .env.example .env
