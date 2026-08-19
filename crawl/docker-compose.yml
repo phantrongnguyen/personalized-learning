@@ -1,0 +1,14 @@
+version: '3.8'
+
+services:
+  huit-crawler:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: huit-captcha-crawler:latest
+    container_name: huit_crawler_app
+    restart: unless-stopped
+    volumes:
+      - ./data:/app/data
+    environment:
+      - PYTHONUNBUFFERED=1
