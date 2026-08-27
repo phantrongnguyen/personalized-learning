@@ -93,5 +93,9 @@ data/processed/*
 # Model Checkpoints & Large Artifacts
 packages/ml/artifacts/models/*
 !packages/ml/artifacts/models/.gitkeep
+packages/ml/artifacts/scalers/*
+!packages/ml/artifacts/scalers/.gitkeep
+packages/ml/artifacts/encoders/*
+!packages/ml/artifacts/encoders/.gitkeep
 
 
