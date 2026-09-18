@@ -1,0 +1,10 @@
+﻿step,implementation,why,control
+Nguồn dữ liệu,7 bảng OULAD được đọc và giữ bản gốc,Giữ đầy đủ nguồn để truy vết và tái lập,"Kiểm tra tên file, cột và SHA-256"
+Khóa ghép,id_student + code_module + code_presentation,"Phân biệt enrollment, không trộn các kỳ học",Kiểm tra validate khi merge
+Cutoff,Dữ liệu đến 50% tiến trình,Mô phỏng dự đoán tại thời điểm hiện tại,Không lấy sự kiện sau ngày cutoff
+Nhãn,Fail/Withdrawn = 1; Pass/Distinction = 0,Biến bài toán thành dự đoán risk,Không đưa final_result vào feature
+Missing hoạt động,Điền 0 cho biến đếm,Không có bản ghi hoạt động được hiểu là chưa ghi nhận hoạt động,Kiểm tra phân biệt 0 thật và thiếu nếu dữ liệu mới thay đổi
+Missing số liên tục,Median imputer trong pipeline,Ổn định hơn mean khi có ngoại lệ,Chỉ fit trên train
+Biến phân loại,Most-frequent imputer + OneHotEncoder,Model cần số và không nên tạo thứ tự giả,handle_unknown=ignore
+Scale,StandardScaler cho Logistic Regression,Đưa biến về thang đo tương đương,Không scale bắt buộc cho model cây
+Group split,Chia theo id_student,Tránh leakage giữa các enrollment của một sinh viên,Assert group disjoint
