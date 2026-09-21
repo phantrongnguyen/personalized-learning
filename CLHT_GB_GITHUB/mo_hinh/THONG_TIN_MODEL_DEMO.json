@@ -1,0 +1,31 @@
+{
+  "feature_columns": [
+    "code_module",
+    "region",
+    "imd_band",
+    "age_band",
+    "studied_credits",
+    "cutoff_day",
+    "clicks_forumng_to_t",
+    "clicks_oucontent_to_t",
+    "clicks_quiz_to_t",
+    "clicks_url_to_t",
+    "active_days_to_t",
+    "last_activity_day",
+    "late_submissions_to_t",
+    "missing_submissions_to_t"
+  ],
+  "threshold": 0.5,
+  "positive_label": 1,
+  "model_name": "HCO-VNLS + HistGradientBoosting demo",
+  "algorithm": "HCO-VNLS",
+  "evaluator": "HistGradientBoostingClassifier",
+  "optimizer_seed": 77,
+  "split_seed": 41,
+  "training_rows": 20930,
+  "test_rows_locked": 3669,
+  "training_policy": "Fit trên train + validation sau khi khóa feature; không dùng test để huấn luyện.",
+  "selected_features_source": "phase9_tuned_hgb_optimizer_results.csv, method=HCO-VNLS, seed=77",
+  "sklearn_version": "1.8.0",
+  "model_path": "mo_hinh\\model_hco_vnls_hgb_demo.joblib"
+}
