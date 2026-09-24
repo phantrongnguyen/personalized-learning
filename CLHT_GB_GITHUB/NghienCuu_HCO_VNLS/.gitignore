@@ -1,0 +1,14 @@
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+ket_qua/du_lieu_cutoff_*.csv
+ket_qua/phan_tap_sinh_vien.csv
+ket_qua/du_doan_validation_*.csv
+ket_qua/ket_qua_test_xac_nhan.csv
+ket_qua/mlp_validation.csv
+ket_qua/threshold_validation.csv
+ket_qua/chon_nguong_validation.csv
+hinh/danh_doi_threshold.png
+notebooks/06_*.ipynb
+notebooks/07_*.ipynb
+notebooks/08_*.ipynb

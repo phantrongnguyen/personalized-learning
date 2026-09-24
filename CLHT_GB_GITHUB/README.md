@@ -2,6 +2,10 @@
 
 Đây là bản đóng gói gọn để đọc trên GitHub và xem lại quá trình nghiên cứu. Mục tiêu là dự đoán sớm sinh viên có nguy cơ `Fail` hoặc `Withdrawn`, sau đó dùng HCO, VNLS và HCO–VNLS để tìm bộ đặc trưng phù hợp hơn.
 
+## Thực nghiệm dự báo ở mốc 50–75%
+
+Xem [NghienCuu_HCO_VNLS](NghienCuu_HCO_VNLS/README.md) cho chuỗi notebook đã chạy, bảng đối chiếu năm mô hình, thí nghiệm chọn đặc trưng HCO/VNLS/hybrid và báo cáo Word. Kết quả chọn đặc trưng là pilot trên validation, có cả trường hợp kém hơn đối chứng đủ cột; không đồng nhất chúng với kết quả của chuỗi notebook cũ.
+
 ## Nếu bạn chưa xem dự án bao giờ
 
 Hãy đọc theo thứ tự:
