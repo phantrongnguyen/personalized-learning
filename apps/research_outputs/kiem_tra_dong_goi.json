@@ -1,0 +1,16 @@
+{
+  "date": "2026-09-30",
+  "branch": "aBaoN9/clht-gb-github",
+  "report": "apps/docs/Bao_5.docx",
+  "backend_tests": 35,
+  "frontend_tests": 10,
+  "frontend_build": "passed",
+  "model_sha256": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db",
+  "heading_levels": {
+    "heading_1": 8,
+    "heading_2": 39
+  },
+  "report_pages": 28,
+  "browser_interaction_verified": false,
+  "known_input_validation_gaps": 2
+}

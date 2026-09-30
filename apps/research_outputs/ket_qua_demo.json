@@ -1,0 +1,402 @@
+[
+  {
+    "status": "available",
+    "suggestions": [
+      {
+        "rule_id": "G01",
+        "title": "Kiểm tra các bài đến hạn",
+        "observation": "2 bài đến hạn chưa có bản ghi hoàn thành.",
+        "evidence": [
+          "4 bài có hạn không sau ngày 201.",
+          "2 bài trong số đó đã có bản ghi nộp.",
+          "Mã minh họa cần kiểm tra: B02, B04"
+        ],
+        "action": "Kiểm tra trạng thái từng bài. Nếu thực sự còn thiếu, trao đổi với giảng viên về cách hoàn thành hoặc hỗ trợ phù hợp.",
+        "limitation": "Hạn chung có thể khác gia hạn cá nhân. Không khẳng định vẫn được nộp muộn hoặc điểm sẽ tăng."
+      }
+    ],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này."
+    ],
+    "assessment_summary": {
+      "due": 4,
+      "submitted": 2,
+      "completed_due": 2,
+      "missing": 2,
+      "late": 0,
+      "missing_ids": [
+        "B02",
+        "B04"
+      ],
+      "late_ids": [],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 0
+    },
+    "prediction": {
+      "probability_risk": 0.18319734425720186,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 201,
+      "module_presentation_length": 268,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 113,
+        "submitted": 2,
+        "due": 4,
+        "recent_clicks": 195
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 2553.83,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "bai-den-han",
+    "case_title": "Cần kiểm tra bài đến hạn",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "available",
+    "suggestions": [
+      {
+        "rule_id": "G02",
+        "title": "Sắp xếp tiến độ nộp bài",
+        "observation": "2 bài mới từng được nộp sau hạn chung.",
+        "evidence": [
+          "Mã minh họa nộp trễ: B01, B03",
+          "Chỉ đếm bài đã nộp đến cutoff; không tính bài bảo lưu hoặc được miễn."
+        ],
+        "action": "Nếu lịch học đang khó sắp xếp, thử chia bài thành các bước và đặt lịch nhắc trước hạn; xác nhận nguyên nhân trước khi điều chỉnh.",
+        "limitation": "Từng nộp trễ không đồng nghĩa kiến thức yếu. Gia hạn cá nhân có thể chưa có trong dữ liệu."
+      }
+    ],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này."
+    ],
+    "assessment_summary": {
+      "due": 4,
+      "submitted": 4,
+      "completed_due": 4,
+      "missing": 0,
+      "late": 2,
+      "missing_ids": [],
+      "late_ids": [
+        "B01",
+        "B03"
+      ],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 0
+    },
+    "prediction": {
+      "probability_risk": 0.0812125901623513,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 201,
+      "module_presentation_length": 268,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 72,
+        "submitted": 4,
+        "due": 4,
+        "recent_clicks": 208
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 10.47,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "nop-tre",
+    "case_title": "Đã nộp đủ, từng nộp trễ",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "available",
+    "suggestions": [
+      {
+        "rule_id": "G03",
+        "title": "Nhìn lại tiến độ tuần vừa qua",
+        "observation": "Không ghi nhận click 7 ngày gần đây, nhưng trước đó trong tháng vẫn có hoạt động.",
+        "evidence": [
+          "0 click từ ngày 195 đến 201.",
+          "72 click trong 30 ngày gần nhất."
+        ],
+        "action": "Kiểm tra bạn có đang học ngoài hệ thống hoặc cần hỗ trợ truy cập không; xác định việc học muốn tiếp nối.",
+        "limitation": "Chưa có nội dung bài học để chỉ ra chương yếu; không khẳng định bạn đã ngừng học 7 ngày."
+      },
+      {
+        "rule_id": "G02",
+        "title": "Sắp xếp tiến độ nộp bài",
+        "observation": "4 bài mới từng được nộp sau hạn chung.",
+        "evidence": [
+          "Mã minh họa nộp trễ: B01, B02, B03, B04",
+          "Chỉ đếm bài đã nộp đến cutoff; không tính bài bảo lưu hoặc được miễn."
+        ],
+        "action": "Nếu lịch học đang khó sắp xếp, thử chia bài thành các bước và đặt lịch nhắc trước hạn; xác nhận nguyên nhân trước khi điều chỉnh.",
+        "limitation": "Từng nộp trễ không đồng nghĩa kiến thức yếu. Gia hạn cá nhân có thể chưa có trong dữ liệu."
+      }
+    ],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này."
+    ],
+    "assessment_summary": {
+      "due": 4,
+      "submitted": 4,
+      "completed_due": 4,
+      "missing": 0,
+      "late": 4,
+      "missing_ids": [],
+      "late_ids": [
+        "B01",
+        "B02",
+        "B03",
+        "B04"
+      ],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 0
+    },
+    "prediction": {
+      "probability_risk": 0.316891843413654,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 201,
+      "module_presentation_length": 268,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 58,
+        "submitted": 4,
+        "due": 4,
+        "recent_clicks": 72
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 9.79,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "gian-doan-7",
+    "case_title": "Một tuần chưa có tương tác",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "available",
+    "suggestions": [
+      {
+        "rule_id": "G04",
+        "title": "Xác nhận tình trạng học hiện tại",
+        "observation": "Không ghi nhận click trong 30 ngày gần nhất, dù có lịch sử trước đó.",
+        "evidence": [
+          "0 click từ ngày 172 đến 201.",
+          "110 click tích lũy đến cutoff, có thể gồm trước ngày mở môn."
+        ],
+        "action": "Xác nhận bạn đang học ngoại tuyến hay gặp trở ngại. Nếu cần, trao đổi với giảng viên hoặc cố vấn về việc tiếp tục học.",
+        "limitation": "Không có click không đồng nghĩa không học, đã bỏ học hay chắc chắn không đạt."
+      },
+      {
+        "rule_id": "G02",
+        "title": "Sắp xếp tiến độ nộp bài",
+        "observation": "2 bài mới từng được nộp sau hạn chung.",
+        "evidence": [
+          "Mã minh họa nộp trễ: B01, B03",
+          "Chỉ đếm bài đã nộp đến cutoff; không tính bài bảo lưu hoặc được miễn."
+        ],
+        "action": "Nếu lịch học đang khó sắp xếp, thử chia bài thành các bước và đặt lịch nhắc trước hạn; xác nhận nguyên nhân trước khi điều chỉnh.",
+        "limitation": "Từng nộp trễ không đồng nghĩa kiến thức yếu. Gia hạn cá nhân có thể chưa có trong dữ liệu."
+      }
+    ],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này."
+    ],
+    "assessment_summary": {
+      "due": 4,
+      "submitted": 4,
+      "completed_due": 4,
+      "missing": 0,
+      "late": 2,
+      "missing_ids": [],
+      "late_ids": [
+        "B01",
+        "B03"
+      ],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 0
+    },
+    "prediction": {
+      "probability_risk": 0.3297971074196214,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 201,
+      "module_presentation_length": 268,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 13,
+        "submitted": 4,
+        "due": 4,
+        "recent_clicks": 0
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 10.51,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "gian-doan-30",
+    "case_title": "Một tháng chưa có tương tác",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "available",
+    "suggestions": [
+      {
+        "rule_id": "G01",
+        "title": "Kiểm tra các bài đến hạn",
+        "observation": "1 bài đến hạn chưa có bản ghi hoàn thành.",
+        "evidence": [
+          "9 bài có hạn không sau ngày 180.",
+          "8 bài trong số đó đã có bản ghi nộp.",
+          "Mã minh họa cần kiểm tra: B06"
+        ],
+        "action": "Kiểm tra trạng thái từng bài. Nếu thực sự còn thiếu, trao đổi với giảng viên về cách hoàn thành hoặc hỗ trợ phù hợp.",
+        "limitation": "Hạn chung có thể khác gia hạn cá nhân. Không khẳng định vẫn được nộp muộn hoặc điểm sẽ tăng."
+      },
+      {
+        "rule_id": "G02",
+        "title": "Sắp xếp tiến độ nộp bài",
+        "observation": "4 bài mới từng được nộp sau hạn chung.",
+        "evidence": [
+          "Mã minh họa nộp trễ: B03, B05, B07, B09",
+          "Chỉ đếm bài đã nộp đến cutoff; không tính bài bảo lưu hoặc được miễn."
+        ],
+        "action": "Nếu lịch học đang khó sắp xếp, thử chia bài thành các bước và đặt lịch nhắc trước hạn; xác nhận nguyên nhân trước khi điều chỉnh.",
+        "limitation": "Từng nộp trễ không đồng nghĩa kiến thức yếu. Gia hạn cá nhân có thể chưa có trong dữ liệu."
+      }
+    ],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này."
+    ],
+    "assessment_summary": {
+      "due": 9,
+      "submitted": 9,
+      "completed_due": 8,
+      "missing": 1,
+      "late": 4,
+      "missing_ids": [
+        "B06"
+      ],
+      "late_ids": [
+        "B03",
+        "B05",
+        "B07",
+        "B09"
+      ],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 1
+    },
+    "prediction": {
+      "probability_risk": 0.07460701315520354,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 180,
+      "module_presentation_length": 240,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 32,
+        "submitted": 9,
+        "due": 9,
+        "recent_clicks": 310
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 180,
+    "cutoff_fraction": 0.75,
+    "course": "BBB · 2013B",
+    "runtime_ms": 11.76,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "nop-som",
+    "case_title": "Nộp sớm không bù được bài thiếu",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "abstained",
+    "suggestions": [],
+    "warnings": [
+      "1 bài chưa có hạn xác định; không kết luận thiếu các bài này.",
+      "Chưa đủ căn cứ để đưa ra gợi ý cụ thể trong bốn tình huống; không có nghĩa người học chắc chắn không gặp khó khăn."
+    ],
+    "assessment_summary": {
+      "due": 4,
+      "submitted": 4,
+      "completed_due": 4,
+      "missing": 0,
+      "late": 0,
+      "missing_ids": [],
+      "late_ids": [],
+      "unknown_deadlines": 1,
+      "exempt_due": 0,
+      "early_future": 0
+    },
+    "prediction": {
+      "probability_risk": 0.029253669747296603,
+      "above_threshold": false,
+      "threshold": 0.5,
+      "cutoff_fraction": 0.75,
+      "cutoff_day": 201,
+      "module_presentation_length": 268,
+      "feature_count": 17,
+      "observations": {
+        "active_days": 121,
+        "submitted": 4,
+        "due": 4,
+        "recent_clicks": 285
+      },
+      "notice": "Tín hiệu hỗ trợ xem xét; không phải kết luận hay quyết định học vụ tự động."
+    },
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 9.0,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "khong-khop",
+    "case_title": "Chưa có tình huống cần gợi ý",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối."
+  },
+  {
+    "status": "abstained",
+    "suggestions": [],
+    "assessment_summary": null,
+    "warnings": [
+      "Chưa chạy model: cần xác nhận dữ liệu đặc trưng tại cutoff và tình trạng còn theo học.",
+      "Chưa xác nhận người học còn theo học tại cutoff; không sinh lời khuyên."
+    ],
+    "prediction": null,
+    "rule_version": "goi-y-1.0",
+    "cutoff_day": 201,
+    "cutoff_fraction": 0.75,
+    "course": "AAA · 2013J",
+    "runtime_ms": 0.02,
+    "notice": "Gợi ý theo quy tắc có giải thích, chưa được chứng minh làm tăng điểm. HCO–VNLS chọn đặc trưng cho dự báo, không trực tiếp tối ưu các lời khuyên này.",
+    "case_id": "thieu-bang-chung",
+    "case_title": "Thiếu bằng chứng: hệ thống từ chối",
+    "source_notice": "Sao chép đầu vào minh họa rồi bỏ xác nhận nguồn để kiểm tra trạng thái thiếu dữ liệu; không chạy dự báo."
+  }
+]

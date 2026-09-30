@@ -1,42 +1,66 @@
-"""
-FastAPI Server Entrypoint
-Hệ thống Gợi ý Chiến lược Học tập Cá nhân hóa (KLTN 13)
-"""
+import os
+from contextlib import asynccontextmanager
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-app = FastAPI(
-    title="KLTN 13 - Personalized Learning Recommendation API",
-    description="API dịch vụ gợi ý chiến lược học tập cá nhân hóa sử dụng thuật toán HCO-VNLS",
-    version="1.0.0",
-)
+from app.services.prediction import _artifact, catalog, model_info, predict
+from app.schemas.prediction import PredictionInput
+from app.schemas.support import SupportInput
+from app.services.support import demo_cases, evaluate_case, evaluate_support
 
-# Cấu hình CORS cho phép Frontend kết nối
+@asynccontextmanager
+async def lifespan(application: FastAPI):
+    _artifact()
+    yield
+
+
+app = FastAPI(title="CLHT · Dự báo và gợi ý có căn cứ", version="0.2.0", lifespan=lifespan)
+origins = os.getenv("CLHT_ALLOWED_ORIGINS", "http://localhost:5173,http://127.0.0.1:5173,http://localhost:5187,http://127.0.0.1:5187")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_origins=[origin.strip() for origin in origins.split(",") if origin.strip()],
+    allow_credentials=False,
+    allow_methods=["GET", "POST"],
+    allow_headers=["Content-Type"],
 )
 
 
-@app.get("/", tags=["Root"])
-def read_root():
-    return {
-        "message": "Welcome to KLTN 13 Personalized Learning Recommendation API",
-        "status": "online",
-        "version": "1.0.0",
-    }
+@app.get("/")
+def root():
+    return {"message": "CLHT API", "docs": "/docs"}
 
 
-@app.get("/api/v1/health", tags=["Health Check"])
-def health_check():
-    return {"status": "healthy", "service": "backend-api"}
+@app.get("/api/v1/health")
+def health():
+    return {"status": "healthy", "service": "clht-risk-demo"}
 
 
-if __name__ == "__main__":
-    import uvicorn
+@app.get("/api/v1/catalog")
+def get_catalog():
+    return catalog()
 
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+
+@app.get("/api/v1/model")
+def get_model_info():
+    return model_info()
+
+
+@app.post("/api/v1/predict")
+def post_predict(payload: PredictionInput):
+    return predict(payload)
+
+
+@app.get("/api/v1/support/cases")
+def get_support_cases():
+    return demo_cases()
+
+
+@app.post("/api/v1/support/cases/{case_id}")
+def post_support_case(case_id: str):
+    return evaluate_case(case_id)
+
+
+@app.post("/api/v1/support")
+def post_support(payload: SupportInput):
+    return evaluate_support(payload)

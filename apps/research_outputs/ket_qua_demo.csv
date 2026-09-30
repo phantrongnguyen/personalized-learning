@@ -1,0 +1,8 @@
+﻿tình huống,nguy cơ ước lượng,quy tắc khớp,trạng thái,thời gian ms
+Cần kiểm tra bài đến hạn,0.18319734425720186,G01,available,2553.83
+"Đã nộp đủ, từng nộp trễ",0.0812125901623513,G02,available,10.47
+Một tuần chưa có tương tác,0.316891843413654,"G03, G02",available,9.79
+Một tháng chưa có tương tác,0.3297971074196214,"G04, G02",available,10.51
+Nộp sớm không bù được bài thiếu,0.07460701315520354,"G01, G02",available,11.76
+Chưa có tình huống cần gợi ý,0.029253669747296603,Không có,abstained,9.0
+Thiếu bằng chứng: hệ thống từ chối,,Không có,abstained,0.02

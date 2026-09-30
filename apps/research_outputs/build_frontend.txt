@@ -1,0 +1,14 @@
+
+> clht-study-app@0.1.0 build
+> vite build
+
+vite v8.3.1 building client environment for production...
+transforming...
+✓ 1895 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.html                   0.60 kB │ gzip:  0.41 kB
+dist/assets/index-DixZoj_7.css   24.72 kB │ gzip:  6.36 kB
+dist/assets/index-DatETZXk.js   270.56 kB │ gzip: 83.65 kB
+
+✓ built in 1.42s
