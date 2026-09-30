@@ -1,13 +1,5 @@
 # Tình trạng bản demo — 30/09/2026
 
-## Bổ sung khi người dùng báo màn hình trắng
-
-- Người dùng báo trang trắng; việc cổng máy chủ đang lắng nghe không chứng minh giao diện đã mở được.
-- Kiểm tra render toàn bộ bốn trang vào trong Node/SSR: đạt. Chưa xác định được nguyên nhân trong trình duyệt thực tế.
-- Thêm thông báo tải trang ngay trong HTML, báo lỗi tải/chạy JavaScript và thông báo khi React không render được, để không phụ thuộc vào màn hình trắng khi chẩn đoán.
-- Chạy lại kiểm thử frontend: 10/10 đạt; build frontend thành công. Đây là lượt kiểm tra bổ sung, không ghi đè bằng chứng 7 kiểm thử của notebook 13 bên dưới.
-- Cần người dùng tải lại trang và xác nhận giao diện hoặc cung cấp thông báo lỗi. Chưa kết luận lỗi trắng đã được khắc phục trên trình duyệt.
-
 ## Đã thực hiện
 
 - Tích hợp model HCO–VNLS + LightGBM nguyên bản với nhánh gợi ý riêng, chỉ ở cutoff 75%.

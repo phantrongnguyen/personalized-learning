@@ -2,6 +2,8 @@
 
 Các notebook ở đây chỉ dành cho phần app/gợi ý mới. Không ghi đè notebook nghiên cứu trước đó và không huấn luyện lại model.
 
+Để theo dõi **nguồn gốc model app**, xem chuỗi nghiên cứu tại `../../CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/notebooks/`: notebook `05b` so sánh HCO/VNLS với LightGBM, `09` kiểm chứng mask chọn đặc trưng, và `10` đóng gói model 17 đặc trưng ở cutoff 75%. Ba notebook `11`–`13` dưới đây kiểm chứng riêng phần gợi ý và tích hợp app. Notebook nghiên cứu cần dữ liệu gốc và đầu ra trung gian nếu muốn chạy lại; chỉ xem kết quả đã lưu hoặc chạy demo thì không cần.
+
 | Thứ tự | File | Câu hỏi trả lời | Kết quả đã có |
 |---|---|---|---|
 | 11 | 11_kiem_tra_bang_chung_goi_y.ipynb | Làm sao đếm đúng bài đến hạn chưa có bản ghi? | Đối chiếu train ở 50/75%, ví dụ nộp sớm có đáp án, xuất 7 tình huống demo |
