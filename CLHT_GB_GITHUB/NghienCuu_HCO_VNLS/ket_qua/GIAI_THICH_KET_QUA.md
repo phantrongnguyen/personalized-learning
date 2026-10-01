@@ -1,5 +1,9 @@
 # Cách đọc các bảng kết quả
 
+## Bảng đầu vào số của model app
+
+Theo yêu cầu ngày 01/10/2026, thư mục `xuat_30_dac_trung_lightgbm/` bổ sung CSV 30 cột số sau tiền xử lý của model HCO–VNLS + LightGBM tại cutoff 75%, bảng giải thích từng cột và thông tin đối chiếu SHA-256. Đây là đầu vào đã mã hóa, không phải bảng chỉ số đánh giá. Đọc `xuat_30_dac_trung_lightgbm/README.md` trước khi sử dụng. Các CSV nguồn, nhãn và mã sinh viên không được đưa lên cùng bản xuất này.
+
 - `kiem_ke_7_bang.csv`: tên bảng, cột, dung lượng và SHA-256 của bảy nguồn.
 - `tong_quan_cac_moc.csv`: số enrollment và số feature ở năm cutoff; `risk_rate_train` chỉ tính trên train.
 - `hgb_theo_cutoff_validation.csv`: HGB đối chứng trên validation, cùng nhóm sinh viên chia theo seed 41.

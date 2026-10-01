@@ -24,7 +24,9 @@ Ngoài ra cần các thư viện dự án ở `requirements.txt` cùng XGBoost. 
 
 ## Nguồn và quyền chia sẻ
 
-Các CSV gốc là OULAD ẩn danh, cần tự kiểm tra quyền phân phối. CSV cấp enrollment, bảng chia sinh viên, xác suất của từng sinh viên được `.gitignore` loại trừ; chỉ nên chia sẻ thống kê tổng hợp và biểu đồ. Không đưa `.venv/` lên GitHub.
+ Các CSV gốc là OULAD ẩn danh, cần tự kiểm tra quyền phân phối. CSV cấp enrollment, bảng chia sinh viên, xác suất của từng sinh viên được `.gitignore` loại trừ; chỉ nên chia sẻ thống kê tổng hợp và biểu đồ. Không đưa `.venv/` lên GitHub.
+
+Ngoại lệ theo yêu cầu chia sẻ ngày 01/10/2026: `ket_qua/xuat_30_dac_trung_lightgbm/` có bản xuất 30 cột số sau tiền xử lý của model app, không kèm mã sinh viên trực tiếp, nhãn hoặc split. Xem README trong thư mục đó để hiểu cách đọc và giới hạn chia sẻ. Quy tắc loại trừ các CSV nguồn vẫn giữ nguyên.
 
 ## Quy tắc so sánh
 
