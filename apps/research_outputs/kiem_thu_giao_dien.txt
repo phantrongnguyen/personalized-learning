@@ -1,0 +1,50 @@
+
+> clht-study-app@0.1.0 test
+> node --test tests/support.test.mjs
+
+TAP version 13
+# Subtest: all seven API outputs render without claiming score improvement
+ok 1 - all seven API outputs render without claiming score improvement
+  ---
+  duration_ms: 1171.4648
+  ...
+# Subtest: missing-data result is not rendered as a zero-percent prediction
+ok 2 - missing-data result is not rendered as a zero-percent prediction
+  ---
+  duration_ms: 5.1119
+  ...
+# Subtest: actual early-submission example shows evidence despite low predicted risk
+ok 3 - actual early-submission example shows evidence despite low predicted risk
+  ---
+  duration_ms: 9.9951
+  ...
+# Subtest: downloaded report includes rules, limitations and true abstention state
+ok 4 - downloaded report includes rules, limitations and true abstention state
+  ---
+  duration_ms: 1.6316
+  ...
+# Subtest: manual evidence starts unconfirmed with no fabricated records
+ok 5 - manual evidence starts unconfirmed with no fabricated records
+  ---
+  duration_ms: 5.5568
+  ...
+# Subtest: manual entry still renders the original three-step form
+ok 6 - manual entry still renders the original three-step form
+  ---
+  duration_ms: 16.1835
+  ...
+# Subtest: evidence is escaped when rendered, never inserted as HTML
+ok 7 - evidence is escaped when rendered, never inserted as HTML
+  ---
+  duration_ms: 6.7317
+  ...
+# 4:41:45 PM [vite] (client) [optimizer] bundling dependencies...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 2673.4027

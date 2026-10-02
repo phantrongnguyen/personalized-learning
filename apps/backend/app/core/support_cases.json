@@ -1,0 +1,560 @@
+[
+  {
+    "id": "bai-den-han",
+    "title": "Cần kiểm tra bài đến hạn",
+    "summary": "Vẫn có tương tác nhưng còn bài chưa có bản ghi hoàn thành.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "F",
+        "highest_education": "HE Qualification",
+        "age_band": "35-55",
+        "studied_credits": 60,
+        "date_registration": -43.0,
+        "total_clicks_to_t": 2026.0,
+        "clicks_resource_to_t": 15.0,
+        "clicks_url_to_t": 41.0,
+        "active_days_to_t": 113.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 2.0,
+        "late_submissions_to_t": 0.0,
+        "last_activity_day": 200.0,
+        "clicks_recent_7": 130.0,
+        "clicks_recent_30": 195.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 10,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 54,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 117,
+            "submitted_day": 117,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 166,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 215,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "nop-tre",
+    "title": "Đã nộp đủ, từng nộp trễ",
+    "summary": "Phân biệt thiếu bài với việc nộp sau hạn chung.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "F",
+        "highest_education": "HE Qualification",
+        "age_band": "35-55",
+        "studied_credits": 60,
+        "date_registration": -53.0,
+        "total_clicks_to_t": 1308.0,
+        "clicks_resource_to_t": 7.0,
+        "clicks_url_to_t": 48.0,
+        "active_days_to_t": 72.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 4.0,
+        "late_submissions_to_t": 2.0,
+        "last_activity_day": 196.0,
+        "clicks_recent_7": 11.0,
+        "clicks_recent_30": 208.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 22,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 54,
+            "submitted_day": 52,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 117,
+            "submitted_day": 121,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 166,
+            "submitted_day": 164,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 215,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "gian-doan-7",
+    "title": "Một tuần chưa có tương tác",
+    "summary": "Nhìn vào cửa sổ 7 ngày, không kết luận sinh viên không học.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "F",
+        "highest_education": "Lower Than A Level",
+        "age_band": "0-35",
+        "studied_credits": 60,
+        "date_registration": -176.0,
+        "total_clicks_to_t": 907.0,
+        "clicks_resource_to_t": 37.0,
+        "clicks_url_to_t": 10.0,
+        "active_days_to_t": 58.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 4.0,
+        "late_submissions_to_t": 4.0,
+        "last_activity_day": 192.0,
+        "clicks_recent_7": 0.0,
+        "clicks_recent_30": 72.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 26,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 54,
+            "submitted_day": 75,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 117,
+            "submitted_day": 124,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 166,
+            "submitted_day": 181,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 215,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "gian-doan-30",
+    "title": "Một tháng chưa có tương tác",
+    "summary": "Có lịch sử trước đó; cần xác nhận tình trạng học hiện tại.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "M",
+        "highest_education": "A Level or Equivalent",
+        "age_band": "35-55",
+        "studied_credits": 150,
+        "date_registration": -50.0,
+        "total_clicks_to_t": 110.0,
+        "clicks_resource_to_t": 1.0,
+        "clicks_url_to_t": 2.0,
+        "active_days_to_t": 13.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 4.0,
+        "late_submissions_to_t": 2.0,
+        "last_activity_day": 166.0,
+        "clicks_recent_7": 0.0,
+        "clicks_recent_30": 0.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 22,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 54,
+            "submitted_day": 54,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 117,
+            "submitted_day": 120,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 166,
+            "submitted_day": 166,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 215,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "nop-som",
+    "title": "Nộp sớm không bù được bài thiếu",
+    "summary": "Đối chiếu từng mã bài thay vì lấy tổng đến hạn trừ tổng đã nộp.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "BBB",
+        "code_presentation": "2013B",
+        "gender": "F",
+        "highest_education": "A Level or Equivalent",
+        "age_band": "0-35",
+        "studied_credits": 60,
+        "date_registration": -50.0,
+        "total_clicks_to_t": 866.0,
+        "clicks_resource_to_t": 124.0,
+        "clicks_url_to_t": 23.0,
+        "active_days_to_t": 32.0,
+        "assessments_due_to_t": 9,
+        "assessments_submitted_to_t": 9.0,
+        "late_submissions_to_t": 4.0,
+        "last_activity_day": 176.0,
+        "clicks_recent_7": 81.0,
+        "clicks_recent_30": 310.0
+      },
+      "evidence": {
+        "snapshot_day": 180,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 18,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 47,
+            "submitted_day": 46,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 54,
+            "submitted_day": 60,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 89,
+            "submitted_day": 88,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 89,
+            "submitted_day": 95,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": 124,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B07",
+            "due_day": 124,
+            "submitted_day": 126,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B08",
+            "due_day": 159,
+            "submitted_day": 158,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B09",
+            "due_day": 159,
+            "submitted_day": 164,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B10",
+            "due_day": 187,
+            "submitted_day": 176,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B11",
+            "due_day": 187,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B12",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "khong-khop",
+    "title": "Chưa có tình huống cần gợi ý",
+    "summary": "Không cố tạo lời khuyên khi bốn điều kiện không khớp.",
+    "source_notice": "Trích rút một hồ sơ train OULAD tại cutoff 75%; bỏ mã sinh viên và kết quả cuối kỳ, đổi mã bài thành B01… Không coi là dữ liệu đã ẩn danh tuyệt đối.",
+    "source_kind": "research_snapshot",
+    "source_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "M",
+        "highest_education": "Post Graduate Qualification",
+        "age_band": "55<=",
+        "studied_credits": 60,
+        "date_registration": -179.0,
+        "total_clicks_to_t": 2800.0,
+        "clicks_resource_to_t": 6.0,
+        "clicks_url_to_t": 79.0,
+        "active_days_to_t": 121.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 4.0,
+        "late_submissions_to_t": 0.0,
+        "last_activity_day": 198.0,
+        "clicks_recent_7": 37.0,
+        "clicks_recent_30": 285.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": true,
+        "feature_data_confirmed": true,
+        "activity_complete": true,
+        "assessments_complete": true,
+        "assessments": [
+          {
+            "assessment_id": "B01",
+            "due_day": 19,
+            "submitted_day": 9,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B02",
+            "due_day": 54,
+            "submitted_day": 52,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B03",
+            "due_day": 117,
+            "submitted_day": 114,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B04",
+            "due_day": 166,
+            "submitted_day": 161,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B05",
+            "due_day": 215,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          },
+          {
+            "assessment_id": "B06",
+            "due_day": null,
+            "submitted_day": null,
+            "is_banked": false,
+            "is_exempt": false
+          }
+        ]
+      }
+    }
+  },
+  {
+    "id": "thieu-bang-chung",
+    "title": "Thiếu bằng chứng: hệ thống từ chối",
+    "summary": "Tình huống kiểm thử tổng hợp, không phải một sinh viên thật.",
+    "source_notice": "Sao chép đầu vào minh họa rồi bỏ xác nhận nguồn để kiểm tra trạng thái thiếu dữ liệu; không chạy dự báo.",
+    "source_kind": "synthetic_test",
+    "payload": {
+      "features": {
+        "code_module": "AAA",
+        "code_presentation": "2013J",
+        "gender": "F",
+        "highest_education": "HE Qualification",
+        "age_band": "35-55",
+        "studied_credits": 60,
+        "date_registration": -43.0,
+        "total_clicks_to_t": 2026.0,
+        "clicks_resource_to_t": 15.0,
+        "clicks_url_to_t": 41.0,
+        "active_days_to_t": 113.0,
+        "assessments_due_to_t": 4,
+        "assessments_submitted_to_t": 2.0,
+        "late_submissions_to_t": 0.0,
+        "last_activity_day": 200.0,
+        "clicks_recent_7": 130.0,
+        "clicks_recent_30": 195.0
+      },
+      "evidence": {
+        "snapshot_day": 201,
+        "enrollment_active": null,
+        "feature_data_confirmed": false,
+        "activity_complete": false,
+        "assessments_complete": false,
+        "assessments": []
+      }
+    }
+  }
+]

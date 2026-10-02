@@ -67,6 +67,7 @@ venv.bak/
 
 # Node / Frontend
 node_modules/
+apps/.runtime/
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
