@@ -97,5 +97,6 @@ packages/ml/artifacts/scalers/*
 !packages/ml/artifacts/scalers/.gitkeep
 packages/ml/artifacts/encoders/*
 !packages/ml/artifacts/encoders/.gitkeep
-
-
+!docs/
+docs/data/*.zip
+*.zip
