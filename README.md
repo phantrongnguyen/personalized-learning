@@ -116,8 +116,8 @@ Hệ thống phân tích khoảng cách năng lực của từng sinh viên so v
 ```text
 personalized-learning/
 ├── apps/                               # CÁC ỨNG DỤNG ĐẦU CUỐI
-│   ├── backend/                        # API Server với FastAPI (app/main.py, routers, schemas)
-│   └── frontend/                       # Web Dashboard giao diện sinh viên (React/Vite)
+│   ├── backend/                        # API Server với FastAPI (main.py, api/, core/, ml/, schemas/, services/, artifacts/)
+│   └── frontend/                       # Web Dashboard sinh viên SPA (index.html, css/style.css, js/app.js)
 │
 ├── packages/                           # CÁC GÓI MÃ NGUỒN TÁI SỬ DỤNG
 │   └── ml/                             # GÓI HỌC MÁY & TỐI ƯU HÓA CỐT LÕI
@@ -180,12 +180,24 @@ jupyter lab
 2. Mở `notebooks/02_hco_vnls_model_and_recommendation.ipynb` để chạy thực nghiệm so sánh GA, PSO, HCO, HCO-VNLS.
 3. Mở `notebooks/03_save_and_load_best_model.ipynb` để kiểm thử nạp model và suy luận thời gian thực.
 
-### 3. Chạy Server Backend (FastAPI)
+### 3. Chạy Server Backend (FastAPI) & Frontend tích hợp
+Khởi chạy Backend API bằng Python hoặc Uvicorn:
 ```bash
-python apps/backend/app/main.py
+python apps/backend/main.py
+# hoặc sử dụng uvicorn trực tiếp:
+uvicorn main:app --app-dir apps/backend --host 127.0.0.1 --port 8000 --reload
 ```
-* API Documentation (Swagger UI): `http://localhost:8000/docs`
-* Health Check: `http://localhost:8000/api/v1/health`
+* **API Documentation (Swagger UI):** [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)
+* **Health Check Endpoint:** [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health)
+* **Giao diện Web Frontend (Mount trực tiếp tại Backend):** [http://127.0.0.1:8000/app/](http://127.0.0.1:8000/app/)
+
+### 4. Chạy Giao Diện Frontend Độc Lập (Tùy chọn)
+Nếu muốn khởi chạy riêng máy chủ tĩnh cho frontend:
+```bash
+python -m http.server 5500 --directory apps/frontend
+```
+* Mở trình duyệt tại: [http://127.0.0.1:5500](http://127.0.0.1:5500)
+* Giao diện tự động kết nối API Backend tại `http://127.0.0.1:8000`.
 
 ---
 
