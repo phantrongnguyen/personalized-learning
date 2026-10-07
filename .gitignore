@@ -94,3 +94,7 @@ data/processed/*
 # Model Checkpoints & Large Artifacts
 packages/ml/artifacts/models/*
 !packages/ml/artifacts/models/.gitkeep
+
+/QUY_TRINH_HCO_VNLS_LIGHTGBM/
+/outputs/
+/apps/docs/Bao_4.docx

@@ -1,5 +1,7 @@
 # Bảng 30 cột số đưa vào LightGBM
 
+**Cập nhật ngày 07/10/2026:** CSV cấp từng lượt học đã được bỏ khỏi bản chia sẻ và thêm vào `.gitignore`. Thư mục chỉ giữ giải thích tên cột và metadata xuất; khi cần xem toàn bộ ma trận, tái tạo cục bộ từ dữ liệu được phép sử dụng và model đã lưu. App không cần CSV này để hoạt động.
+
 ## Đây là bảng gì?
 
 Bảng được xuất từ đúng bộ tiền xử lý nằm trong model **HCO–VNLS + LightGBM 80 cây, cutoff 75%** đang dùng cho app. Không tạo dữ liệu giả, không chọn lại đặc trưng và không huấn luyện lại model.
@@ -12,7 +14,7 @@ Quy trình: **38 đặc trưng ứng viên → HCO–VNLS chọn 17 đặc trưn
 
 | File | Nội dung |
 |---|---|
-| `du_lieu_30_dac_trung_cutoff_75.csv` | Đúng 23.159 dòng dữ liệu và 30 cột số, không thêm cột chỉ mục. |
+| `du_lieu_30_dac_trung_cutoff_75.csv` | Chỉ lưu/tái tạo cục bộ: 23.159 dòng và 30 cột số; không đính kèm trên GitHub. |
 | `giai_thich_30_cot.csv` | Giải thích lần lượt 30 cột, chỉ rõ đặc trưng gốc và giá trị được mã hóa. |
 | `THONG_TIN_XUAT.json` | Số dòng, thứ tự cột, số dòng theo tập trong nguồn và SHA-256 để đối chiếu nguồn, model, CSV. |
 
