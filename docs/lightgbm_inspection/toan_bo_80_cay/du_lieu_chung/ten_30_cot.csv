@@ -1,0 +1,31 @@
+﻿feature_index,pipeline_name,feature
+0,num__studied_credits,studied_credits
+1,num__date_registration,date_registration
+2,num__total_clicks_to_t,total_clicks_to_t
+3,num__clicks_resource_to_t,clicks_resource_to_t
+4,num__clicks_url_to_t,clicks_url_to_t
+5,num__active_days_to_t,active_days_to_t
+6,num__assessments_submitted_to_t,assessments_submitted_to_t
+7,num__late_submissions_to_t,late_submissions_to_t
+8,num__active_day_ratio,active_day_ratio
+9,num__submission_rate,submission_rate
+10,num__days_since_last_activity,days_since_last_activity
+11,num__clicks_recent_7,clicks_recent_7
+12,num__clicks_recent_30,clicks_recent_30
+13,cat__code_module_AAA,code_module_AAA
+14,cat__code_module_BBB,code_module_BBB
+15,cat__code_module_CCC,code_module_CCC
+16,cat__code_module_DDD,code_module_DDD
+17,cat__code_module_EEE,code_module_EEE
+18,cat__code_module_FFF,code_module_FFF
+19,cat__code_module_GGG,code_module_GGG
+20,cat__gender_F,gender_F
+21,cat__gender_M,gender_M
+22,cat__highest_education_A Level or Equivalent,highest_education_A Level or Equivalent
+23,cat__highest_education_HE Qualification,highest_education_HE Qualification
+24,cat__highest_education_Lower Than A Level,highest_education_Lower Than A Level
+25,cat__highest_education_No Formal quals,highest_education_No Formal quals
+26,cat__highest_education_Post Graduate Qualification,highest_education_Post Graduate Qualification
+27,cat__age_band_0-35,age_band_0-35
+28,cat__age_band_35-55,age_band_35-55
+29,cat__age_band_55<=,age_band_55<=

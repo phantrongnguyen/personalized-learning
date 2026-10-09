@@ -1,0 +1,68 @@
+{
+  "evaluated_at": "2026-10-09",
+  "evaluation_type": "Historical test confirmation; this OULAD test split has appeared in prior project history and is not a newly untouched external holdout.",
+  "model_refit_during_evaluation": false,
+  "threshold_tuned_on_test": false,
+  "student_groups_disjoint": true,
+  "input_hashes_unchanged": {
+    "model": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db",
+    "metadata": "c80bc48dfb02130c5cbb4eaa464f312f29d03cb4bd7f888ba31576859778c301",
+    "dataset": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23"
+  },
+  "metrics": {
+    "model": "HCO-VNLS + LightGBM 80 cây — cutoff 75%",
+    "cutoff_fraction": 0.75,
+    "training_policy": "Fit train + validation sau khi khóa mask; không dùng test để fit.",
+    "train_validation_rows": 19712,
+    "test_rows": 3447,
+    "feature_count": 17,
+    "threshold": 0.5,
+    "accuracy": 0.8619089062953292,
+    "precision_risk": 0.9123222748815166,
+    "recall_risk": 0.6569965870307167,
+    "f1_risk": 0.7638888888888888,
+    "weighted_f1": 0.8553179744156014,
+    "average_precision_risk": 0.8815750676130706,
+    "roc_auc": 0.9049323031916888,
+    "brier_score": 0.10136986801098771,
+    "tn": 2201,
+    "fp": 74,
+    "fn": 402,
+    "tp": 770,
+    "alerts": 844,
+    "actual_risk": 1172
+  },
+  "AP_reconstructed_from_probability_ranking": 0.8815750676130706,
+  "top_k": [
+    {
+      "top_k": 100,
+      "risk_rows": 100,
+      "precision_at_k": 1.0,
+      "recall_at_k": 0.08532423208191127
+    },
+    {
+      "top_k": 500,
+      "risk_rows": 499,
+      "precision_at_k": 0.998,
+      "recall_at_k": 0.4257679180887372
+    },
+    {
+      "top_k": 844,
+      "risk_rows": 770,
+      "precision_at_k": 0.9123222748815166,
+      "recall_at_k": 0.6569965870307167
+    },
+    {
+      "top_k": 1000,
+      "risk_rows": 843,
+      "precision_at_k": 0.843,
+      "recall_at_k": 0.7192832764505119
+    },
+    {
+      "top_k": 3447,
+      "risk_rows": 1172,
+      "precision_at_k": 0.3400058021467943,
+      "recall_at_k": 1.0
+    }
+  ]
+}

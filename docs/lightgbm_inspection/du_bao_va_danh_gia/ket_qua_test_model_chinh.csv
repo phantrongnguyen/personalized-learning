@@ -1,0 +1,2 @@
+﻿model,cutoff_fraction,training_policy,train_validation_rows,test_rows,feature_count,threshold,accuracy,precision_risk,recall_risk,f1_risk,weighted_f1,average_precision_risk,roc_auc,brier_score,tn,fp,fn,tp,alerts,actual_risk
+HCO-VNLS + LightGBM 80 cây — cutoff 75%,0.75,Fit train + validation sau khi khóa mask; không dùng test để fit.,19712,3447,17,0.5,0.8619089062953292,0.9123222748815166,0.6569965870307167,0.7638888888888888,0.8553179744156014,0.8815750676130706,0.9049323031916888,0.10136986801098771,2201,74,402,770,844,1172
