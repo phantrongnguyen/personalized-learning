@@ -1,20 +1,38 @@
-# Cách đọc các bảng kết quả
+# Cách đọc các bảng còn giữ
 
-## Bảng đầu vào số của model app
+## Dữ liệu và model chính
 
-Theo yêu cầu ngày 01/10/2026, thư mục `xuat_30_dac_trung_lightgbm/` bổ sung CSV 30 cột số sau tiền xử lý của model HCO–VNLS + LightGBM tại cutoff 75%, bảng giải thích từng cột và thông tin đối chiếu SHA-256. Đây là đầu vào đã mã hóa, không phải bảng chỉ số đánh giá. Đọc `xuat_30_dac_trung_lightgbm/README.md` trước khi sử dụng. Các CSV nguồn, nhãn và mã sinh viên không được đưa lên cùng bản xuất này.
+- `kiem_ke_7_bang.csv`: nguồn, số cột/dung lượng và SHA-256 của bảy bảng; notebook 01 tạo.
+- `tong_quan_cac_moc.csv`: thống kê tạo dữ liệu ở notebook 02, có cả mốc trung gian lịch sử; so sánh cuối dùng 50%/75%.
+- `hco_vnls_lightgbm_validation.csv`: đủ 38 biến/HCO/VNLS/hybrid với LightGBM 80 cây ở hai cutoff; mask chuẩn của notebook 05b. Hàng Full features có thể không ghi chuỗi tên biến vì giữ toàn bộ đầu vào.
+- `xuat_30_dac_trung_lightgbm/`: metadata và bảng giải thích tên 30 cột số sau pipeline. CSV cấp từng lượt học không chia sẻ; các con số 17 → 30 là mã hóa, không phải tạo thêm thông tin độc lập.
 
-- `kiem_ke_7_bang.csv`: tên bảng, cột, dung lượng và SHA-256 của bảy nguồn.
-- `tong_quan_cac_moc.csv`: số enrollment và số feature ở năm cutoff; `risk_rate_train` chỉ tính trên train.
-- `hgb_theo_cutoff_validation.csv`: HGB đối chứng trên validation, cùng nhóm sinh viên chia theo seed 41.
-- `boosting_validation.csv`: CatBoost/LightGBM/XGBoost trên năm cutoff; CatBoost đã được cài và notebook 04 chạy lại. Cùng split nhưng cấu hình/tiền xử lý của từng model khác nhau, đây là bảng so model hoàn chỉnh chứ không quy chênh lệch cho một tham số.
-- `hco_vnls_validation.csv`: ba phương pháp tìm mask, hai seed, 50/75%; `fitness_cv` là AP CV có thưởng độ gọn, không bằng `average_precision_risk` trên validation.
-- `hco_vnls_hoi_tu.csv`: lịch sử fitness, dùng vẽ biểu đồ hội tụ.
-- `hco_vnls_du_feature_validation.csv`: HGB 60 vòng dùng đủ feature, đối chứng đúng cùng evaluator của notebook 05.
-- `hco_vnls_lightgbm_validation.csv`: cùng ba optimizer trên LightGBM nhỏ và hàng đủ feature cùng cấu hình; thí nghiệm bổ sung ở notebook 05b.
-- `hco_vnls_catboost_validation.csv`: CatBoost 80 cây nhận category gốc, hai cutoff, đủ cột và ba optimizer cùng evaluator; AP CV dùng chọn mask, AP validation dùng đối chiếu.
-- `hco_vnls_catboost_hoi_tu.csv`: fitness CV tốt nhất theo bước của từng phương pháp trên CatBoost; không phải AP validation.
-- `mo_hinh_thu_them_validation.csv`: **chỉ LogisticRegression cân bằng** ở 50%/75%, cùng train/validation. Có Accuracy, Precision, Recall, F1, AP và thời gian. Các ứng viên khác không nằm trong bảng năm mô hình.
-- `nam_mo_hinh_validation.csv`: bảng gộp 5 mô hình CatBoost, XGBoost, LightGBM, HGB, LogisticRegression cân bằng ở hai cutoff; do notebook 04c sinh ra từ ba CSV tổng hợp, không chứa dự đoán cấp sinh viên. Chỉ so trong từng cutoff; cấu hình và preprocessing khác nhau.
+## Kiểm chứng bộ biến từ notebook 09
 
-Các file `du_lieu_cutoff_*.csv`, `phan_tap_sinh_vien.csv`, `du_doan_validation_*.csv` chứa thông tin cấp sinh viên/enrollment và được `.gitignore` loại khỏi bản đưa lên GitHub. Giữ chúng cục bộ để tái lập, không chia sẻ khi chưa kiểm tra quyền dữ liệu.
+| Bảng | Cho biết gì? |
+|---|---|
+| `kiem_chung_mask_validation.csv` | Chỉ số và tên biến của các mask kiểm chứng; notebook 10 cần bảng này để đối chiếu mask chốt. |
+| `nhat_ky_mask_hco_vnls.csv` | Từng mask mới đã chấm, AP train-CV, fitness và best fitness; nguồn hình diễn biến tìm kiếm. |
+| `tan_suat_chon_feature.csv` | Số lần chọn từng biến trong năm seed; nguồn hình ổn định. |
+| `mask_ngau_nhien_cung_kich_thuoc.csv` | Mask ngẫu nhiên cùng số biến để không nhầm giảm biến bất kỳ với hiệu quả của thuật toán. |
+| `doi_chung_va_on_dinh_mask.csv` | Bảng tổng hợp đối chứng/ổn định, gồm Jaccard; không phải kiểm định ý nghĩa thống kê. |
+| `ablation_hybrid_75_train_cv.csv` | AP thay đổi khi bỏ từng biến trong mask hybrid 75%; không đo tác động can thiệp. |
+
+Bốn bảng nhật ký/kiểm chứng còn thiếu trong bản chia sẻ được sao chép nguyên nội dung từ gói quy trình cục bộ, kiểm tra hash, không tạo kết quả mới hoặc sửa số liệu.
+
+## Hai đối chứng CatBoost và XGBoost
+
+- `so_sanh_catboost_lightgbm_50_75.csv` và `so_sanh_xgboost_lightgbm_50_75.csv`: mỗi bảng 16 hàng = hai cutoff × hai bộ học × bốn phương án. Bộ học mới tự tìm mask trong train; LightGBM fit lại train-only với mask cũ.
+- `so_sanh_ba_bo_hoc_50_75.csv`: 24 hàng của ba bộ học, không nhân đôi LightGBM; gộp ở cell 21 notebook 07 sau khi kiểm tra giao thức và hash dữ liệu.
+- `tim_mask_catboost_50_75.csv` và `tim_mask_xgboost_50_75.csv`: mỗi bảng 48 mask mới, có AP ba fold và best fitness. Không phải dự đoán của từng sinh viên.
+- `giao_thuc_catboost_50_75.json` và `giao_thuc_xgboost_50_75.json`: cấu hình, phiên bản, SHA dữ liệu, thống kê nhóm và xác nhận không đánh giá test/không đổi model app.
+
+## Tên cột nên hiểu đúng
+
+`features` là số biến gốc; `reduction_pct = 100 × (1 − features/38)`. `encoded_features` là số cột sau tiền xử lý bên ngoài bộ học; CatBoost giữ category gốc, không dùng con số này để suy ra số mã hóa nội bộ.
+
+`mean_ap_cv`/`std_ap_cv` tính trong train, không phải AP validation. Std dùng ddof=0 giữa ba fold của một mask, không là độ ổn định qua nhiều seed hoặc khoảng tin cậy. `average_precision_risk` là AP trên validation; `weighted_f1` khác F1 của riêng lớp nguy cơ.
+
+`fit_seconds` gồm tiền xử lý + fit; `predict_seconds` gồm transform + dự đoán validation; `search_seconds` là tìm mask. Search LightGBM mới để trống vì không chạy lại tìm kiếm; `objective_calls = 0` là không chấm mask mới trong lần đo này, không có nghĩa tìm kiếm miễn phí. `ap_delta_vs_historical` kiểm tra tái lập; hai đối chứng tái lập AP LightGBM với chênh lệch bằng 0.
+
+Các số liệu dùng validation ở ngưỡng 0,5. Runtime đo một lần, phụ thuộc máy; không dùng số liệu này để khẳng định tiết kiệm tài nguyên chắc chắn. Test lịch sử không phải holdout mới. Không có điểm đánh giá con người hoặc bằng chứng gợi ý làm tăng điểm trong các bảng này.

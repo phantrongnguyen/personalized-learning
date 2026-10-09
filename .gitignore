@@ -99,4 +99,7 @@ packages/ml/artifacts/scalers/*
 packages/ml/artifacts/encoders/*
 !packages/ml/artifacts/encoders/.gitkeep
 
+/QUY_TRINH_HCO_VNLS_LIGHTGBM/
+/outputs/
+/apps/docs/Bao_4.docx
 

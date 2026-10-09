@@ -1,38 +1,42 @@
-# Hướng dẫn đọc chuỗi thực nghiệm dự báo và chọn đặc trưng
+# Cách đọc bảy notebook
 
-Đọc `00`–`05c` để hiểu các mô hình đã thử và HCO/VNLS; đọc tiếp `09`–`10` để kiểm chứng đặc trưng và tìm hiểu cách đóng gói model đang dùng trong app. Không so sánh trực tiếp kết quả giữa các chuỗi nếu cách chia tập, đặc trưng hoặc cutoff khác. Bản công bố gồm 11 notebook trong bảng dưới; không bao gồm các thử nghiệm `06`–`08` chưa được chọn làm bằng chứng trực tiếp cho model app.
+## Năm notebook chính
 
-Bản tổng hợp đã cập nhật: `../bao_cao/BaoCao_DuBaoNguyCo_HCO_VNLS.md`. Đọc báo cáo này để xem bảng năm mô hình, bảng so HCO/VNLS theo từng evaluator và những kết luận chưa thể khẳng định.
+Đọc **01 → 02 → 05b → 09 → 10** để đi từ bảy bảng dữ liệu đến model HCO–VNLS + LightGBM 75% đang dùng trong app.
 
-| File | Câu hỏi | Đầu ra chính | Cần nhớ |
-|---|---|---|---|
-| `00_thiet_ke_thi_nghiem.ipynb` | Thành công được định nghĩa thế nào? | Protocol và kiểm kê nguồn | Accuracy phải đi cùng Recall/AP. |
-| `01_kiem_tra_du_lieu_va_ro_ri.ipynb` | Bảy bảng và khóa gộp có hợp lệ? | Kiểm kê 7 bảng; audit cutoff | Không lấy dữ liệu sau cutoff. |
-| `02_tao_dac_trung_theo_thoi_gian.ipynb` | Hành vi gần cutoff có thêm tín hiệu? | Năm bảng cutoff và thống kê | Dữ liệu từng sinh viên chỉ lưu cục bộ. |
-| `03_so_sanh_cac_moc_cutoff.ipynb` | Đổi thời điểm có ích không? | Bảng/đồ thị HGB | Tập enrollment có thể đổi giữa các mốc. |
-| `04_catboost_lightgbm_xgboost.ipynb` | Boosting mới có vượt HGB? | Bảng validation 5 mốc | Chỉ là cấu hình ban đầu. |
-| `04c_thu_them_mo_hinh.ipynb` | LogisticRegression cân bằng đánh đổi AP/Recall thế nào so bốn model còn lại? | Bảng năm model tại 50%/75% và hình AP–Recall | Cùng validation; không có test mới. |
-| `05_hco_vnls_tren_boosting.ipynb` | Hybrid có hơn HCO/VNLS ở cùng budget? | Bảng mask, hình hội tụ | Fitness khác AP; pilot budget nhỏ. |
-| `05b_hco_vnls_lightgbm.ipynb` | Kết luận chọn feature có phụ thuộc model? | Bảng HCO/VNLS trên LightGBM nhỏ | So đúng với LightGBM đủ feature, không trộn cấu hình 210 cây. |
-| `05c_hco_vnls_catboost.ipynb` | HCO, VNLS, hybrid có còn hữu ích với CatBoost xử lý category gốc? | Bảng CatBoost 80 cây đủ cột và chọn cột, hình hội tụ | Chỉ so đúng cùng evaluator CatBoost, không trộn 240 cây của notebook 04. |
-| `09_kiem_chung_dac_trung_hco_vnls.ipynb` | Mask HCO/VNLS có ổn định qua seed và hơn mask ngẫu nhiên cùng số cột không? | Bảng, hình, thử bỏ từng cột với mask hybrid | Được chọn không đồng nghĩa ảnh hưởng nhân quả; AP validation của mask có thể thấp hơn đủ 38 cột. |
-| `10_dong_goi_model_hco_vnls_lightgbm_75.ipynb` | Model 17 đặc trưng tại cutoff 75% được tạo cho app như thế nào? | Đối chiếu mask 05b/09, fit train + validation, lưu model và nạp thử | Không dùng test để fit; smoke test năm dòng không phải đánh giá độ chính xác mới. |
+| Notebook | Câu hỏi được giải quyết | Bằng chứng quan trọng |
+|---|---|---|
+| `01_kiem_tra_du_lieu_va_ro_ri.ipynb` | Gộp bảy bảng đúng khóa và đúng thời điểm không? | Kiểm kê nguồn; kiểm tra khóa và thông tin sau cutoff. |
+| `02_tao_dac_trung_theo_thoi_gian.ipynb` | Tại thời điểm quan sát có thể biết những gì? | Đặc trưng/tỷ lệ/cửa sổ tương tác; split theo sinh viên; thống kê số dòng. |
+| `05b_hco_vnls_lightgbm.ipynb` | HCO/VNLS giữ bao nhiêu biến, đổi lại chất lượng ra sao? | Cùng LightGBM 80 cây: đủ biến/HCO/VNLS/hybrid ở 50%/75%, bảng validation và mask. |
+| `09_kiem_chung_dac_trung_hco_vnls.ipynb` | Bộ biến có bằng chứng ngoài việc được hàm chọn không? | Năm seed, mask ngẫu nhiên cùng số biến, Jaccard, tần suất chọn và bỏ từng biến. Đây không phải chứng minh nhân quả. |
+| `10_dong_goi_model_hco_vnls_lightgbm_75.ipynb` | Model app được tạo và kiểm tra thế nào? | Đối chiếu mask 17 biến với 05b/09, fit 19.712 lượt học train + validation, lưu artifact và nạp thử. |
 
-Các kết quả test từng được xem trong lịch sử dự án; không được gọi test cũ là một holdout chưa từng sử dụng. Bảng công bố hiện tại chỉ trình bày validation.
+Notebook 02 giữ output lịch sử các mốc trung gian; chỉ hai mốc 50%/75% được đưa vào đối chứng cuối. Notebook 10 cần `kiem_chung_mask_validation.csv` do 09 tạo ra; không bỏ qua bước kiểm chứng khi tái tạo model.
 
-`code_dung_chung/` chỉ chứa thao tác lặp lại (đường dẫn, chia nhóm, tạo tỷ lệ, tiền xử lý). Code huấn luyện, so sánh và nhận xét đều ở notebook để theo dõi thí nghiệm.
+## Hai notebook đối chứng
 
-## Tên cột thường gặp
+- `06_so_sanh_catboost_voi_lightgbm_50_75.ipynb`: CatBoost 80 cây, category gốc; đủ 38 biến/HCO/VNLS/hybrid ở hai cutoff, so pipeline LightGBM với mask đã chốt.
+- `07_so_sanh_xgboost_voi_lightgbm_50_75.ipynb`: XGBoost 80 cây, median/mode/One-Hot; cùng các trường hợp, gộp bảng ba bộ học khi đã chạy 06.
 
-- `risk = 1`: Fail/Withdrawn; `risk = 0`: Pass/Distinction.
-- `cutoff_day`: `floor(tỷ lệ cutoff × module_presentation_length)`, không phải phần trăm số dòng.
-- `*_to_t`: chỉ dùng hoạt động đến cutoff.
-- `split`: train/validation/test cố định theo sinh viên, không phải feature.
-- `average_precision_risk` (AP): chất lượng xếp hạng lớp nguy cơ.
-- `recall_risk`: tỷ lệ sinh viên thật sự nguy cơ được cảnh báo.
-- `brier_score`: sai số xác suất; thấp hơn thường tốt hơn.
-- `fitness_cv`: mục tiêu tìm mask có thưởng ít feature, không bằng AP thuần.
+Hai notebook đã chạy toàn bộ, có bảng và hình trong output. Không đánh giá test mới, không dò ngưỡng/hyperparameter và không thay model triển khai. Đủ 38 biến tại cutoff **không phải Full toàn kỳ 100%**.
 
-## Kiểm tra trạng thái
+## Địa chỉ cell của hai notebook đối chứng
 
-Mười một notebook trong bảng trên đã chạy và có output. `09` cần dữ liệu cutoff và mã dùng chung; `10` còn cần bảng kết quả do `05b` và `09` tạo ra. Muốn chạy lại trên máy khác cần đủ bảy CSV trong `../data/`, tái tạo các đầu ra trung gian theo đúng thứ tự và cài các gói nêu ở `README.md`. Bộ app đã có model đóng gói nên không cần chạy lại các notebook này để dùng demo.
+Đếm từ 1, gồm cả Markdown; không nhầm với số `In [ ]`.
+
+| Cell | Nội dung | Nên nhìn gì? |
+|---|---|---|
+| 4 | Giao thức | Seed, budget 8, alpha, ngưỡng 0,5 và tham số LightGBM. |
+| 6 | Kiểm tra dữ liệu | Số dòng, nhóm sinh viên, SHA dữ liệu và chín cột loại khỏi đầu vào. |
+| 8 | Bộ học và tiền xử lý | Xử lý số thiếu/category ở đâu; khác nhau giữa CatBoost và hai bộ học còn lại. |
+| 10 | Chấm mask | GroupKFold chỉ trong train, AP trung bình/độ lệch chuẩn, fitness và cache. |
+| 12 | Thực nghiệm | Accuracy, Precision/Recall/F1, weighted F1, AP, AUC, Brier và thời gian. |
+| 14 | Đánh đổi khi giảm biến | Tên biến gốc, tỷ lệ giảm và delta so với đủ biến cùng bộ học. |
+| 16 | Lưu bằng chứng | Hình, bảng CSV và JSON giao thức. |
+| 18 | Nhận xét | Kết luận lấy trực tiếp từ số liệu, không viết sẵn rằng model mới thắng. |
+| 21, chỉ notebook 07 | Bảng gộp | Kiểm tra hash/giao thức, gộp 24 trường hợp của ba bộ học. |
+
+`std_ap_cv` là độ phân tán AP giữa ba fold của một mask, không phải qua nhiều seed hoặc khoảng tin cậy. `fit_seconds` gồm tiền xử lý + fit; `search_seconds` là tìm mask; `predict_seconds` gồm transform + dự đoán. Thời gian đo một lần, không đủ khẳng định benchmark.
+
+Các CSV cấp sinh viên không chia sẻ. Để chạy lại, dùng Python 3.12, môi trường nghiên cứu riêng, requirements cấp trên và bảy CSV nguồn. Giải thích lý thuyết/bố cục trình bày nằm trong `../../../bao_cao/HUONG_DAN_TRINH_BAY.md`.
