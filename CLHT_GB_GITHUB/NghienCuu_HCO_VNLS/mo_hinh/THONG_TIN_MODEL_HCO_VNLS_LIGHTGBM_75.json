@@ -1,0 +1,116 @@
+{
+  "model_name": "HCO-VNLS + LightGBM 80 cây — cutoff 75%",
+  "cutoff_fraction": 0.75,
+  "optimizer_seed": 41,
+  "model_random_state": 41,
+  "feature_columns": [
+    "code_module",
+    "gender",
+    "highest_education",
+    "age_band",
+    "studied_credits",
+    "date_registration",
+    "total_clicks_to_t",
+    "clicks_resource_to_t",
+    "clicks_url_to_t",
+    "active_days_to_t",
+    "assessments_submitted_to_t",
+    "late_submissions_to_t",
+    "active_day_ratio",
+    "submission_rate",
+    "days_since_last_activity",
+    "clicks_recent_7",
+    "clicks_recent_30"
+  ],
+  "input_schema": [
+    {
+      "name": "code_module",
+      "kind": "category"
+    },
+    {
+      "name": "gender",
+      "kind": "category"
+    },
+    {
+      "name": "highest_education",
+      "kind": "category"
+    },
+    {
+      "name": "age_band",
+      "kind": "category"
+    },
+    {
+      "name": "studied_credits",
+      "kind": "number"
+    },
+    {
+      "name": "date_registration",
+      "kind": "number"
+    },
+    {
+      "name": "total_clicks_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "clicks_resource_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "clicks_url_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "active_days_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "assessments_submitted_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "late_submissions_to_t",
+      "kind": "number"
+    },
+    {
+      "name": "active_day_ratio",
+      "kind": "number"
+    },
+    {
+      "name": "submission_rate",
+      "kind": "number"
+    },
+    {
+      "name": "days_since_last_activity",
+      "kind": "number"
+    },
+    {
+      "name": "clicks_recent_7",
+      "kind": "number"
+    },
+    {
+      "name": "clicks_recent_30",
+      "kind": "number"
+    }
+  ],
+  "positive_label": 1,
+  "threshold": 0.5,
+  "training_policy": "Fit train + validation sau khi khóa mask; không dùng test để fit.",
+  "training_rows": 19712,
+  "test_rows_excluded": 3447,
+  "validation_reference_train_only": {
+    "average_precision_risk": 0.8967566497124569,
+    "accuracy": 0.8740849194729137,
+    "recall_risk": 0.689802913453299
+  },
+  "mask_source": "05b_hco_vnls_lightgbm.ipynb; xác nhận bởi 09_kiem_chung_dac_trung_hco_vnls.ipynb",
+  "feature_data_source": "ket_qua/du_lieu_cutoff_75.csv",
+  "data_sha256": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+  "versions": {
+    "python": "3.12.6",
+    "scikit_learn": "1.6.0",
+    "lightgbm": "4.7.0",
+    "pandas": "2.2.2",
+    "joblib": "1.4.2"
+  },
+  "model_sha256": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db"
+}

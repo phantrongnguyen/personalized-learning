@@ -4,6 +4,8 @@
 
 Model triển khai: **HCO–VNLS + LightGBM 80 cây, cutoff 75%**, 17 biến gốc → 30 cột sau tiền xử lý. CatBoost/XGBoost là hai đối chứng đã chạy, chưa thay model app.
 
+**File model đã xuất (09/10/2026):** [16 baseline CatBoost/XGBoost](mo_hinh/baselines_50_75/DANH_SACH_16_MODEL.csv), [8 LightGBM tham chiếu](mo_hinh/lightgbm_50_75/DANH_SACH_8_MODEL.csv), gồm LightGBM 75% đủ biến chưa chọn HCO/VNLS; [model chính](mo_hinh/model_hco_vnls_lightgbm_cutoff75.joblib) sao chép nguyên byte từ bản triển khai. [Bảng so sánh 24 model kèm artifact](ket_qua/so_sanh_tat_ca_model_da_xuat.csv), [báo cáo](bao_cao/SO_SANH_3_MODEL_BASELINE_50_75.md) và [hướng dẫn nạp model](mo_hinh/README.md). Các bản so sánh fit train-only; model chính fit train + validation, không trộn metric hai loại.
+
 Hiện chỉ giữ **bảy notebook**: năm notebook chính và hai notebook đối chứng. Các bản HGB, so nhiều cutoff/ứng viên cũ và CatBoost trung gian đã sao lưu ngoài repository rồi bỏ khỏi nhánh để tránh nhầm phiên bản. Thư mục rỗng giữ bằng `.gitkeep`.
 
 ## Thứ tự đọc

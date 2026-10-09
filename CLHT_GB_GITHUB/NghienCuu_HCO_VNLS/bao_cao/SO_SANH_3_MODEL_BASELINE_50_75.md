@@ -1,6 +1,8 @@
 # So sánh LightGBM, XGBoost và CatBoost tại cutoff 50% / 75%
 
-Ngày tổng hợp: **09/10/2026**. Nhánh: **`aBaoN9/clht-gb-github`**. Báo cáo đọc kết quả đã chạy; không chạy lại huấn luyện, không thêm số liệu mô phỏng và không đổi model ứng dụng.
+Ngày cập nhật: **09/10/2026**. Nhánh: **`aBaoN9/clht-gb-github`**. Đã xuất file model bằng cách fit lại **train-only** với mask/cấu hình khóa sẵn, kiểm chứng khớp toàn bộ chỉ số validation lịch sử. Không tìm lại mask, không thêm số liệu mô phỏng, không chấm test mới và không đổi model ứng dụng.
+
+Bảng đầy đủ kèm đường dẫn artifact, SHA-256, thời gian xuất và trạng thái kiểm chứng: [so_sanh_tat_ca_model_da_xuat.csv](../ket_qua/so_sanh_tat_ca_model_da_xuat.csv). CSV lịch sử `so_sanh_ba_bo_hoc_50_75.csv` giữ nguyên làm nguồn đối chiếu, không sửa số đo cũ. Mục 8 có link tải các model và phân biệt LightGBM chính.
 
 Nguồn được kiểm tra tại commit `589bb3bca5bae82e1c9deffd84a5ed2b858b518a`. Hai baseline ở đây là **CatBoost và XGBoost**, đối chiếu với LightGBM. Mỗi bộ học có đủ biến / HCO / VNLS / HCO-VNLS ở hai cutoff: tổng cộng **24 trường hợp**, không chỉ ba dòng model.
 
@@ -230,3 +232,30 @@ Tất cả bảng lấy từ CSV/JSON và output notebook đã lưu trên đúng
 | [ket_qua/tim_mask_xgboost_50_75.csv](../ket_qua/tim_mask_xgboost_50_75.csv) | `af97ff15bc70a2b287c04f3cb24b8e39988274415dde131c4916cf9ab712bed2` |
 
 Hash trên tính byte của blob Git, không phải bản checkout đã đổi LF/CRLF trên Windows. Thời điểm ghi giao thức: CatBoost `2026-10-07T22:04:13`; XGBoost `2026-10-07T22:05:04` (giờ cục bộ).
+
+## 8. File model đã xuất và kiểm chứng
+
+**24 model train-only** tương ứng đủ 24 dòng trong mục 3: 16 CatBoost/XGBoost theo yêu cầu và 8 LightGBM tham chiếu. Bổ sung riêng **1 model chính fit train + validation**, giữ nguyên byte từ bản triển khai. Tổng cộng 25 artifact `.joblib`; bản native của cùng model không tính thành trường hợp mới.
+
+| Bộ học | Cutoff | Đủ biến | HCO | VNLS | HCO-VNLS |
+| --- | --- | --- | --- | --- | --- |
+| CatBoost | 50% | [model](../mo_hinh/baselines_50_75/catboost_cutoff50_full_features.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff50_hco.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff50_vnls.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff50_hco_vnls.joblib) |
+| CatBoost | 75% | [model](../mo_hinh/baselines_50_75/catboost_cutoff75_full_features.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff75_hco.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff75_vnls.joblib) | [model](../mo_hinh/baselines_50_75/catboost_cutoff75_hco_vnls.joblib) |
+| XGBoost | 50% | [model](../mo_hinh/baselines_50_75/xgboost_cutoff50_full_features.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff50_hco.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff50_vnls.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff50_hco_vnls.joblib) |
+| XGBoost | 75% | [model](../mo_hinh/baselines_50_75/xgboost_cutoff75_full_features.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff75_hco.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff75_vnls.joblib) | [model](../mo_hinh/baselines_50_75/xgboost_cutoff75_hco_vnls.joblib) |
+| LightGBM | 50% | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff50_full_features.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff50_hco.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff50_vnls.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff50_hco_vnls.joblib) |
+| LightGBM | 75% | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_full_features.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_hco.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_vnls.joblib) | [model](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_hco_vnls.joblib) |
+
+Mỗi `.joblib` đi kèm JSON chứa thứ tự biến, category, ngưỡng 0,5, split, phiên bản thư viện, cấu hình, hash dữ liệu/model và metric validation. Bản native: CatBoost `.cbm`, XGBoost `.ubj`, LightGBM `.txt`. XGBoost/LightGBM cần bộ tiền xử lý đã fit trong `.joblib`, không đưa category thô trực tiếp vào native.
+
+| Artifact LightGBM 75% | Biến gốc / mã hóa | Dữ liệu fit | AP validation train-only | Vai trò |
+| --- | --- | --- | --- | --- |
+| [Full features](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_full_features.joblib) | 38 / 76 | 16.297 dòng train | 0,896987 | Baseline chưa chọn biến HCO/VNLS |
+| [HCO-VNLS so sánh](../mo_hinh/lightgbm_50_75/lightgbm_cutoff75_hco_vnls.joblib) | 17 / 30 | 16.297 dòng train | 0,896757 | Bản kiểm chứng đúng dòng so sánh |
+| [HCO-VNLS model chính](../mo_hinh/model_hco_vnls_lightgbm_cutoff75.joblib) | 17 / 30 | 19.712 dòng train + validation | Không chấm lại validation đã dùng fit | Bản triển khai giữ nguyên |
+
+Model chính **đã có trên GitHub** tại `apps/backend/model_store/model_hco_vnls_lightgbm_cutoff75.joblib` và `streamlit-web/model_hco_vnls_lightgbm_cutoff75.joblib`. Bản trong thư mục nghiên cứu đồng nhất SHA-256 `90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db`, không huấn luyện thay thế. [Metadata](../mo_hinh/THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json) có `validation_reference_train_only` để tham khảo bản train-only trước đóng gói, **không phải** metric validation của bản triển khai.
+
+Đã kiểm chứng đủ tổ hợp, nhóm sinh viên không giao nhau, mọi metric khớp CSV lịch sử với sai số tối đa `1e-12`, dự đoán sau nạp lại joblib/native khớp, dữ liệu/bảng cũ/model chính không đổi. Danh sách: [16 baseline](../mo_hinh/baselines_50_75/DANH_SACH_16_MODEL.csv), [8 LightGBM](../mo_hinh/lightgbm_50_75/DANH_SACH_8_MODEL.csv); checksum: [baseline](../mo_hinh/baselines_50_75/manifest_sha256.csv), [LightGBM](../mo_hinh/lightgbm_50_75/manifest_sha256.csv). `export_fit_seconds` tách riêng thời gian fit xuất file, không ghi đè thời gian thực nghiệm lịch sử.
+
+Xem [hướng dẫn nạp và tái kiểm chứng](../mo_hinh/README.md). Không đưa CSV cấp sinh viên hoặc `.venv` lên GitHub.
