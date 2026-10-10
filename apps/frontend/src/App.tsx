@@ -4,9 +4,9 @@ import { Sidebar } from './components/common/Sidebar';
 import { Navbar } from './components/common/Navbar';
 import { Footer } from './components/common/Footer';
 import { ToastContainer } from './components/common/ToastContainer';
-import { BackendStatusModal } from './components/common/BackendStatusModal';
 import { AuthModal } from './components/common/AuthModal';
 
+import { AuthPage } from './pages/AuthPage';
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
 import { AboutPage } from './pages/AboutPage';
@@ -14,7 +14,7 @@ import { ContactPage } from './pages/ContactPage';
 import { ProfilePage } from './pages/ProfilePage';
 
 const AppContent: React.FC = () => {
-  const { currentView } = useApp();
+  const { currentView, user } = useApp();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isCollapsed, setIsCollapsed] = useState(() => {
     try {
@@ -23,6 +23,16 @@ const AppContent: React.FC = () => {
       return false;
     }
   });
+
+  // If user is not authenticated, display the Auth Portal first before entering home page
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-slate-950 text-slate-100">
+        <AuthPage />
+        <ToastContainer />
+      </div>
+    );
+  }
 
   const toggleCollapsed = () => {
     setIsCollapsed((prev) => {
@@ -74,7 +84,6 @@ const AppContent: React.FC = () => {
 
       {/* Global Modals & Notifications */}
       <ToastContainer />
-      <BackendStatusModal />
       <AuthModal />
     </div>
   );

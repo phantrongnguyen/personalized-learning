@@ -3,7 +3,6 @@ import { useApp } from '../../state/AppContext';
 import {
   Menu,
   ChevronRight,
-  Activity,
   LogIn,
   LogOut,
   LayoutDashboard,
@@ -29,12 +28,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   const {
     currentView,
     setCurrentView,
-    backendStatus,
-    latency,
     user,
     logout,
     setIsAuthModalOpen,
-    setIsBackendModalOpen,
   } = useApp();
 
   const getViewInfo = () => {
@@ -120,40 +116,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </div>
           </div>
 
-          {/* Right: Actions (API Status, User Profile) */}
+          {/* Right: Actions (User Profile & Logout) */}
           <div className="flex items-center gap-3">
-            {/* Backend status pill */}
-            <button
-              type="button"
-              onClick={() => setIsBackendModalOpen(true)}
-              className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-mono font-medium border transition-colors ${
-                backendStatus === 'ok'
-                  ? 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/40'
-                  : backendStatus === 'checking'
-                  ? 'border-amber-500/30 bg-amber-950/40 text-amber-300 hover:bg-amber-900/40'
-                  : 'border-rose-500/30 bg-rose-950/40 text-rose-300 hover:bg-rose-900/40'
-              }`}
-              title="Nhấp để cấu hình và kiểm tra kết nối API"
-            >
-              <span
-                className={`w-2 h-2 rounded-full animate-pulse ${
-                  backendStatus === 'ok'
-                    ? 'bg-emerald-400'
-                    : backendStatus === 'checking'
-                    ? 'bg-amber-400'
-                    : 'bg-rose-400'
-                }`}
-              />
-              <span className="hidden sm:inline">
-                {backendStatus === 'ok'
-                  ? `API OK (${latency ?? 0}ms)`
-                  : backendStatus === 'checking'
-                  ? 'Đang ping API…'
-                  : 'Mất kết nối API'}
-              </span>
-              <Activity className="w-3.5 h-3.5 sm:hidden" />
-            </button>
-
             {/* Auth Profile / Login */}
             {user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800">

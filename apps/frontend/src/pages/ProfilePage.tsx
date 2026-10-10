@@ -19,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { user, login, logout, updateUser, history, apiBase, backendStatus, addToast } = useApp();
+  const { user, login, logout, updateUser, history, addToast } = useApp();
 
   // Form states
   const [name, setName] = useState(user?.name || 'Nguyễn Minh Khang');
@@ -333,19 +333,6 @@ export const ProfilePage: React.FC = () => {
                   onChange={(e) => setCsvBomFormat(e.target.checked)}
                   className="w-4 h-4 rounded text-emerald-500 focus:ring-emerald-500 bg-slate-900 border-slate-700"
                 />
-              </div>
-
-              <div className="p-3 rounded-xl bg-slate-950/60 border border-slate-800 space-y-1">
-                <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Máy chủ API kết nối:</span>
-                  <span className="font-mono text-emerald-400 font-semibold">{apiBase}</span>
-                </div>
-                <div className="flex items-center justify-between text-[11px]">
-                  <span className="text-slate-400">Trạng thái API:</span>
-                  <span className={backendStatus === 'ok' ? 'text-emerald-400' : 'text-rose-400'}>
-                    {backendStatus.toUpperCase()}
-                  </span>
-                </div>
               </div>
             </div>
           </div>

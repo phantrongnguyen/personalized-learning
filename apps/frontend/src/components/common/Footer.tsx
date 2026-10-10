@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { setCurrentView, backendStatus, latency, setIsBackendModalOpen, addToast } = useApp();
+  const { setCurrentView, addToast } = useApp();
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
   const handleNav = (view: NavigationPage) => {
@@ -114,39 +114,6 @@ export const Footer: React.FC = () => {
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
               Hệ thống trí tuệ nhân tạo chuyên sâu hỗ trợ các trường đại học, học viện và tổ chức đào tạo phát hiện sớm nguy cơ trượt/bỏ học và tự động kê đơn can thiệp sư phạm cá nhân hóa.
             </p>
-
-            {/* Live API Health & Uptime Status Pill */}
-            <div className="pt-2">
-              <button
-                type="button"
-                onClick={() => setIsBackendModalOpen(true)}
-                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-xl border font-mono text-[11px] transition-colors ${
-                  backendStatus === 'ok'
-                    ? 'border-emerald-500/30 bg-emerald-950/40 text-emerald-300 hover:bg-emerald-900/40'
-                    : backendStatus === 'checking'
-                    ? 'border-amber-500/30 bg-amber-950/40 text-amber-300 hover:bg-amber-900/40'
-                    : 'border-rose-500/30 bg-rose-950/40 text-rose-300 hover:bg-rose-900/40'
-                }`}
-                title="Nhấp để kiểm tra hoặc đổi địa chỉ máy chủ API"
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    backendStatus === 'ok'
-                      ? 'bg-emerald-400 animate-pulse'
-                      : backendStatus === 'checking'
-                      ? 'bg-amber-400 animate-pulse'
-                      : 'bg-rose-400'
-                  }`}
-                />
-                <span>
-                  {backendStatus === 'ok'
-                    ? `Hệ thống Trực tuyến (${latency ?? 0}ms)`
-                    : 'Máy chủ Mất kết nối'}
-                </span>
-                <span className="text-slate-500">&bull;</span>
-                <span className="text-slate-400">SLA 99.9%</span>
-              </button>
-            </div>
 
             {/* Corporate Compliance Badges */}
             <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] text-slate-400">

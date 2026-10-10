@@ -31,12 +31,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   const {
     currentView,
     setCurrentView,
-    backendStatus,
-    latency,
     user,
     logout,
     setIsAuthModalOpen,
-    setIsBackendModalOpen,
   } = useApp();
 
   const handleNavClick = (view: NavigationPage) => {
@@ -224,42 +221,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Sidebar Bottom (API Ping & User profile) */}
+        {/* Sidebar Bottom (User profile & Collapse toggle) */}
         <div className="p-3 border-t border-slate-800/80 bg-slate-950/40 space-y-2.5">
-          {/* API Health Pill */}
-          <button
-            type="button"
-            onClick={() => setIsBackendModalOpen(true)}
-            className={`w-full flex items-center gap-2.5 p-2 rounded-xl text-xs font-mono border transition-colors ${
-              backendStatus === 'ok'
-                ? 'border-emerald-500/20 bg-emerald-950/30 text-emerald-300 hover:bg-emerald-900/30'
-                : backendStatus === 'checking'
-                ? 'border-amber-500/20 bg-amber-950/30 text-amber-300 hover:bg-amber-900/30'
-                : 'border-rose-500/20 bg-rose-950/30 text-rose-300 hover:bg-rose-900/30'
-            } ${isCollapsed && !isOpen ? 'lg:justify-center' : ''}`}
-            title="Nhấp để cấu hình và kiểm tra kết nối API"
-          >
-            <span
-              className={`w-2 h-2 rounded-full shrink-0 ${
-                backendStatus === 'ok'
-                  ? 'bg-emerald-400 animate-pulse'
-                  : backendStatus === 'checking'
-                  ? 'bg-amber-400 animate-pulse'
-                  : 'bg-rose-400'
-              }`}
-            />
-            {(!isCollapsed || isOpen) && (
-              <div className="flex-1 text-left flex items-center justify-between truncate">
-                <span className="truncate">
-                  {backendStatus === 'ok' ? 'FastAPI OK' : 'API Mất kết nối'}
-                </span>
-                <span className="text-[11px] text-slate-400">
-                  {latency !== null ? `${latency}ms` : '—'}
-                </span>
-              </div>
-            )}
-          </button>
-
           {/* User Profile Bar */}
           {user ? (
             <div
