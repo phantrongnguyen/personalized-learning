@@ -1,0 +1,317 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+  --color-slate-50: 248 250 252;
+  --color-slate-100: 241 245 249;
+  --color-slate-200: 226 232 240;
+  --color-slate-300: 203 213 225;
+  --color-slate-400: 148 163 184;
+  --color-slate-500: 100 116 139;
+  --color-slate-600: 71 85 105;
+  --color-slate-700: 51 65 85;
+  --color-slate-750: 40 53 72;
+  --color-slate-800: 30 41 59;
+  --color-slate-850: 21 30 46;
+  --color-slate-900: 15 23 42;
+  --color-slate-950: 9 13 22;
+  --color-brand-50: 236 253 245;
+  --color-brand-100: 209 250 229;
+  --color-brand-200: 167 243 208;
+  --color-brand-300: 110 231 183;
+  --color-brand-400: 52 211 153;
+  --color-brand-500: 16 185 129;
+  --color-brand-600: 5 150 105;
+  --color-brand-700: 4 120 87;
+  --color-emerald-100: 209 250 229;
+  --color-emerald-200: 167 243 208;
+  --color-emerald-300: 110 231 183;
+  --color-emerald-400: 52 211 153;
+  --color-emerald-900: 6 78 59;
+  --color-emerald-950: 2 44 34;
+  --color-rose-100: 255 228 230;
+  --color-rose-200: 254 205 211;
+  --color-rose-300: 253 164 175;
+  --color-rose-400: 251 113 133;
+  --color-rose-900: 136 19 55;
+  --color-rose-950: 76 5 25;
+  --color-amber-100: 254 243 199;
+  --color-amber-200: 253 230 138;
+  --color-amber-300: 252 211 77;
+  --color-amber-400: 251 191 36;
+  --color-amber-900: 120 53 15;
+  --color-amber-950: 69 26 3;
+  --color-blue-100: 219 234 254;
+  --color-blue-200: 191 219 254;
+  --color-blue-300: 147 197 253;
+  --color-blue-400: 96 165 250;
+  --color-blue-900: 30 58 138;
+  --color-blue-950: 23 37 84;
+  --color-sky-100: 224 242 254;
+  --color-sky-200: 186 230 253;
+  --color-sky-300: 125 211 252;
+  --color-sky-400: 56 189 248;
+  --color-sky-900: 12 74 110;
+  --color-sky-950: 8 47 73;
+  --color-cyan-100: 207 250 254;
+  --color-cyan-200: 165 243 252;
+  --color-cyan-300: 103 232 249;
+  --color-cyan-400: 34 211 238;
+  --color-cyan-900: 22 78 99;
+  --color-cyan-950: 8 51 68;
+  --color-teal-100: 204 251 241;
+  --color-teal-200: 153 246 228;
+  --color-teal-300: 94 234 212;
+  --color-teal-400: 45 212 191;
+  --color-teal-900: 19 78 74;
+  --color-teal-950: 4 47 46;
+  --color-purple-100: 243 232 255;
+  --color-purple-200: 233 213 255;
+  --color-purple-300: 216 180 254;
+  --color-purple-400: 192 132 252;
+  --color-purple-900: 88 28 135;
+  --color-purple-950: 59 7 100;
+  --color-orange-100: 255 237 213;
+  --color-orange-200: 254 215 170;
+  --color-orange-300: 253 186 116;
+  --color-orange-400: 251 146 60;
+  --color-orange-900: 124 45 18;
+  --color-orange-950: 67 20 7;
+  --color-lime-100: 236 252 203;
+  --color-lime-200: 217 249 157;
+  --color-lime-300: 190 242 100;
+  --color-lime-400: 163 230 53;
+  --color-lime-900: 54 83 20;
+  --color-lime-950: 26 46 5;
+  --color-green-100: 220 252 231;
+  --color-green-200: 187 247 208;
+  --color-green-300: 134 239 172;
+  --color-green-400: 74 222 128;
+  --color-green-900: 20 83 45;
+  --color-green-950: 5 46 22;
+  --color-yellow-100: 254 249 195;
+  --color-yellow-200: 254 240 138;
+  --color-yellow-300: 253 224 71;
+  --color-yellow-400: 250 204 21;
+  --color-yellow-900: 113 63 18;
+  --color-yellow-950: 66 32 6;
+  --color-heading: 255 255 255;
+  --color-brand-tail-400: 45 212 191;
+  --color-brand-tail-500: 20 184 166;
+  --color-brand-tail-600: 13 148 136;
+  --color-chart-student: 16 185 129;
+  --color-chart-benchmark: 96 165 250;
+  --color-chart-focus: 147 197 253;
+  --color-overlay: 9 13 22;
+  color-scheme: dark;
+  }
+
+  :root[data-theme="light"] {
+  --color-slate-50: 15 23 42;
+  --color-slate-100: 15 23 42;
+  --color-slate-200: 30 41 59;
+  --color-slate-300: 51 65 85;
+  --color-slate-400: 71 85 105;
+  --color-slate-500: 100 116 139;
+  --color-slate-600: 100 116 139;
+  --color-slate-700: 148 163 184;
+  --color-slate-750: 203 213 225;
+  --color-slate-800: 226 232 240;
+  --color-slate-850: 241 245 249;
+  --color-slate-900: 255 255 255;
+  --color-slate-950: 248 250 252;
+  --color-brand-50: 239 246 255;
+  --color-brand-100: 219 234 254;
+  --color-brand-200: 30 64 175;
+  --color-brand-300: 29 78 216;
+  --color-brand-400: 29 78 216;
+  --color-brand-500: 59 130 246;
+  --color-brand-600: 37 99 235;
+  --color-brand-700: 29 78 216;
+  --color-emerald-100: 6 95 70;
+  --color-emerald-200: 6 95 70;
+  --color-emerald-300: 4 120 87;
+  --color-emerald-400: 4 120 87;
+  --color-emerald-900: 236 253 245;
+  --color-emerald-950: 236 253 245;
+  --color-rose-100: 159 18 57;
+  --color-rose-200: 159 18 57;
+  --color-rose-300: 190 18 60;
+  --color-rose-400: 190 18 60;
+  --color-rose-900: 255 241 242;
+  --color-rose-950: 255 241 242;
+  --color-amber-100: 146 64 14;
+  --color-amber-200: 146 64 14;
+  --color-amber-300: 180 83 9;
+  --color-amber-400: 180 83 9;
+  --color-amber-900: 255 251 235;
+  --color-amber-950: 255 251 235;
+  --color-blue-100: 30 64 175;
+  --color-blue-200: 30 64 175;
+  --color-blue-300: 29 78 216;
+  --color-blue-400: 29 78 216;
+  --color-blue-900: 239 246 255;
+  --color-blue-950: 239 246 255;
+  --color-sky-100: 7 89 133;
+  --color-sky-200: 7 89 133;
+  --color-sky-300: 3 105 161;
+  --color-sky-400: 3 105 161;
+  --color-sky-900: 240 249 255;
+  --color-sky-950: 240 249 255;
+  --color-cyan-100: 21 94 117;
+  --color-cyan-200: 21 94 117;
+  --color-cyan-300: 14 116 144;
+  --color-cyan-400: 14 116 144;
+  --color-cyan-900: 236 254 255;
+  --color-cyan-950: 236 254 255;
+  --color-teal-100: 17 94 89;
+  --color-teal-200: 17 94 89;
+  --color-teal-300: 15 118 110;
+  --color-teal-400: 15 118 110;
+  --color-teal-900: 240 253 250;
+  --color-teal-950: 240 253 250;
+  --color-purple-100: 107 33 168;
+  --color-purple-200: 107 33 168;
+  --color-purple-300: 126 34 206;
+  --color-purple-400: 126 34 206;
+  --color-purple-900: 250 245 255;
+  --color-purple-950: 250 245 255;
+  --color-orange-100: 154 52 18;
+  --color-orange-200: 154 52 18;
+  --color-orange-300: 194 65 12;
+  --color-orange-400: 194 65 12;
+  --color-orange-900: 255 247 237;
+  --color-orange-950: 255 247 237;
+  --color-lime-100: 63 98 18;
+  --color-lime-200: 63 98 18;
+  --color-lime-300: 77 124 15;
+  --color-lime-400: 77 124 15;
+  --color-lime-900: 247 254 231;
+  --color-lime-950: 247 254 231;
+  --color-green-100: 22 101 52;
+  --color-green-200: 22 101 52;
+  --color-green-300: 21 128 61;
+  --color-green-400: 21 128 61;
+  --color-green-900: 240 253 244;
+  --color-green-950: 240 253 244;
+  --color-yellow-100: 133 77 14;
+  --color-yellow-200: 133 77 14;
+  --color-yellow-300: 161 98 7;
+  --color-yellow-400: 161 98 7;
+  --color-yellow-900: 254 252 232;
+  --color-yellow-950: 254 252 232;
+  --color-heading: 15 23 42;
+  --color-brand-tail-400: 96 165 250;
+  --color-brand-tail-500: 59 130 246;
+  --color-brand-tail-600: 37 99 235;
+  --color-chart-student: 4 120 87;
+  --color-chart-benchmark: 29 78 216;
+  --color-chart-focus: 29 78 216;
+  --color-overlay: 15 23 42;
+  color-scheme: light;
+  }
+
+  body {
+    @apply bg-slate-950 text-slate-100 antialiased font-sans;
+    background-image: 
+      radial-gradient(at 100% 0%, rgba(16, 185, 129, 0.08) 0px, transparent 50%),
+      radial-gradient(at 0% 100%, rgba(59, 130, 246, 0.06) 0px, transparent 50%);
+    background-attachment: fixed;
+  }
+
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  ::-webkit-scrollbar-track {
+    background: rgb(var(--color-slate-950));
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgb(var(--color-slate-800));
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgb(var(--color-slate-700));
+  }
+}
+
+.gauge-circle {
+  transition: stroke-dashoffset 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: rotate(-90deg);
+  transform-origin: 50% 50%;
+}
+
+.competency-card {
+  container: competency / inline-size;
+}
+
+.competency-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
+  gap: 1.5rem;
+}
+
+.competency-breakdown {
+  container: competency-values / inline-size;
+}
+
+.competency-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.competency-axis-label {
+  display: none;
+}
+
+.competency-tooltip-slot {
+  min-height: 14rem;
+}
+
+@container competency (min-width: 12.5rem) {
+  .competency-tooltip-slot {
+    min-height: 11rem;
+  }
+}
+
+.competency-hit:focus {
+  outline: none;
+}
+
+.competency-hit:focus-visible .competency-sector {
+  stroke: rgb(var(--color-chart-focus));
+  stroke-width: 2;
+  stroke-dasharray: 4 3;
+}
+
+@container competency (min-width: 28rem) {
+  .competency-axis-label {
+    display: block;
+  }
+
+  .competency-axis-number,
+  .competency-dimension-number,
+  .competency-axis-hint {
+    display: none;
+  }
+}
+
+@container competency (min-width: 48rem) {
+  .competency-layout {
+    grid-template-columns: minmax(0, 22.5rem) minmax(0, 1fr);
+    gap: 2rem;
+  }
+}
+
+@container competency-values (min-width: 27rem) {
+  .competency-row {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+    gap: 1rem;
+  }
+}
