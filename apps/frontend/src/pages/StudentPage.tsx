@@ -186,7 +186,7 @@ export const StudentPage: React.FC = () => {
                   <div className="text-[11px] text-slate-400 mt-1 truncate">{c.course_name}</div>
                   <div className="mt-1 text-[11px] text-slate-300">
                     {c.studied_credits} tín chỉ
-                    {c.final_result && <span className="text-emerald-400"> — {c.final_result}</span>}
+                    {c.final_result && <span className="text-brand-400"> — {c.final_result}</span>}
                   </div>
                 </button>
               ))}
@@ -208,7 +208,7 @@ export const StudentPage: React.FC = () => {
                 className={`p-6 rounded-2xl border shadow-xl ${
                   prediction.risk_level === 'HIGH_RISK'
                     ? 'bg-rose-950/40 border-rose-500/40'
-                    : 'bg-emerald-950/40 border-emerald-500/40'
+                    : 'bg-brand-950/40 border-brand-500/40'
                 }`}
               >
                 <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -221,14 +221,14 @@ export const StudentPage: React.FC = () => {
                       {prediction.risk_level === 'HIGH_RISK' ? (
                         <AlertTriangle className="w-8 h-8 text-rose-400" />
                       ) : (
-                        <ShieldCheck className="w-8 h-8 text-emerald-400" />
+                        <ShieldCheck className="w-8 h-8 text-brand-400" />
                       )}
                       <div>
                         <div
                           className={`text-2xl font-extrabold ${
                             prediction.risk_level === 'HIGH_RISK'
                               ? 'text-rose-400'
-                              : 'text-emerald-400'
+                              : 'text-brand-400'
                           }`}
                         >
                           {(prediction.risk_probability * 100).toFixed(1)}%
@@ -244,7 +244,7 @@ export const StudentPage: React.FC = () => {
                       className={`px-3 py-1.5 rounded-lg text-xs font-bold ${
                         prediction.risk_level === 'HIGH_RISK'
                           ? 'bg-rose-500/20 text-rose-300'
-                          : 'bg-emerald-500/20 text-emerald-300'
+                          : 'bg-brand-500/20 text-brand-300'
                       }`}
                     >
                       {prediction.risk_level === 'HIGH_RISK' ? 'NGUY CƠ CAO' : 'AN TOÀN'}
@@ -266,7 +266,7 @@ export const StudentPage: React.FC = () => {
                   <ul className="space-y-2 text-xs">
                     {prediction.pedagogical_recommendations.map((rec, i) => (
                       <li key={i} className="flex items-start gap-2 text-slate-300">
-                        <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
+                        <CheckCircle2 className="w-4 h-4 text-brand-400 shrink-0 mt-0.5" />
                         <span>{rec}</span>
                       </li>
                     ))}
@@ -288,7 +288,7 @@ export const StudentPage: React.FC = () => {
       {/* Tasks */}
       <div>
         <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
-          <ClipboardList className="w-4 h-4 text-emerald-400" />
+          <ClipboardList className="w-4 h-4 text-brand-400" />
           Nhiệm vụ can thiệp cần thực hiện
         </h2>
         {upcomingTasks.length === 0 && (
@@ -307,7 +307,7 @@ export const StudentPage: React.FC = () => {
                         ? 'bg-rose-500/15 text-rose-300'
                         : t.priority === 'MEDIUM'
                         ? 'bg-amber-500/15 text-amber-300'
-                        : 'bg-emerald-500/15 text-emerald-300'
+                        : 'bg-brand-500/15 text-brand-300'
                     }`}
                   >
                     {t.priority}
@@ -315,7 +315,7 @@ export const StudentPage: React.FC = () => {
                   <h4 className="mt-2 text-sm font-bold text-white">{t.title}</h4>
                   <p className="text-xs text-slate-400 mt-1">{t.description}</p>
                   {t.target_metric && (
-                    <div className="text-[11px] text-emerald-400 mt-2">
+                    <div className="text-[11px] text-brand-400 mt-2">
                       Chỉ số mục tiêu: <strong>{t.target_metric}</strong>
                     </div>
                   )}
@@ -325,7 +325,7 @@ export const StudentPage: React.FC = () => {
                 type="button"
                 disabled={completingTaskId === t.id}
                 onClick={() => handleCompleteTask(t)}
-                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white text-xs font-semibold"
+                className="mt-3 inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 disabled:opacity-50 text-white text-xs font-semibold"
               >
                 {completingTaskId === t.id ? (
                   <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -437,7 +437,7 @@ export const StudentPage: React.FC = () => {
                   <span
                     className={`px-2 py-0.5 rounded-md text-[10px] font-semibold ${
                       r.status === 'RESOLVED'
-                        ? 'bg-emerald-500/15 text-emerald-300'
+                        ? 'bg-brand-500/15 text-brand-300'
                         : r.status === 'IN_PROGRESS'
                         ? 'bg-amber-500/15 text-amber-300'
                         : 'bg-slate-800 text-slate-300'

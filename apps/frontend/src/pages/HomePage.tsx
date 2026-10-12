@@ -29,13 +29,13 @@ export const HomePage: React.FC = () => {
       {/* 1. Hero Section */}
       <section className="text-center max-w-4xl mx-auto px-4 pt-6 pb-2">
         {user && (
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-emerald-500/30 text-xs text-slate-300 mb-5 shadow-lg shadow-emerald-500/5">
-            <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-xs text-slate-300 mb-5 shadow-lg shadow-brand-500/5">
+            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
             <span>
               Xin chào, <strong className="text-white">{user.name}</strong>
             </span>
             <span className="text-slate-600">&bull;</span>
-            <span className="text-emerald-400 font-semibold">{user.role}</span>
+            <span className="text-brand-400 font-semibold">{user.role}</span>
             {user.department && (
               <>
                 <span className="text-slate-600 hidden sm:inline">&bull;</span>
@@ -45,27 +45,27 @@ export const HomePage: React.FC = () => {
           </div>
         )}
 
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-semibold mb-6">
+        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold mb-6">
           <Sparkles className="w-3.5 h-3.5" />
           <span>EduRisk AI Enterprise Platform &bull; Quản trị Rủi ro Đào tạo &amp; Cá nhân hóa Học tập</span>
         </div>
 
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight sm:leading-tight mb-6">
           Dự Đoán Nguy Cơ &amp; Can Thiệp Học Tập <br className="hidden sm:inline" />
-          <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
+          <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-cyan-400 bg-clip-text text-transparent">
             Chuẩn Xác Với Trí Tuệ Nhân Tạo
           </span>
         </h1>
 
         <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8">
           Ứng dụng mô hình phân lớp <strong className="text-white">LightGBM</strong> tối ưu siêu tham số
-          bằng thuật toán lai <strong className="text-emerald-400">HCO-VNLS</strong> (Human Conception Optimization &amp; Variable Neighborhood Local Search), hỗ trợ ban cố vấn học tập và cơ sở giáo dục phát hiện sớm nguy cơ trượt/bỏ học để can thiệp kịp thời.
+          bằng thuật toán lai <strong className="text-brand-400">HCO-VNLS</strong> (Human Conception Optimization &amp; Variable Neighborhood Local Search), hỗ trợ ban cố vấn học tập và cơ sở giáo dục phát hiện sớm nguy cơ trượt/bỏ học để can thiệp kịp thời.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
           <button
             onClick={() => setCurrentView('dashboard')}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-sm shadow-xl shadow-emerald-600/30 transition-all hover:scale-[1.02]"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-sm shadow-xl shadow-brand-600/30 transition-all hover:scale-[1.02]"
           >
             <span>Truy cập Dashboard Phân tích</span>
             <ArrowRight className="w-4 h-4" />
@@ -84,16 +84,16 @@ export const HomePage: React.FC = () => {
       {/* 2. KPI Stats Grid */}
       <section className="max-w-6xl mx-auto px-4">
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-semibold">Độ chính xác (Accuracy)</span>
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
+              <TrendingUp className="w-4 h-4 text-brand-400" />
             </div>
             <div className="text-3xl font-extrabold text-white font-mono">93.04%</div>
-            <div className="text-[11px] text-emerald-400 mt-1">Đánh giá kiểm thử độc lập (Test 20%)</div>
+            <div className="text-[11px] text-brand-400 mt-1">Đánh giá kiểm thử độc lập (Test 20%)</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-semibold">ROC-AUC Score</span>
               <BrainCircuit className="w-4 h-4 text-cyan-400" />
@@ -102,7 +102,7 @@ export const HomePage: React.FC = () => {
             <div className="text-[11px] text-cyan-400 mt-1">Khả năng phân tách nhãn nhị phân tối ưu</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-semibold">Giảm số chiều dữ liệu</span>
               <Filter className="w-4 h-4 text-amber-400" />
@@ -111,7 +111,7 @@ export const HomePage: React.FC = () => {
             <div className="text-[11px] text-amber-400 mt-1">Lọc từ 30 biến xuống 4 đặc trưng cốt lõi</div>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-emerald-500/40 transition-colors">
+          <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-semibold">Thời điểm quan sát</span>
               <Clock className="w-4 h-4 text-purple-400" />
@@ -133,7 +133,7 @@ export const HomePage: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <div className="p-6 rounded-2xl bg-slate-900/60 border border-slate-800 hover:border-slate-700 transition-all">
-            <div className="w-10 h-10 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
+            <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center mb-4">
               <Filter className="w-5 h-5" />
             </div>
             <h3 className="text-base font-bold text-white mb-2">1. Lọc Đặc Trưng Tối Ưu (HCO-VNLS)</h3>
@@ -170,7 +170,7 @@ export const HomePage: React.FC = () => {
       {/* 4. Thông Tin Nền Tảng & Đặc Tả Kỹ Thuật (Website & System Information) */}
       <section className="max-w-6xl mx-auto px-4 pt-4 border-t border-slate-800/80">
         <div className="flex items-center gap-3 mb-8">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+          <div className="p-2.5 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400">
             <Cpu className="w-6 h-6" />
           </div>
           <div>
@@ -184,7 +184,7 @@ export const HomePage: React.FC = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* Card 1: Về Nền tảng */}
           <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
-            <div className="flex items-center gap-2 text-emerald-400 font-bold text-sm">
+            <div className="flex items-center gap-2 text-brand-400 font-bold text-sm">
               <Sparkles className="w-4 h-4" />
               <span>Sứ Mệnh &amp; Bản Quyền</span>
             </div>
@@ -250,26 +250,26 @@ export const HomePage: React.FC = () => {
           {/* Nav Item 1: Dashboard */}
           <div
             onClick={() => setCurrentView('dashboard')}
-            className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-emerald-500/60 shadow-lg cursor-pointer group transition-all duration-200 hover:-translate-y-1"
+            className="p-5 rounded-2xl bg-slate-900/90 border border-slate-800 hover:border-brand-500/60 shadow-lg cursor-pointer group transition-all duration-200 hover:-translate-y-1"
           >
             <div className="flex items-center justify-between mb-3">
-              <div className="p-2.5 rounded-xl bg-emerald-500/15 text-emerald-400 group-hover:scale-110 transition-transform">
+              <div className="p-2.5 rounded-xl bg-brand-500/15 text-brand-400 group-hover:scale-110 transition-transform">
                 <LayoutDashboard className="w-5 h-5" />
               </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300">
+              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-brand-500/20 text-brand-300">
                 LÀM VIỆC CHÍNH
               </span>
             </div>
 
-            <h3 className="text-base font-bold text-white group-hover:text-emerald-300 transition-colors mb-1.5 flex items-center justify-between">
+            <h3 className="text-base font-bold text-white group-hover:text-brand-300 transition-colors mb-1.5 flex items-center justify-between">
               <span>Dashboard Phân Tích</span>
-              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-emerald-400" />
+              <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-400" />
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-4">
               Nhập 17 đặc trưng học tập OULAD, nạp mẫu sinh viên, xem đồng hồ đo SVG Gauge và biểu đồ Radar đối sánh.
             </p>
 
-            <div className="flex items-center gap-1 text-xs font-semibold text-emerald-400">
+            <div className="flex items-center gap-1 text-xs font-semibold text-brand-400">
               <span>Mở Dashboard</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
@@ -367,7 +367,7 @@ export const HomePage: React.FC = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 pb-4 border-b border-slate-800">
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                <FileSpreadsheet className="w-5 h-5 text-emerald-400" />
+                <FileSpreadsheet className="w-5 h-5 text-brand-400" />
                 <span>Quy Trình 4 Bước Phân Tích &amp; Can Thiệp Nguy Cơ</span>
               </h3>
               <p className="text-xs text-slate-400 mt-1">
@@ -377,7 +377,7 @@ export const HomePage: React.FC = () => {
 
             <button
               onClick={() => setCurrentView('dashboard')}
-              className="px-4 py-2 rounded-xl bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 text-xs font-bold transition-colors w-fit"
+              className="px-4 py-2 rounded-xl bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 border border-brand-500/30 text-xs font-bold transition-colors w-fit"
             >
               Bắt đầu phân tích ngay &rarr;
             </button>
@@ -385,7 +385,7 @@ export const HomePage: React.FC = () => {
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 text-xs">
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
-              <div className="flex items-center gap-2 font-bold text-emerald-400">
+              <div className="flex items-center gap-2 font-bold text-brand-400">
                 <CheckCircle2 className="w-4 h-4" />
                 <span>Bước 1: Nạp Dữ Liệu</span>
               </div>

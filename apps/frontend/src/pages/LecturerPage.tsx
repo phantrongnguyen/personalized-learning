@@ -191,7 +191,7 @@ export const LecturerPage: React.FC = () => {
               className={`px-2.5 py-1 rounded-lg text-xs font-bold ${
                 highRiskCount > 0
                   ? 'bg-rose-500/15 text-rose-300'
-                  : 'bg-emerald-500/15 text-emerald-300'
+                  : 'bg-brand-500/15 text-brand-300'
               }`}
             >
               {highRiskCount} nguy cơ cao
@@ -244,7 +244,7 @@ export const LecturerPage: React.FC = () => {
                             className={`px-2 py-0.5 rounded-md font-mono font-semibold ${
                               highRisk
                                 ? 'bg-rose-500/15 text-rose-300'
-                                : 'bg-emerald-500/15 text-emerald-300'
+                                : 'bg-brand-500/15 text-brand-300'
                             }`}
                           >
                             {(s.risk_probability * 100).toFixed(1)}% —{' '}

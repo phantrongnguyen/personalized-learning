@@ -58,7 +58,7 @@ export const HistoryTable: React.FC = () => {
               placeholder="Lọc môn học / kết quả..."
               value={filterText}
               onChange={(e) => setFilterText(e.target.value)}
-              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-750 text-slate-200 text-xs focus:border-emerald-500 focus:outline-none w-44"
+              className="pl-8 pr-3 py-1.5 rounded-lg bg-slate-950 border border-slate-750 text-slate-200 text-xs focus:border-brand-500 focus:outline-none w-44"
             />
             {filterText && (
               <button
@@ -72,7 +72,7 @@ export const HistoryTable: React.FC = () => {
 
           <button
             onClick={handleExport}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600/20 hover:bg-emerald-600/30 text-emerald-300 border border-emerald-500/30 transition-colors"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-600/20 hover:bg-brand-600/30 text-brand-300 border border-brand-500/30 transition-colors"
             title="Xuất lịch sử phân tích sang định dạng CSV tương thích Excel"
           >
             <Download className="w-3.5 h-3.5" />
@@ -132,7 +132,7 @@ export const HistoryTable: React.FC = () => {
                         className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-md font-semibold text-[11px] ${
                           atRisk
                             ? 'bg-rose-500/20 text-rose-300 border border-rose-500/30'
-                            : 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30'
+                            : 'bg-brand-500/20 text-brand-300 border border-brand-500/30'
                         }`}
                       >
                         {atRisk ? (

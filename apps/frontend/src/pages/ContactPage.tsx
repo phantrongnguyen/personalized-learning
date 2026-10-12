@@ -54,7 +54,7 @@ export const ContactPage: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           <div className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4">
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Building2 className="w-5 h-5 text-emerald-400" />
+              <Building2 className="w-5 h-5 text-brand-400" />
               <span>Trung Tâm Giải Pháp Doanh Nghiệp</span>
             </h3>
 
@@ -84,10 +84,10 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <div className="font-semibold text-slate-100">Kênh liên hệ trực tuyến:</div>
                   <div className="text-slate-400">
-                    &bull; Tư vấn giải pháp: <code className="text-emerald-400">enterprise@edurisk.ai</code>
+                    &bull; Tư vấn giải pháp: <code className="text-brand-400">enterprise@edurisk.ai</code>
                   </div>
                   <div className="text-slate-400">
-                    &bull; Hỗ trợ kỹ thuật &amp; API: <code className="text-emerald-400">support@edurisk.ai</code>
+                    &bull; Hỗ trợ kỹ thuật &amp; API: <code className="text-brand-400">support@edurisk.ai</code>
                   </div>
                 </div>
               </div>
@@ -108,7 +108,7 @@ export const ContactPage: React.FC = () => {
             className="p-6 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-xl space-y-4"
           >
             <h3 className="text-base font-bold text-white flex items-center gap-2">
-              <Send className="w-4 h-4 text-emerald-400" />
+              <Send className="w-4 h-4 text-brand-400" />
               <span>Đăng Ký Tư Vấn &amp; Trải Nghiệm Demo</span>
             </h3>
 
@@ -120,7 +120,7 @@ export const ContactPage: React.FC = () => {
                 value={name}
                 onChange={(e) => setName(e.target.value)}
                 placeholder="Nguyễn Văn A"
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-brand-500 focus:outline-none"
               />
             </div>
 
@@ -132,7 +132,7 @@ export const ContactPage: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="contact@university.edu.vn"
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-brand-500 focus:outline-none"
               />
             </div>
 
@@ -144,13 +144,13 @@ export const ContactPage: React.FC = () => {
                 value={message}
                 onChange={(e) => setMessage(e.target.value)}
                 placeholder="Ví dụ: Cần tích hợp dự báo nguy cơ học tập với hệ thống Moodle 4.x cho 15.000 sinh viên..."
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-brand-500 focus:outline-none"
               />
             </div>
 
             <button
               type="submit"
-              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-xs shadow-lg shadow-emerald-600/20 transition-all"
+              className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/20 transition-all"
             >
               <span>Gửi yêu cầu tư vấn</span>
             </button>
@@ -180,7 +180,7 @@ export const ContactPage: React.FC = () => {
                     <span>{faq.q}</span>
                     <ChevronDown
                       className={`w-4 h-4 text-slate-400 shrink-0 transition-transform ${
-                        isOpen ? 'transform rotate-180 text-emerald-400' : ''
+                        isOpen ? 'transform rotate-180 text-brand-400' : ''
                       }`}
                     />
                   </button>

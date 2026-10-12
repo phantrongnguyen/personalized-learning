@@ -59,7 +59,7 @@ export const AuthModal: React.FC = () => {
 
         {/* 1-Click Demo Accounts */}
         <div className="mb-5 p-3.5 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2">
-          <div className="text-[11px] font-semibold text-emerald-400 uppercase tracking-wider">
+          <div className="text-[11px] font-semibold text-brand-400 uppercase tracking-wider">
             ⚡ Đăng nhập mẫu 4 vai trò (1-Click Login)
           </div>
           <div className="grid grid-cols-2 gap-2">
@@ -69,7 +69,7 @@ export const AuthModal: React.FC = () => {
               onClick={handleDemoAdvisor}
               className="flex items-center gap-2 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-left transition-colors"
             >
-              <UserCheck className="w-4 h-4 text-emerald-400 shrink-0" />
+              <UserCheck className="w-4 h-4 text-brand-400 shrink-0" />
               <div className="truncate">
                 <div className="text-xs font-semibold text-slate-200">Cố vấn học tập</div>
                 <div className="text-[10px] text-slate-400">advisor@huit.edu.vn</div>
@@ -95,7 +95,7 @@ export const AuthModal: React.FC = () => {
               onClick={handleDemoAdmin}
               className="flex items-center gap-2 p-2 rounded-lg bg-slate-850 hover:bg-slate-800 border border-slate-700/80 text-left transition-colors"
             >
-              <ShieldCheck className="w-4 h-4 text-teal-400 shrink-0" />
+              <ShieldCheck className="w-4 h-4 text-brand-400 shrink-0" />
               <div className="truncate">
                 <div className="text-xs font-semibold text-slate-200">Quản trị viên</div>
                 <div className="text-[10px] text-slate-400">admin@huit.edu.vn</div>
@@ -123,7 +123,7 @@ export const AuthModal: React.FC = () => {
             onClick={() => setTab('login')}
             className={`flex-1 pb-2.5 text-sm font-semibold border-b-2 transition-colors ${
               tab === 'login'
-                ? 'border-emerald-500 text-emerald-400'
+                ? 'border-brand-500 text-brand-400'
                 : 'border-transparent text-slate-400 hover:text-slate-300'
             }`}
           >
@@ -143,7 +143,7 @@ export const AuthModal: React.FC = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@huit.edu.vn"
-                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-emerald-500 focus:outline-none"
+                className="w-full pl-9 pr-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-brand-500 focus:outline-none"
               />
             </div>
           </div>
@@ -158,7 +158,7 @@ export const AuthModal: React.FC = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="••••••••"
-                className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-emerald-500 focus:outline-none"
+                className="w-full pl-9 pr-10 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 text-sm focus:border-brand-500 focus:outline-none"
               />
               <button
                 type="button"
@@ -173,7 +173,7 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={isLoading}
-            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold text-sm shadow-lg shadow-emerald-600/20 transition-all flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 mt-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-sm shadow-lg shadow-brand-600/20 transition-all flex items-center justify-center gap-2"
           >
             {isLoading && <Loader2 className="w-4 h-4 animate-spin" />}
             {isLoading ? 'Đang xác thực...' : 'Đăng nhập ngay'}

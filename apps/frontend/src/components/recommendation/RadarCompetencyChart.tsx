@@ -162,7 +162,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
             <span>Đối sánh Năng lực &amp; Hành vi Học tập</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-semibold">
+            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 font-semibold">
               Radar 6D
             </span>
           </h3>
@@ -173,8 +173,8 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
 
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs font-medium">
-          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-emerald-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+          <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-brand-950/40 border border-brand-500/30 text-brand-300">
+            <span className="w-2.5 h-2.5 rounded-full bg-brand-400" />
             <span>Sinh viên hiện tại</span>
           </div>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-blue-950/40 border border-blue-500/30 text-blue-300">
@@ -250,8 +250,8 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
             {/* Student Polygon */}
             <polygon
               points={studentPolygon}
-              fill="rgba(16, 185, 129, 0.22)"
-              stroke="#10b981"
+              fill="rgba(8, 117, 188, 0.22)"
+              stroke="#0875bc"
               strokeWidth="2.5"
             />
 
@@ -264,7 +264,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                     cx={sx}
                     cy={sy}
                     r="5"
-                    fill="#10b981"
+                    fill="#0875bc"
                     stroke="#0f172a"
                     strokeWidth="2"
                   />
@@ -301,7 +301,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                     y={14}
                     textAnchor={cfg.anchor}
                     className={`text-[10px] font-mono font-medium ${
-                      isLagging ? 'fill-rose-400' : 'fill-emerald-400'
+                      isLagging ? 'fill-rose-400' : 'fill-brand-400'
                     }`}
                   >
                     {d.rawStudent} {d.unit}
@@ -337,7 +337,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                     {isLagging ? (
                       <AlertTriangle className="w-3.5 h-3.5 text-rose-400 shrink-0" />
                     ) : (
-                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400 shrink-0" />
+                      <CheckCircle2 className="w-3.5 h-3.5 text-brand-400 shrink-0" />
                     )}
                     <span className="font-semibold text-slate-200">{dim.title}</span>
                     <span className="text-[10px] text-slate-400 hidden sm:inline">
@@ -348,7 +348,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                   <div className="flex items-center gap-2 font-mono text-xs">
                     <span
                       className={`font-bold ${
-                        isLagging ? 'text-rose-400' : 'text-emerald-400'
+                        isLagging ? 'text-rose-400' : 'text-brand-400'
                       }`}
                     >
                       {dim.rawStudent} {dim.unit}
@@ -371,7 +371,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                   {/* Student actual progress */}
                   <div
                     className={`h-full rounded-full transition-all duration-500 ${
-                      isLagging ? 'bg-rose-500' : 'bg-emerald-500'
+                      isLagging ? 'bg-rose-500' : 'bg-brand-500'
                     }`}
                     style={{ width: `${progressPercent}%` }}
                   />

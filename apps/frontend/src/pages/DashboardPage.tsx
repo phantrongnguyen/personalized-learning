@@ -60,7 +60,7 @@ export const DashboardPage: React.FC = () => {
           <div>
             <h1 className="text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
               <span>Bảng Điều Khiển Dự Đoán &amp; Can Thiệp</span>
-              <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">
+              <span className="px-2 py-0.5 rounded text-[11px] font-mono bg-brand-500/20 text-brand-400 border border-brand-500/30">
                 LightGBM
               </span>
             </h1>
@@ -69,9 +69,6 @@ export const DashboardPage: React.FC = () => {
             </p>
           </div>
 
-          <div className="text-xs text-slate-500 font-mono">
-            Trạng thái máy chủ: <span className="text-emerald-400 font-semibold">{apiBase}</span>
-          </div>
         </div>
       </div>
 
@@ -91,17 +88,17 @@ export const DashboardPage: React.FC = () => {
         <div className="lg:col-span-5 space-y-6">
           {result ? (
             <>
-              <RiskGauge atRisk={atRisk} probability={probability} apiBase={apiBase} />
+              <RiskGauge atRisk={atRisk} probability={probability} />
               <InterventionList strategies={strategies} />
             </>
           ) : (
             <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 border-dashed text-center flex flex-col items-center justify-center min-h-[380px]">
-              <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center mb-4">
+              <div className="w-14 h-14 rounded-2xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center mb-4">
                 <Sparkles className="w-7 h-7" />
               </div>
               <h3 className="text-lg font-bold text-white mb-2">Chờ phân tích hồ sơ</h3>
               <p className="text-xs text-slate-400 max-w-xs leading-relaxed mb-6">
-                Nhấn nút <strong className="text-emerald-400">"Phân tích nguy cơ học tập"</strong> ở form bên
+                Nhấn nút <strong className="text-brand-400">"Phân tích nguy cơ học tập"</strong> ở form bên
                 trái hoặc nạp mẫu thử nghiệm để xem kết quả đánh giá nguy cơ và đề xuất giải pháp.
               </p>
               <button

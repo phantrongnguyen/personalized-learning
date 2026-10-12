@@ -43,7 +43,7 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
       case 'tien_do':
         return <Target className="w-4 h-4 text-blue-400" />;
       default:
-        return <BookOpen className="w-4 h-4 text-emerald-400" />;
+        return <BookOpen className="w-4 h-4 text-brand-400" />;
     }
   };
 
@@ -51,7 +51,7 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
     <div className="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl p-5 sm:p-6">
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
-          <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-400">
+          <div className="p-2 rounded-xl bg-brand-500/10 text-brand-400">
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
@@ -78,7 +78,7 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
           } else if (item.priority === 'MEDIUM') {
             priorityBadge = 'bg-amber-500/20 text-amber-300 border-amber-500/30';
           } else {
-            priorityBadge = 'bg-emerald-500/20 text-emerald-300 border-emerald-500/30';
+            priorityBadge = 'bg-brand-500/20 text-brand-300 border-brand-500/30';
           }
 
           return (
@@ -106,11 +106,11 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
               <p className="text-xs text-slate-300 leading-relaxed pl-6">{item.description}</p>
 
               {item.targetMetric && (
-                <div className="mt-2.5 ml-6 flex items-center gap-1.5 text-xs text-emerald-400 font-medium">
+                <div className="mt-2.5 ml-6 flex items-center gap-1.5 text-xs text-brand-400 font-medium">
                   <CheckCircle className="w-3.5 h-3.5 shrink-0" />
                   <span>
                     Chỉ số mục tiêu:{' '}
-                    <strong className="text-emerald-300">{item.targetMetric}</strong>
+                    <strong className="text-brand-300">{item.targetMetric}</strong>
                   </span>
                 </div>
               )}

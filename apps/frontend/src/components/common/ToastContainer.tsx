@@ -14,8 +14,8 @@ export const ToastContainer: React.FC = () => {
         let icon = <Info className="w-5 h-5 text-blue-400 shrink-0" />;
 
         if (toast.type === 'success') {
-          borderClass = 'border-emerald-500/30 bg-slate-900/95 text-emerald-200';
-          icon = <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />;
+          borderClass = 'border-brand-500/30 bg-slate-900/95 text-brand-200';
+          icon = <CheckCircle2 className="w-5 h-5 text-brand-400 shrink-0" />;
         } else if (toast.type === 'warning') {
           borderClass = 'border-amber-500/30 bg-slate-900/95 text-amber-200';
           icon = <AlertTriangle className="w-5 h-5 text-amber-400 shrink-0" />;

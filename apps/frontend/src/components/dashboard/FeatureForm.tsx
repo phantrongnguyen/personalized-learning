@@ -64,7 +64,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
           <button
             type="button"
             onClick={() => handleApplyPreset('good')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-brand-500/15 hover:bg-brand-500/25 text-brand-300 border border-brand-500/30 transition-all"
             title="Nạp mẫu sinh viên an toàn, học lực tốt"
           >
             <UserCheck className="w-3.5 h-3.5" />
@@ -93,14 +93,14 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
               onClick={() => setActiveGroup(tab.id)}
               className={`flex items-center gap-2 pb-3 px-3 text-xs sm:text-sm font-semibold border-b-2 whitespace-nowrap transition-colors ${
                 isActive
-                  ? 'border-emerald-500 text-emerald-400'
+                  ? 'border-brand-500 text-brand-400'
                   : 'border-transparent text-slate-400 hover:text-slate-300'
               }`}
             >
               <span>{tab.label}</span>
               <span
                 className={`text-[10px] px-1.5 py-0.5 rounded-full ${
-                  isActive ? 'bg-emerald-500/20 text-emerald-300' : 'bg-slate-800 text-slate-500'
+                  isActive ? 'bg-brand-500/20 text-brand-300' : 'bg-slate-800 text-slate-500'
                 }`}
               >
                 {tab.count}
@@ -138,7 +138,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
                     id={field.key}
                     value={String(val)}
                     onChange={(e) => handleInputChange(field.key, e.target.value)}
-                    className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-750 text-slate-100 text-xs sm:text-sm focus:border-emerald-500 focus:outline-none"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-750 text-slate-100 text-xs sm:text-sm focus:border-brand-500 focus:outline-none"
                   >
                     {field.options?.map((opt) => (
                       <option key={opt} value={opt}>
@@ -155,7 +155,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
                     max={field.max}
                     value={val as number}
                     onChange={(e) => handleInputChange(field.key, parseFloat(e.target.value) || 0)}
-                    className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-750 text-slate-100 text-xs sm:text-sm font-mono focus:border-emerald-500 focus:outline-none"
+                    className="w-full mt-1 px-3 py-2 rounded-lg bg-slate-900 border border-slate-750 text-slate-100 text-xs sm:text-sm font-mono focus:border-brand-500 focus:outline-none"
                   />
                 )}
               </div>
@@ -172,7 +172,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
           <button
             type="submit"
             disabled={loading}
-            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold text-sm shadow-lg shadow-emerald-600/25 transition-all disabled:opacity-50"
+            className="w-full sm:w-auto flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white font-bold text-sm shadow-lg shadow-brand-600/25 transition-all disabled:opacity-50"
           >
             {loading ? (
               <>

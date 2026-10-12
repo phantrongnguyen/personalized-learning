@@ -4,10 +4,9 @@ import { ShieldCheck, AlertTriangle } from 'lucide-react';
 interface RiskGaugeProps {
   atRisk: boolean;
   probability: number;
-  apiBase: string;
 }
 
-export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability, apiBase }) => {
+export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability }) => {
   const radius = 54;
   const circumference = 2 * Math.PI * radius;
   const strokeOffset = circumference * (1 - probability);
@@ -19,7 +18,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability, apiBa
       {/* Background glow */}
       <div
         className={`absolute -top-12 -right-12 w-40 h-40 rounded-full blur-3xl pointer-events-none ${
-          atRisk ? 'bg-rose-500/15' : 'bg-emerald-500/15'
+          atRisk ? 'bg-rose-500/15' : 'bg-brand-500/15'
         }`}
       />
 
@@ -28,7 +27,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability, apiBa
         className={`inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider mb-5 ${
           atRisk
             ? 'bg-rose-500/15 text-rose-400 border border-rose-500/30'
-            : 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/30'
+            : 'bg-brand-500/15 text-brand-400 border border-brand-500/30'
         }`}
       >
         {atRisk ? (
@@ -62,7 +61,7 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability, apiBa
             cy="64"
             r={radius}
             className={`transition-all duration-1000 ease-out ${
-              atRisk ? 'stroke-rose-500' : 'stroke-emerald-400'
+              atRisk ? 'stroke-rose-500' : 'stroke-brand-400'
             }`}
             strokeWidth="10"
             strokeDasharray={circumference}
@@ -92,16 +91,12 @@ export const RiskGauge: React.FC<RiskGaugeProps> = ({ atRisk, probability, apiBa
           </span>
         ) : (
           <span>
-            Mô hình dự đoán sinh viên <strong className="text-emerald-400">AN TOÀN</strong> — xác
+            Mô hình dự đoán sinh viên <strong className="text-brand-400">AN TOÀN</strong> — xác
             suất rủi ro chỉ ở mức <strong className="text-white">{percentage}%</strong>.
           </span>
         )}
       </p>
 
-      {/* Metadata stamp */}
-      <div className="text-[11px] text-slate-400 font-mono border-t border-slate-800/80 pt-3 w-full">
-        Phân tích thời gian thực qua máy chủ: <span className="text-slate-400">{apiBase}</span>
-      </div>
     </div>
   );
 };

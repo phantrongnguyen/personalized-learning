@@ -21,7 +21,7 @@ export const AboutPage: React.FC = () => {
       {/* 3 Pillars */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-          <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 w-fit mb-4">
+          <div className="p-2.5 rounded-xl bg-brand-500/10 text-brand-400 w-fit mb-4">
             <Cpu className="w-5 h-5" />
           </div>
           <h3 className="text-base font-bold text-white mb-2">HCO (Khám phá toàn cục)</h3>
@@ -56,7 +56,7 @@ export const AboutPage: React.FC = () => {
 
       {/* Fitness Formula Box */}
       <div className="p-6 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-3 font-mono">
-        <div className="text-xs text-emerald-400 font-semibold uppercase tracking-wider">
+        <div className="text-xs text-brand-400 font-semibold uppercase tracking-wider">
           📐 Hàm thích ứng tối ưu hóa đa mục tiêu (Fitness Function):
         </div>
         <div className="p-4 rounded-xl bg-slate-900 border border-slate-800 text-center text-sm sm:text-base text-slate-100 overflow-x-auto">
@@ -123,16 +123,16 @@ export const AboutPage: React.FC = () => {
                 <td className="py-3 px-4 text-right text-slate-300">0.9339</td>
                 <td className="py-3 px-4 text-right text-slate-300">0.9810</td>
               </tr>
-              <tr className="bg-emerald-950/20 font-bold border-l-2 border-emerald-500">
-                <td className="py-3 px-4 font-sans text-emerald-300 flex items-center gap-1.5">
+              <tr className="bg-brand-950/20 font-bold border-l-2 border-brand-500">
+                <td className="py-3 px-4 font-sans text-brand-300 flex items-center gap-1.5">
                   <span>HCO-VNLS Đề xuất</span>
                   <ArrowUpRight className="w-3.5 h-3.5" />
                 </td>
-                <td className="py-3 px-4 text-center text-emerald-400">4 / 30</td>
-                <td className="py-3 px-4 text-center text-emerald-400">86.7%</td>
-                <td className="py-3 px-4 text-right text-emerald-300">93.04%</td>
-                <td className="py-3 px-4 text-right text-emerald-300">0.9304</td>
-                <td className="py-3 px-4 text-right text-emerald-300">0.9785</td>
+                <td className="py-3 px-4 text-center text-brand-400">4 / 30</td>
+                <td className="py-3 px-4 text-center text-brand-400">86.7%</td>
+                <td className="py-3 px-4 text-right text-brand-300">93.04%</td>
+                <td className="py-3 px-4 text-right text-brand-300">0.9304</td>
+                <td className="py-3 px-4 text-right text-brand-300">0.9785</td>
               </tr>
             </tbody>
           </table>

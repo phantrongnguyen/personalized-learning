@@ -125,7 +125,7 @@ export const AdvisorPage: React.FC = () => {
       <div className="flex items-center justify-between gap-3 pb-4 border-b border-slate-800">
         <div>
           <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            <UserCheck className="w-6 h-6 text-emerald-400" />
+            <UserCheck className="w-6 h-6 text-brand-400" />
             <span>Phân hệ Cố vấn Học tập</span>
           </h1>
           <p className="text-xs text-slate-400 mt-1">
@@ -139,7 +139,7 @@ export const AdvisorPage: React.FC = () => {
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold">Sinh viên phụ trách</span>
-            <Users className="w-4 h-4 text-emerald-400" />
+            <Users className="w-4 h-4 text-brand-400" />
           </div>
           <div className="text-2xl font-bold text-white font-mono">{totalStudents}</div>
           <div className="text-[11px] text-slate-400">{classes.length} lớp sinh hoạt</div>
@@ -155,9 +155,9 @@ export const AdvisorPage: React.FC = () => {
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold">An toàn</span>
-            <ShieldCheck className="w-4 h-4 text-emerald-400" />
+            <ShieldCheck className="w-4 h-4 text-brand-400" />
           </div>
-          <div className="text-2xl font-bold text-emerald-400 font-mono">{safeTotal}</div>
+          <div className="text-2xl font-bold text-brand-400 font-mono">{safeTotal}</div>
           <div className="text-[11px] text-slate-400">Tiến độ ổn định</div>
         </div>
       </div>
@@ -176,7 +176,7 @@ export const AdvisorPage: React.FC = () => {
               onClick={() => setSelectedClass(cls.class_name)}
               className={`p-4 rounded-2xl border text-left transition-all ${
                 selectedClass === cls.class_name
-                  ? 'bg-emerald-500/10 border-emerald-500/40'
+                  ? 'bg-brand-500/10 border-brand-500/40'
                   : 'bg-slate-900/70 border-slate-800 hover:border-slate-700'
               }`}
             >
@@ -188,7 +188,7 @@ export const AdvisorPage: React.FC = () => {
                   className={`px-2 py-0.5 rounded-md font-semibold ${
                     cls.high_risk_count > 0
                       ? 'bg-rose-500/15 text-rose-300'
-                      : 'bg-emerald-500/15 text-emerald-300'
+                      : 'bg-brand-500/15 text-brand-300'
                   }`}
                 >
                   {cls.high_risk_count} rủi ro
@@ -204,7 +204,7 @@ export const AdvisorPage: React.FC = () => {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider">
             Danh sách sinh viên {selectedClass && (
-              <span className="text-emerald-400">— {selectedClass}</span>
+              <span className="text-brand-400">— {selectedClass}</span>
             )}
           </h2>
           <button
@@ -213,7 +213,7 @@ export const AdvisorPage: React.FC = () => {
               setSelectedClass('');
               loadStudents();
             }}
-            className="text-xs text-emerald-400 hover:underline"
+            className="text-xs text-brand-400 hover:underline"
           >
             Xem tất cả
           </button>
@@ -261,11 +261,11 @@ export const AdvisorPage: React.FC = () => {
                         <div className="flex items-center gap-2">
                           <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
                             <div
-                              className={`h-full ${highRisk ? 'bg-rose-500' : 'bg-emerald-500'}`}
+                              className={`h-full ${highRisk ? 'bg-rose-500' : 'bg-brand-500'}`}
                               style={{ width: `${Math.min(100, Number(riskPct))}%` }}
                             />
                           </div>
-                          <span className={`font-mono ${highRisk ? 'text-rose-400' : 'text-emerald-400'}`}>
+                          <span className={`font-mono ${highRisk ? 'text-rose-400' : 'text-brand-400'}`}>
                             {riskPct}%
                           </span>
                         </div>
@@ -275,7 +275,7 @@ export const AdvisorPage: React.FC = () => {
                           className={`px-2 py-0.5 rounded-md font-semibold ${
                             highRisk
                               ? 'bg-rose-500/15 text-rose-300'
-                              : 'bg-emerald-500/15 text-emerald-300'
+                              : 'bg-brand-500/15 text-brand-300'
                           }`}
                         >
                           {highRisk ? 'HIGH RISK' : 'SAFE'}
@@ -283,7 +283,7 @@ export const AdvisorPage: React.FC = () => {
                       </td>
                       <td className="px-4 py-3 text-slate-400">
                         {s.has_active_plan ? (
-                          <span className="text-emerald-400">Đang hoạt động</span>
+                          <span className="text-brand-400">Đang hoạt động</span>
                         ) : (
                           'Chưa có'
                         )}
@@ -303,7 +303,7 @@ export const AdvisorPage: React.FC = () => {
                             setPlanDate('');
                             setPlanTasks([{ ...EMPTY_TASK }]);
                           }}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors"
+                          className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-brand-600 hover:bg-brand-500 disabled:opacity-40 disabled:cursor-not-allowed text-white text-xs font-semibold transition-colors"
                           title={
                             highRisk
                               ? 'Lập kế hoạch can thiệp'
@@ -355,7 +355,7 @@ export const AdvisorPage: React.FC = () => {
                     type="date"
                     value={planDate}
                     onChange={(e) => setPlanDate(e.target.value)}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
                 <div>
@@ -367,7 +367,7 @@ export const AdvisorPage: React.FC = () => {
                     value={planNote}
                     onChange={(e) => setPlanNote(e.target.value)}
                     placeholder="Ví dụ: Sinh viên thụ động trong 2 tuần gần nhất…"
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-500 focus:outline-none"
                   />
                 </div>
               </div>
@@ -423,7 +423,7 @@ export const AdvisorPage: React.FC = () => {
                           value={task.title}
                           onChange={(e) => updateTask(idx, 'title', e.target.value)}
                           placeholder="Tên nhiệm vụ"
-                          className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                          className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-500 focus:outline-none"
                         />
                       </div>
                     </div>
@@ -434,7 +434,7 @@ export const AdvisorPage: React.FC = () => {
                         value={task.description}
                         onChange={(e) => updateTask(idx, 'description', e.target.value)}
                         placeholder="Mô tả nhiệm vụ"
-                        className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                        className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-500 focus:outline-none"
                       />
                     </div>
                     <div>
@@ -444,7 +444,7 @@ export const AdvisorPage: React.FC = () => {
                         value={task.target_metric}
                         onChange={(e) => updateTask(idx, 'target_metric', e.target.value)}
                         placeholder="VD: Đăng nhập LMS tối thiểu 3 ngày/tuần"
-                        className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-emerald-500 focus:outline-none"
+                        className="w-full px-2.5 py-2 rounded-lg bg-slate-950 border border-slate-700 text-slate-100 focus:border-brand-500 focus:outline-none"
                       />
                     </div>
                   </div>
@@ -462,7 +462,7 @@ export const AdvisorPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold shadow-lg shadow-emerald-600/20 disabled:opacity-50"
+                  className="inline-flex items-center gap-2 px-5 py-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold shadow-lg shadow-brand-600/20 disabled:opacity-50"
                 >
                   {saving && <Loader2 className="w-4 h-4 animate-spin" />}
                   <Target className="w-4 h-4" />
