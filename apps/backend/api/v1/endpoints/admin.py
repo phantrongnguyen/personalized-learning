@@ -3,7 +3,8 @@ import time
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_, update
+from sqlalchemy import select, desc, and_, update, delete
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from core.database import get_db
@@ -22,6 +23,7 @@ from models.audit import AuditLog
 from schemas.auth import UserOut
 from schemas.admin import (
     AdminUserCreateIn,
+    AdminUserUpdateIn,
     UserStatusUpdateIn,
     UserRolesUpdateIn,
     CourseCreateIn,
@@ -81,6 +83,65 @@ async def get_all_users(
     )
     result = await db.execute(query)
     return list(result.scalars().all())
+
+
+@router.get("/users/{user_id}", response_model=UserOut, summary="Xem chi tiết tài khoản")
+async def get_user_detail(user_id: uuid.UUID, current_user: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    user = await _load_user_full(db, user_id)
+    if not user:
+        raise HTTPException(404, "Người dùng không tồn tại")
+    return user
+
+
+@router.put("/users/{user_id}", response_model=UserOut, summary="Sửa thông tin tài khoản")
+async def edit_user(user_id: uuid.UUID, payload: AdminUserUpdateIn, request: Request,
+                    current_user: User = Depends(require_admin), db: AsyncSession = Depends(get_db)):
+    user = await _load_user_full(db, user_id)
+    if not user:
+        raise HTTPException(404, "Người dùng không tồn tại")
+    fields = payload.model_dump(exclude_unset=True)
+    if not fields:
+        raise HTTPException(400, "Không có thông tin cập nhật")
+    profile_fields = {
+        "student_code": user.student_profile,
+        "lecturer_code": user.lecturer_profile,
+        "academic_rank": user.lecturer_profile,
+        "office_location": user.advisor_profile,
+        "department": user.advisor_profile or user.lecturer_profile,
+    }
+    for field in fields:
+        if field in profile_fields and profile_fields[field] is None:
+            raise HTTPException(400, f"Tài khoản không có hồ sơ phù hợp để sửa {field}")
+    try:
+        for field, value in fields.items():
+            setattr(profile_fields[field] if field in profile_fields else user, field, value)
+        await write_audit_log(db, user_id=current_user.id, action="UPDATE_USER", target_type="USER",
+                              target_id=user.id, detail=f"Cập nhật các trường: {', '.join(fields)}", ip_address=get_client_ip(request))
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(409, "Email, mã sinh viên hoặc mã giảng viên đã được sử dụng")
+    return await _load_user_full(db, user_id)
+
+
+@router.delete("/users/{user_id}", summary="Xóa tài khoản và hồ sơ liên quan")
+async def delete_user(user_id: uuid.UUID, request: Request, current_user: User = Depends(require_admin),
+                      db: AsyncSession = Depends(get_db)):
+    if user_id == current_user.id:
+        raise HTTPException(400, "Không thể xóa tài khoản đang sử dụng")
+    user = await _load_user_full(db, user_id)
+    if not user:
+        raise HTTPException(404, "Người dùng không tồn tại")
+    try:
+        await write_audit_log(db, user_id=current_user.id, action="DELETE_USER", target_type="USER",
+                              target_id=user.id, detail=f"Xóa tài khoản {user.email}", ip_address=get_client_ip(request))
+        # Database foreign keys cascade profiles and dependent academic data.
+        await db.execute(delete(User).where(User.id == user_id).execution_options(synchronize_session=False))
+        await db.commit()
+    except IntegrityError:
+        await db.rollback()
+        raise HTTPException(409, "Không thể xóa do tài khoản còn dữ liệu liên kết. Hãy khóa tài khoản.")
+    return {"message": "Đã xóa tài khoản và dữ liệu liên quan"}
 
 
 @router.post("/users", response_model=UserOut, summary="Tạo mới tài khoản người dùng")
@@ -164,6 +225,8 @@ async def toggle_user_status(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
+    if user_id == current_user.id and not payload.is_active:
+        raise HTTPException(400, "Không thể khóa tài khoản đang sử dụng")
     user = await db.get(User, user_id)
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Người dùng không tồn tại")

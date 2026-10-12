@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, EmailStr, Field
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
 
 
 # -------------------------------------------------------------
@@ -24,6 +24,25 @@ class AdminUserCreateIn(BaseModel):
 
 class UserStatusUpdateIn(BaseModel):
     is_active: bool
+
+
+class AdminUserUpdateIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    email: Optional[EmailStr] = None
+    full_name: Optional[str] = Field(None, min_length=1, max_length=150)
+    phone_number: Optional[str] = Field(None, max_length=20)
+    student_code: Optional[str] = Field(None, min_length=1, max_length=50)
+    lecturer_code: Optional[str] = Field(None, min_length=1, max_length=50)
+    department: Optional[str] = Field(None, min_length=1, max_length=150)
+    academic_rank: Optional[str] = Field(None, min_length=1, max_length=50)
+    office_location: Optional[str] = Field(None, max_length=100)
+
+    @field_validator("email", "full_name", "student_code", "lecturer_code", "department", "academic_rank", mode="before")
+    @classmethod
+    def nonempty(cls, value):
+        if value is None or not str(value).strip():
+            raise ValueError("Trường này không được để trống")
+        return str(value).strip()
 
 
 class UserRolesUpdateIn(BaseModel):
