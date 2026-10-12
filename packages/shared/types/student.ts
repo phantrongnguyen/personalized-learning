@@ -61,6 +61,10 @@ export interface UserProfile {
   phone?: string;
   organization?: string;
   avatarUrl?: string;
+  studentCode?: string;
+  lecturerCode?: string;
+  academicRank?: string;
+  officeLocation?: string;
 }
 
 export type FeatureGroup = 'info' | 'activity' | 'assessment';

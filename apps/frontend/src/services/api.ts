@@ -31,11 +31,10 @@ function cleanBase(baseUrl: string): string {
  * sang interface hiển thị ở Frontend (UserProfile).
  */
 export function mapBackendUser(user: BackendUser): UserProfile {
-  const primaryRole = user.roles[0];
+  const primaryRole = user.roles.find((role) => role.code === 'ADMIN') || user.roles[0];
   const department =
     user.advisor_profile?.department ||
-    user.lecturer_profile?.department ||
-    'Khoa Công nghệ Thông tin';
+    user.lecturer_profile?.department || undefined;
 
   const derivedInitials = user.full_name
     .trim()
@@ -54,6 +53,10 @@ export function mapBackendUser(user: BackendUser): UserProfile {
     department,
     phone: user.phone_number || undefined,
     avatarUrl: user.avatar_url || undefined,
+    studentCode: user.student_profile?.student_code,
+    lecturerCode: user.lecturer_profile?.lecturer_code,
+    academicRank: user.lecturer_profile?.academic_rank,
+    officeLocation: user.advisor_profile?.office_location || undefined,
     organization: 'Trường Đại học Công Thương TP. Hồ Chí Minh',
   };
 }
@@ -143,14 +146,14 @@ export async function predictStudentRisk(
 // -------------------------------------------------------------
 export async function loginApi(
   baseUrl: string,
-  email: string,
+  username: string,
   password: string
 ): Promise<{ user: BackendUser; tokens: AuthTokens }> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const res = await fetch(`${cleanUrl}/api/v1/auth/login`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ email, password }),
+    body: JSON.stringify({ username: username.trim(), password }),
   });
 
   if (!res.ok) {
