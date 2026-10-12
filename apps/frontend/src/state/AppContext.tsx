@@ -13,6 +13,7 @@ export type NavigationPage =
   | 'about'
   | 'contact'
   | 'profile'
+  | 'admin-users'
   | 'advisor'
   | 'lecturer'
   | 'student';
@@ -23,6 +24,7 @@ const VALID_NAV_PAGES: NavigationPage[] = [
   'about',
   'contact',
   'profile',
+  'admin-users',
   'advisor',
   'lecturer',
   'student',
@@ -37,7 +39,7 @@ function defaultViewForRole(roleCode?: RoleCode): NavigationPage {
     case 'STUDENT':
       return 'student';
     case 'ADMIN':
-      return 'dashboard';
+      return 'admin-users';
     default:
       return 'home';
   }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp, NavigationPage } from '../../state/AppContext';
+import { BrandLogo } from './BrandLogo';
 import {
   LayoutDashboard,
   User,
@@ -56,6 +57,14 @@ export const Sidebar: React.FC<SidebarProps> = ({
       icon: React.ReactNode;
       badge?: string;
     }[] = [];
+    if (user?.roleCode === 'ADMIN') {
+      roleItems.push({
+        id: 'admin-users',
+        label: 'Quản lý tài khoản',
+        icon: <ShieldCheck className="w-5 h-5 shrink-0" />,
+        badge: 'ADMIN',
+      });
+    }
     if (user?.roleCode === 'ADVISOR') {
       roleItems.push({
         id: 'advisor',
@@ -145,23 +154,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
               isCollapsed ? 'lg:justify-center lg:w-full' : ''
             }`}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-400 flex items-center justify-center shadow-lg shadow-emerald-500/20 group-hover:scale-105 transition-transform shrink-0">
-              <GraduationCap className="w-6 h-6 text-white" />
-            </div>
-
-            {(!isCollapsed || isOpen) && (
-              <div className="min-w-0">
-                <div className="flex items-center gap-1.5 font-bold tracking-tight text-white text-base leading-tight">
-                  <span className="truncate">EduRisk</span>
-                  <span className="px-1.5 py-0.2 text-[9px] font-extrabold uppercase rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 shrink-0">
-                    AI
-                  </span>
-                </div>
-                <p className="text-[10px] text-slate-400 font-mono tracking-wide truncate">
-                  Enterprise Suite
-                </p>
-              </div>
-            )}
+            <BrandLogo
+              compact={isCollapsed && !isOpen}
+              className={isCollapsed && !isOpen ? '' : 'w-[190px] max-w-full'}
+            />
           </div>
 
           {/* Mobile close button */}
@@ -192,11 +188,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   title={item.label}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 rounded-xl text-sm font-semibold transition-all ${
                     active
-                      ? 'bg-emerald-500/15 text-emerald-300 border border-emerald-500/30 shadow-sm'
+                      ? 'bg-brand-500/15 text-brand-300 border border-brand-500/30 shadow-sm'
                       : 'text-slate-300 hover:text-white hover:bg-slate-800/60'
                   } ${isCollapsed && !isOpen ? 'lg:justify-center lg:px-2' : ''}`}
                 >
-                  <span className={active ? 'text-emerald-400' : 'text-slate-400'}>
+                  <span className={active ? 'text-brand-400' : 'text-slate-400'}>
                     {item.icon}
                   </span>
 
@@ -207,7 +203,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                         <span
                           className={`text-[10px] font-mono px-1.5 py-0.5 rounded-full font-bold ${
                             active
-                              ? 'bg-emerald-500/30 text-emerald-200'
+                              ? 'bg-brand-500/30 text-brand-200'
                               : 'bg-slate-800 text-slate-400'
                           }`}
                         >
@@ -266,7 +262,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             >
               <div
                 onClick={() => handleNavClick('profile')}
-                className="w-8 h-8 rounded-lg bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer hover:opacity-90"
+                className="w-8 h-8 rounded-lg bg-brand-600/30 border border-brand-500/40 text-brand-300 font-bold text-xs flex items-center justify-center shrink-0 cursor-pointer hover:opacity-90"
                 title="Nhấp để mở Hồ sơ chuyên gia"
               >
                 {user.initials}
@@ -278,7 +274,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   className="flex-1 min-w-0 cursor-pointer hover:opacity-90"
                 >
                   <div className="text-xs font-semibold text-slate-200 truncate">{user.name}</div>
-                  <div className="text-[10px] text-emerald-400 truncate flex items-center gap-1">
+                  <div className="text-[10px] text-brand-400 truncate flex items-center gap-1">
                     <ShieldCheck className="w-3 h-3" />
                     <span>{user.role}</span>
                   </div>
@@ -300,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <button
               type="button"
               onClick={() => setIsAuthModalOpen(true)}
-              className={`w-full flex items-center gap-2 p-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-md shadow-emerald-600/20 transition-all ${
+              className={`w-full flex items-center gap-2 p-2 rounded-xl bg-brand-600 hover:bg-brand-500 text-white text-xs font-bold shadow-md shadow-brand-600/20 transition-all ${
                 isCollapsed && !isOpen ? 'lg:justify-center' : 'justify-center'
               }`}
             >

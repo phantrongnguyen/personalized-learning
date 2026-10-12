@@ -15,6 +15,7 @@ import { ProfilePage } from './pages/ProfilePage';
 import { AdvisorPage } from './pages/AdvisorPage';
 import { LecturerPage } from './pages/LecturerPage';
 import { StudentPage } from './pages/StudentPage';
+import { AdminUsersPage } from './pages/AdminUsersPage';
 
 const AppContent: React.FC = () => {
   const { currentView, user } = useApp();
@@ -82,6 +83,7 @@ const AppContent: React.FC = () => {
           {currentView === 'advisor' && <AdvisorPage />}
           {currentView === 'lecturer' && <LecturerPage />}
           {currentView === 'student' && <StudentPage />}
+          {currentView === 'admin-users' && <AdminUsersPage />}
         </main>
 
         {/* Enterprise Footer */}

@@ -38,11 +38,17 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const getViewInfo = () => {
     switch (currentView) {
+      case 'admin-users':
+        return {
+          title: 'Quản lý tài khoản',
+          subtitle: 'Cấp tài khoản và quản lý quyền truy cập',
+          icon: <UserCheck className="w-4 h-4 text-brand-400" />,
+        };
       case 'dashboard':
         return {
           title: 'Dashboard Phân tích Nguy cơ',
           subtitle: 'Mô hình LightGBM Cutoff 75%',
-          icon: <LayoutDashboard className="w-4 h-4 text-emerald-400" />,
+          icon: <LayoutDashboard className="w-4 h-4 text-brand-400" />,
         };
       case 'advisor':
         return {
@@ -66,7 +72,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         return {
           title: 'Hồ sơ Cá nhân & Cài đặt',
           subtitle: 'Thông tin tài khoản & tùy chỉnh phân hệ',
-          icon: <User className="w-4 h-4 text-emerald-400" />,
+          icon: <User className="w-4 h-4 text-brand-400" />,
         };
       case 'about':
         return {
@@ -84,7 +90,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         return {
           title: 'EduRisk AI Enterprise Platform',
           subtitle: 'Quản trị rủi ro học tập & Can thiệp cá nhân hóa',
-          icon: <Home className="w-4 h-4 text-emerald-400" />,
+          icon: <Home className="w-4 h-4 text-brand-400" />,
         };
     }
   };
@@ -115,7 +121,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               title={isCollapsed ? 'Mở rộng thanh sidebar' : 'Thu gọn thanh sidebar'}
             >
               {isCollapsed ? (
-                <PanelLeftOpen className="w-4 h-4 text-emerald-400" />
+                <PanelLeftOpen className="w-4 h-4 text-brand-400" />
               ) : (
                 <PanelLeftClose className="w-4 h-4" />
               )}
@@ -147,12 +153,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
                   title="Nhấp để xem Hồ sơ chuyên gia"
                 >
-                  <div className="w-8 h-8 rounded-lg bg-emerald-600/30 border border-emerald-500/40 text-emerald-300 font-bold text-xs flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-lg bg-brand-600/30 border border-brand-500/40 text-brand-300 font-bold text-xs flex items-center justify-center">
                     {user.initials}
                   </div>
                   <div className="text-left hidden md:block">
                     <div className="text-xs font-semibold text-slate-200">{user.name}</div>
-                    <div className="text-[10px] text-emerald-400">{user.role}</div>
+                    <div className="text-[10px] text-brand-400">{user.role}</div>
                   </div>
                 </div>
                 <button
@@ -168,7 +174,7 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={() => setIsAuthModalOpen(true)}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20 transition-all"
+                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg bg-brand-600 hover:bg-brand-500 text-white shadow-md shadow-brand-600/20 transition-all"
               >
                 <LogIn className="w-3.5 h-3.5" />
                 <span>Đăng nhập</span>
