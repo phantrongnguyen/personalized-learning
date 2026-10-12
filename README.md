@@ -7,9 +7,9 @@
 > **Mã đề tài:** KLTN 13  
 > **Giảng viên hướng dẫn:** ThS. Nguyễn Thị Thùy Trang (`trangntthuy@huit.edu.vn`)  
 > **Sinh viên thực hiện:**  
-> - Phan Trọng Nguyên (MSSV: 2001210886)  
-> - Bùi Lê Hoài Bảo (MSSV: 2001215638)  
-> - Võ Bạch Kim Thịnh (MSSV: 2001216196)  
+> - Phan Trọng Nguyên (MSSV: 2045230068)  
+> - Nguyễn Gia Bảo (MSSV: 2045230010)  
+> - Võ Bạch Kim Thịnh (MSSV: 2045230096)  
 
 [![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
@@ -282,7 +282,7 @@ python -m streamlit run CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/main_app/app.py
 * **Cơ quan chủ quản:** Khoa Công Nghệ Thông Tin – Trường Đại học Công Thương TP.HCM (HUIT)
 * **Giảng viên hướng dẫn:** ThS. Nguyễn Thị Thùy Trang (`trangntthuy@huit.edu.vn`)
 * **Sinh viên thực hiện:**
-  - Phan Trọng Nguyên (MSSV: 2001210886)
-  - Bùi Lê Hoài Bảo (MSSV: 2001215638)
-  - Võ Bạch Kim Thịnh (MSSV: 2001216196)
+  - Phan Trọng Nguyên (MSSV: 2045230068)
+  - Nguyễn Gia Bảo (MSSV: 2045230010)
+  - Võ Bạch Kim Thịnh (MSSV: 2045230096)
 * **Giấy phép:** [MIT License](LICENSE) © 2026 HUIT.
