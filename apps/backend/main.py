@@ -50,15 +50,23 @@ app.include_router(
 
 # Phục vụ thư mục frontend trực tiếp từ backend tại /app
 frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
-if frontend_dir.exists():
+dist_dir = frontend_dir / "dist"
+serve_dir = dist_dir if dist_dir.exists() else frontend_dir
+if serve_dir.exists():
     from fastapi.staticfiles import StaticFiles
-    app.mount("/app", StaticFiles(directory=str(frontend_dir), html=True), name="frontend")
+    app.mount("/app", StaticFiles(directory=str(serve_dir), html=True), name="frontend")
 
 
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Machine Learning API is running",
+        "message": "Personalized Learning Recommendation System API is running",
         "docs": "/docs",
         "frontend": "/app",
     }
+
+
+if __name__ == "__main__":
+    import uvicorn
+
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

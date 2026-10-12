@@ -104,4 +104,6 @@ packages/ml/artifacts/encoders/*
 !docs/
 docs/data/*.zip
 *.zip
+# Word Documents
+reports/words/
 

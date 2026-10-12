@@ -1,0 +1,1 @@
+# Scripts in this directory will be automatically executed in alphabetical order by PostgreSQL upon container initialization.

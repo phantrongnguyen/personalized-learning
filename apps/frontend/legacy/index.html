@@ -1,0 +1,712 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EduRisk AI — Hệ Thống Dự Đoán & Can Thiệp Nguy Cơ Học Tập Cá Nhân Hóa</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ===== Toast Notification Container ===== -->
+  <div id="toast-container" class="toast-container" aria-live="polite"></div>
+
+  <!-- ===== Header & Navigation Bar ===== -->
+  <header class="navbar">
+    <div class="nav-container">
+      <div class="nav-brand" role="button" tabindex="0" data-nav="home">
+        <div class="brand-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M22 10v6M2 10l10-5 10 5-10 5z"/>
+            <path d="M6 12v5c3 3 9 3 12 0v-5"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <span class="brand-title">EduRisk <span class="brand-badge">AI</span></span>
+          <span class="brand-sub">HCO-VNLS &bull; LightGBM</span>
+        </div>
+      </div>
+
+      <!-- Main Navigation Menu -->
+      <nav class="nav-menu">
+        <button type="button" class="nav-link active" data-nav="home">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          <span>Trang chủ</span>
+        </button>
+        <button type="button" class="nav-link" data-nav="dashboard">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="7" height="9" x="3" y="3" rx="1"/><rect width="7" height="5" x="14" y="3" rx="1"/><rect width="7" height="9" x="14" y="12" rx="1"/><rect width="7" height="5" x="3" y="16" rx="1"/></svg>
+          <span>Dashboard</span>
+        </button>
+        <button type="button" class="nav-link" data-nav="about">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M12 16v-4"/><path d="M12 8h.01"/></svg>
+          <span>Giới thiệu</span>
+        </button>
+        <button type="button" class="nav-link" data-nav="contact">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+          <span>Liên hệ</span>
+        </button>
+      </nav>
+
+      <!-- Nav Actions (Backend status & User auth) -->
+      <div class="nav-actions">
+        <!-- Backend Status Pill -->
+        <button type="button" id="backend-status-btn" class="status-pill status-checking" title="Nhấp để cấu hình địa chỉ Backend API">
+          <span class="status-dot"></span>
+          <span id="backend-status-text">Đang kiểm tra API…</span>
+        </button>
+
+        <!-- User Profile or Login Trigger -->
+        <div id="auth-nav-slot">
+          <!-- Rendered dynamically by JS -->
+          <button type="button" class="btn btn-outline-primary btn-sm" id="open-auth-btn">
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"/><polyline points="10 17 15 12 10 7"/><line x1="15" x2="3" y1="12" y2="12"/></svg>
+            <span>Đăng nhập</span>
+          </button>
+        </div>
+
+        <!-- Mobile menu toggle -->
+        <button type="button" class="mobile-toggle" id="mobile-toggle-btn" aria-label="Mở menu">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <!-- ===== Main Content Area (Views) ===== -->
+  <main class="main-content">
+
+    <!-- ==================== VIEW 1: TRANG CHỦ (HOME) ==================== -->
+    <section id="view-home" class="page-view active">
+      <!-- Hero Section -->
+      <div class="hero-section">
+        <div class="hero-badge">
+          <span class="badge-spark">✨</span> Hệ thống AI Giáo dục Cá nhân hóa &bull; Mốc quan sát 75%
+        </div>
+        <h1 class="hero-title">
+          Dự Đoán Nguy Cơ &amp; Can Thiệp Học Tập <br>
+          <span class="gradient-text">Chuẩn Xác Với Trí Tuệ Nhân Tạo</span>
+        </h1>
+        <p class="hero-desc">
+          Ứng dụng mô hình máy học <strong>LightGBM</strong> được tối ưu hóa siêu tham số bằng thuật toán lai <strong>HCO-VNLS</strong> (Hybrid Cuckoo Optimization &amp; Variable Neighborhood Local Search), hỗ trợ giảng viên và cố vấn học tập phát hiện sớm nguy cơ trượt/bỏ học và triển khai giải pháp cá nhân hóa.
+        </p>
+        <div class="hero-cta">
+          <button type="button" class="btn btn-primary btn-lg" data-nav="dashboard">
+            <span>Truy cập Dashboard Phân tích</span>
+            <svg class="btn-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+          </button>
+          <button type="button" class="btn btn-secondary btn-lg" data-nav="about">
+            <span>Tìm hiểu mô hình HCO-VNLS</span>
+          </button>
+        </div>
+
+        <!-- Metric Cards -->
+        <div class="metric-grid">
+          <div class="metric-card">
+            <div class="metric-num">88.4%</div>
+            <div class="metric-label">Độ chính xác mô hình (AUC-ROC)</div>
+            <div class="metric-sub">Tối ưu hóa bằng thuật toán HCO-VNLS</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-num">Cutoff 75%</div>
+            <div class="metric-label">Mốc quan sát vàng</div>
+            <div class="metric-sub">Thời điểm lý tưởng để can thiệp kịp thời</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-num">17 Đặc trưng</div>
+            <div class="metric-label">Phân tích đa chiều</div>
+            <div class="metric-sub">Hành vi VLE, bài nộp &amp; nhân khẩu học</div>
+          </div>
+          <div class="metric-card">
+            <div class="metric-num">&lt; 100ms</div>
+            <div class="metric-label">Tốc độ suy luận API</div>
+            <div class="metric-sub">FastAPI hiệu năng cao, phản hồi tức thì</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Feature Highlight Section -->
+      <div class="container section-block">
+        <div class="section-header text-center">
+          <span class="section-tag">Tính năng vượt trội</span>
+          <h2 class="section-title">Giải Pháp Toàn Diện Cho Cố Vấn Học Tập</h2>
+          <p class="section-desc">Từ dữ liệu tương tác học tập trực tuyến đến chiến lược hỗ trợ sinh viên từng bước.</p>
+        </div>
+
+        <div class="feature-grid">
+          <div class="feature-card">
+            <div class="feature-icon icon-purple">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg>
+            </div>
+            <h3>Chẩn Đoán Đa Chiều</h3>
+            <p>Phân tích đồng thời lịch sử đăng ký học phần, thói quen click tài nguyên VLE và tiến độ làm bài đánh giá.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon icon-blue">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="m16 12-4-4-4 4"/><path d="M12 16V8"/></svg>
+            </div>
+            <h3>Tối Ưu Siêu Tham Số</h3>
+            <p>Thuật toán HCO-VNLS tự động khám phá không gian tham số tối ưu, vượt trội hơn GridSearch và RandomSearch thông thường.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon icon-emerald">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2v20"/><path d="m17 5-5-3-5 3"/><path d="m17 19-5 3-5-3"/></svg>
+            </div>
+            <h3>Khuyến Nghị Thông Minh</h3>
+            <p>Tự động xuất danh sách việc cần làm cho giảng viên: gọi điện nhắc nhở, tư vấn giảm tải tín chỉ hoặc gia hạn bài tập.</p>
+          </div>
+
+          <div class="feature-card">
+            <div class="feature-icon icon-amber">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+            </div>
+            <h3>Xuất Báo Cáo &amp; Lịch Sử</h3>
+            <p>Lưu trữ các phiên phân tích gần nhất và xuất danh sách sinh viên nguy cơ cao ra định dạng file CSV chuẩn.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Quick Try Banner -->
+      <div class="container section-block">
+        <div class="cta-banner">
+          <div class="cta-content">
+            <h2>Sẵn sàng phân tích hồ sơ sinh viên?</h2>
+            <p>Dùng ngay bộ mẫu dữ liệu chuẩn hoặc nhập các chỉ số VLE để nhận kết quả phân tích theo thời gian thực.</p>
+          </div>
+          <button type="button" class="btn btn-white btn-lg" data-nav="dashboard">
+            <span>Mở Dashboard Ngay</span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 2: DASHBOARD (PHÂN TÍCH) ==================== -->
+    <section id="view-dashboard" class="page-view">
+      <div class="container-fluid dashboard-layout">
+
+        <!-- Left Column: Input Form Panel -->
+        <section class="card form-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Hồ Sơ Đặc Trưng Sinh Viên</h2>
+              <p class="card-subtitle">Nhập 17 đặc trưng học tập tại mốc quan sát <strong>cutoff 75%</strong> của khóa học</p>
+            </div>
+            <!-- Preset Quick Select -->
+            <div class="preset-group">
+              <span class="preset-label">Mẫu nhanh:</span>
+              <button type="button" class="btn btn-sm btn-ghost" data-preset="weak" title="Mô phỏng sinh viên có nguy cơ rớt môn cao">
+                <span>🔴 Sinh viên yếu</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" data-preset="good" title="Mô phỏng sinh viên chăm chỉ, tỷ lệ qua môn cao">
+                <span>🟢 Sinh viên tốt</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost" data-preset="reset" title="Đặt lại về giá trị mặc định">
+                <span>↺ Đặt lại</span>
+              </button>
+            </div>
+          </div>
+
+          <form id="predict-form" class="card-body" novalidate>
+            <!-- Group 1: Thông tin cá nhân & Đăng ký -->
+            <fieldset class="field-section" data-group="info">
+              <legend class="section-legend">
+                <span class="legend-icon">📋</span>
+                <span>Thông tin cá nhân &amp; Khóa học</span>
+              </legend>
+              <div class="field-grid" data-fields="info"></div>
+            </fieldset>
+
+            <!-- Group 2: Hoạt động học tập trực tuyến (VLE) -->
+            <fieldset class="field-section" data-group="activity">
+              <legend class="section-legend">
+                <span class="legend-icon">🖱️</span>
+                <span>Tương tác trên hệ thống học tập trực tuyến (VLE)</span>
+              </legend>
+              <div class="field-grid" data-fields="activity"></div>
+            </fieldset>
+
+            <!-- Group 3: Đánh giá & Bài kiểm tra -->
+            <fieldset class="field-section" data-group="assessment">
+              <legend class="section-legend">
+                <span class="legend-icon">📝</span>
+                <span>Tiến độ nộp bài &amp; Đánh giá</span>
+              </legend>
+              <div class="field-grid" data-fields="assessment"></div>
+            </fieldset>
+
+            <div class="form-submit-row">
+              <button type="submit" id="submit-btn" class="btn btn-primary btn-lg submit-button">
+                <span class="spinner hidden" id="submit-spinner"></span>
+                <span id="submit-text">🔍 Phân tích nguy cơ học tập</span>
+              </button>
+              <span class="form-hint-text">Mô hình LightGBM sẽ tính toán xác suất rủi ro tại thời điểm t.</span>
+            </div>
+          </form>
+        </section>
+
+        <!-- Right Column: Results & Recommendations -->
+        <aside class="result-column">
+
+          <!-- Result Card -->
+          <div class="card result-card">
+            <div class="card-header">
+              <h2 class="card-title">Kết Quả Đánh Giá Rủi Ro</h2>
+              <span class="card-badge" id="model-tag">HCO-VNLS Model</span>
+            </div>
+
+            <!-- Empty State Placeholder -->
+            <div id="result-placeholder" class="result-placeholder">
+              <div class="placeholder-art">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+                  <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/>
+                </svg>
+              </div>
+              <h3>Chưa có kết quả phân tích</h3>
+              <p>Hãy chọn một <strong>Mẫu nhanh</strong> ở cột bên trái hoặc tùy chỉnh các trường rồi nhấn <strong>Phân tích nguy cơ học tập</strong>.</p>
+            </div>
+
+            <!-- Result Dynamic Content -->
+            <div id="result-content" class="result-content hidden">
+              <!-- Risk Status Badge -->
+              <div id="risk-badge" class="risk-badge">
+                <span id="risk-icon" class="risk-badge-icon">⚠️</span>
+                <div class="risk-badge-content">
+                  <span class="risk-badge-sub">Mức độ rủi ro dự đoán</span>
+                  <span id="risk-label" class="risk-badge-title">NGUY CƠ CAO</span>
+                </div>
+              </div>
+
+              <!-- Animated Radial Gauge -->
+              <div class="gauge-box">
+                <div class="gauge-wrap">
+                  <svg class="gauge-svg" viewBox="0 0 130 130">
+                    <circle class="gauge-track" cx="65" cy="65" r="54"/>
+                    <circle id="gauge-value" class="gauge-value" cx="65" cy="65" r="54"/>
+                  </svg>
+                  <div class="gauge-center">
+                    <span id="gauge-percent" class="gauge-percent">0.0%</span>
+                    <span class="gauge-unit">Xác suất nguy cơ</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Summary Paragraph -->
+              <div class="result-summary-box">
+                <p id="result-summary" class="result-summary-text"></p>
+              </div>
+
+              <!-- Recommendation Card Box -->
+              <div id="recommend-box" class="recommend-box hidden">
+                <div class="recommend-header">
+                  <span class="recommend-icon">💡</span>
+                  <h4>Đề xuất can thiệp cá nhân hóa</h4>
+                  <button type="button" class="btn-copy-rec" id="copy-rec-btn" title="Sao chép đề xuất">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></svg>
+                    <span>Copy</span>
+                  </button>
+                </div>
+                <ul id="recommend-list" class="recommend-list"></ul>
+              </div>
+
+              <div class="result-meta-footer">
+                <span id="result-meta"></span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick System Diagnostic Card -->
+          <div class="card system-card">
+            <div class="card-header-compact">
+              <span class="sys-title">Thông số Trực tiếp API</span>
+              <span class="sys-ping" id="api-ping-label">Ping: ~20ms</span>
+            </div>
+            <div class="sys-body">
+              <div class="sys-row">
+                <span class="sys-k">Địa chỉ máy chủ:</span>
+                <span class="sys-v" id="sys-server-url">http://127.0.0.1:8000</span>
+              </div>
+              <div class="sys-row">
+                <span class="sys-k">Trạng thái Mô hình:</span>
+                <span class="sys-v text-emerald" id="sys-model-status">Sẵn sàng (Cutoff 75)</span>
+              </div>
+              <div class="sys-row">
+                <span class="sys-k">Bộ dữ liệu:</span>
+                <span class="sys-v">OULAD Benchmark</span>
+              </div>
+            </div>
+          </div>
+
+        </aside>
+      </div>
+
+      <!-- History Section -->
+      <div class="container-fluid history-section">
+        <div class="card history-card">
+          <div class="card-header">
+            <div>
+              <h2 class="card-title">Lịch Sử Phân Tích Trong Phiên</h2>
+              <p class="card-subtitle">Theo dõi các lượt đánh giá sinh viên đã thực hiện</p>
+            </div>
+            <div class="history-actions">
+              <div class="search-box">
+                <input type="text" id="history-filter-input" placeholder="Lọc theo học phần/tuổi…" />
+              </div>
+              <button type="button" class="btn btn-sm btn-outline-secondary" id="export-history-btn">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                <span>Xuất CSV</span>
+              </button>
+              <button type="button" class="btn btn-sm btn-ghost text-danger" id="clear-history">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                <span>Xóa lịch sử</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table class="data-table">
+              <thead>
+                <tr>
+                  <th>Thời gian</th>
+                  <th>Học phần</th>
+                  <th>Nhóm tuổi</th>
+                  <th>Tín chỉ</th>
+                  <th>Lượt click VLE</th>
+                  <th>Dự đoán nguy cơ</th>
+                  <th>Xác suất rủi ro</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody id="history-body">
+                <tr class="empty-row">
+                  <td colspan="8">Chưa có dự đoán nào trong phiên này.</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 3: GIỚI THIỆU (ABOUT) ==================== -->
+    <section id="view-about" class="page-view">
+      <div class="container section-block">
+        <div class="about-hero text-center">
+          <span class="section-tag">Công nghệ &amp; Nghiên cứu</span>
+          <h1 class="about-title">Nền Tảng AI Hỗ Trợ Đào Tạo Cá Nhân Hóa</h1>
+          <p class="about-lead">
+            Dự án nghiên cứu giải pháp phát hiện sớm sinh viên có nguy cơ rớt môn hoặc bỏ học thông qua kỹ thuật khai phá dữ liệu giáo dục (Educational Data Mining) và Học máy (Machine Learning).
+          </p>
+        </div>
+
+        <div class="about-grid">
+          <div class="card about-card">
+            <div class="about-card-icon icon-purple">🧬</div>
+            <h3>Thuật toán lai HCO-VNLS</h3>
+            <p>
+              <strong>Hybrid Cuckoo Optimization &amp; Variable Neighborhood Local Search (HCO-VNLS)</strong> là thuật toán tối ưu hóa siêu tham số lấy cảm hứng từ tập tính loài chim Cuckoo kết hợp kỹ thuật tìm kiếm lân cận biến đổi. Thuật toán giúp mô hình LightGBM tránh các cực tiểu địa phương, tìm ra bộ siêu tham số (learning rate, num_leaves, min_child_samples, v.v.) đạt chất lượng phân loại vượt bậc.
+            </p>
+          </div>
+
+          <div class="card about-card">
+            <div class="about-card-icon icon-blue">⚡</div>
+            <h3>Mô hình LightGBM</h3>
+            <p>
+              <strong>Light Gradient Boosting Machine (LightGBM)</strong> là thuật toán tăng cường độ dốc trên cây quyết định hiệu quả hàng đầu hiện nay. Khả năng phát triển cây theo chiều sâu (leaf-wise) và kỹ thuật phân cụm histogram giúp mô hình xử lý trơn tru dữ liệu clickstream dung lượng lớn với tốc độ suy luận dưới 50ms.
+            </p>
+          </div>
+
+          <div class="card about-card">
+            <div class="about-card-icon icon-emerald">⏱️</div>
+            <h3>Ý nghĩa của Cutoff 75%</h3>
+            <p>
+              Trong học phần đại học, mốc 75% thời gian là <strong>thời điểm then chốt (golden window)</strong>: sinh viên đã có đủ tương tác trên hệ thống để mô hình nhận diện chính xác xu hướng, nhưng đồng thời vẫn còn đủ thời gian trước kỳ thi kết thúc học phần để giảng viên triển khai kế hoạch phụ đạo và cứu vãn học tập.
+            </p>
+          </div>
+
+          <div class="card about-card">
+            <div class="about-card-icon icon-amber">📊</div>
+            <h3>Tập dữ liệu chuẩn OULAD</h3>
+            <p>
+              Mô hình được huấn luyện và đối sánh trên bộ dữ liệu <strong>Open University Learning Analytics Dataset (OULAD)</strong> của Đại học Mở Vương quốc Anh — một trong những tập dữ liệu giáo dục chuẩn mực và uy tín nhất thế giới với hàng chục ngàn sinh viên và hàng triệu tương tác VLE.
+            </p>
+          </div>
+        </div>
+
+        <!-- Workflow Diagram Card -->
+        <div class="card workflow-card">
+          <div class="card-header">
+            <h2 class="card-title">Quy Trình Hoạt Động Của Hệ Thống</h2>
+          </div>
+          <div class="workflow-steps">
+            <div class="step-item">
+              <div class="step-badge">1</div>
+              <h4>Thu thập dữ liệu VLE</h4>
+              <p>Trích xuất 17 đặc trưng hành vi và đánh giá tại mốc cutoff 75%.</p>
+            </div>
+            <div class="step-arrow">&rarr;</div>
+            <div class="step-item">
+              <div class="step-badge">2</div>
+              <h4>Suy luận LightGBM</h4>
+              <p>Mô hình đã tối ưu hóa bởi HCO-VNLS tính toán xác suất nguy cơ lớp 1.</p>
+            </div>
+            <div class="step-arrow">&rarr;</div>
+            <div class="step-item">
+              <div class="step-badge">3</div>
+              <h4>Phân lớp &amp; Khuyến nghị</h4>
+              <p>Phân loại rủi ro (An toàn / Nguy cơ cao) và kích hoạt bộ luật can thiệp thông minh.</p>
+            </div>
+            <div class="step-arrow">&rarr;</div>
+            <div class="step-item">
+              <div class="step-badge">4</div>
+              <h4>Cố vấn hành động</h4>
+              <p>Giảng viên liên hệ sinh viên, điều chỉnh kế hoạch học tập kịp thời.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== VIEW 4: LIÊN HỆ (CONTACT) ==================== -->
+    <section id="view-contact" class="page-view">
+      <div class="container section-block">
+        <div class="section-header text-center">
+          <span class="section-tag">Hỗ trợ &amp; Kết nối</span>
+          <h1 class="section-title">Liên Hệ Nhóm Nghiên Cứu &amp; Kỹ Thuật</h1>
+          <p class="section-desc">Bạn cần tích hợp API vào hệ thống LMS của trường hoặc cần tư vấn về mô hình? Hãy gửi tin nhắn cho chúng tôi.</p>
+        </div>
+
+        <div class="contact-layout">
+          <!-- Contact Info -->
+          <div class="contact-info-panel">
+            <div class="contact-info-card">
+              <h3>Thông tin kết nối</h3>
+              <p class="text-muted">Đội ngũ kỹ thuật sẵn sàng hỗ trợ triển khai và tích hợp 24/7.</p>
+
+              <div class="contact-info-list">
+                <div class="contact-item">
+                  <div class="contact-icon">📍</div>
+                  <div>
+                    <strong>Địa chỉ:</strong>
+                    <p>140 Lê Trọng Tấn, phường Tây Thạnh, TP. Hồ Chí Minh</p>
+                  </div>
+                </div>
+                <div class="contact-item">
+                  <div class="contact-icon">📧</div>
+                  <div>
+                    <strong>Email hỗ trợ:</strong>
+                    <p>pn629503@gmail.com</p>
+                  </div>
+                </div>
+                <div class="contact-item">
+                  <div class="contact-icon">🌐</div>
+                  <div>
+                    <strong>Tài liệu API:</strong>
+                    <p><a href="http://127.0.0.1:8000/docs" target="_blank" rel="noreferrer" class="link-styled">FastAPI Swagger Docs (/docs)</a></p>
+                  </div>
+                </div>
+                <div class="contact-item">
+                  <div class="contact-icon">⏱️</div>
+                  <div>
+                    <strong>Thời gian làm việc:</strong>
+                    <p>Thứ 2 &ndash; Thứ 6 (8:00 &ndash; 17:30)</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- FAQ Mini -->
+            <div class="faq-box">
+              <h4>Câu hỏi thường gặp (FAQ)</h4>
+              <details class="faq-item">
+                <summary>Dữ liệu sinh viên có được bảo mật không?</summary>
+                <p>Toàn bộ dữ liệu gửi lên API đều được xử lý ẩn danh dưới dạng vector đặc trưng số, không lưu trữ thông tin nhận dạng cá nhân nhạy cảm.</p>
+              </details>
+              <details class="faq-item">
+                <summary>Làm sao tích hợp vào Moodle / Canvas?</summary>
+                <p>Backend cung cấp sẵn chuẩn REST API `POST /api/v1/predictions/` tương thích với mọi plugin Webhook hoặc LTI của Moodle.</p>
+              </details>
+            </div>
+          </div>
+
+          <!-- Contact Form -->
+          <div class="card contact-form-card">
+            <div class="card-header">
+              <h3 class="card-title">Gửi Yêu Cầu Hỗ Trợ</h3>
+            </div>
+            <form id="contact-form" class="card-body">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="contact-name">Họ và tên <span class="text-danger">*</span></label>
+                  <input type="text" id="contact-name" class="form-control" placeholder="Nguyễn Văn A" required />
+                </div>
+                <div class="form-group">
+                  <label for="contact-email">Email liên hệ <span class="text-danger">*</span></label>
+                  <input type="email" id="contact-email" class="form-control" placeholder="advisor@university.edu.vn" required />
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="contact-unit">Đơn vị / Khoa / Trường</label>
+                <input type="text" id="contact-unit" class="form-control" placeholder="Khoa Công Nghệ Thông Tin" />
+              </div>
+
+              <div class="form-group">
+                <label for="contact-topic">Chủ đề liên hệ</label>
+                <select id="contact-topic" class="form-control">
+                  <option value="integrate">Yêu cầu tích hợp API hệ thống trường</option>
+                  <option value="research">Hợp tác nghiên cứu mô hình HCO-VNLS</option>
+                  <option value="bug">Báo cáo lỗi hoặc phản ánh giao diện</option>
+                  <option value="other">Chủ đề khác</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label for="contact-message">Nội dung tin nhắn <span class="text-danger">*</span></label>
+                <textarea id="contact-message" class="form-control" rows="4" placeholder="Nhập nội dung bạn cần hỗ trợ…" required></textarea>
+              </div>
+
+              <button type="submit" id="contact-submit-btn" class="btn btn-primary btn-lg w-100">
+                <span>Gửi Tin Nhắn Liên Hệ</span>
+              </button>
+            </form>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ===== Footer ===== -->
+  <footer class="app-footer">
+    <div class="footer-container">
+      <div class="footer-left">
+        <span class="footer-brand">EduRisk AI Dashboard</span>
+        <p class="footer-copy">&copy; 2026 Personalized Learning Recommendation System. All rights reserved.</p>
+      </div>
+      <div class="footer-center">
+        <span>Mô hình: LightGBM (HCO-VNLS 75%) &bull; Backend: FastAPI</span>
+      </div>
+      <div class="footer-right">
+        <a href="#home" data-nav="home">Trang chủ</a>
+        <a href="#dashboard" data-nav="dashboard">Dashboard</a>
+        <a href="#about" data-nav="about">Giới thiệu</a>
+        <a href="#contact" data-nav="contact">Liên hệ</a>
+      </div>
+    </div>
+  </footer>
+
+  <!-- ==================== MODAL: ĐĂNG NHẬP / ĐĂNG KÝ ==================== -->
+  <div id="auth-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+    <div class="modal-card">
+      <button type="button" class="modal-close-btn" id="close-auth-modal" aria-label="Đóng">&times;</button>
+
+      <div class="modal-header">
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab-btn active" id="tab-login-btn">Đăng nhập</button>
+          <button type="button" class="auth-tab-btn" id="tab-register-btn">Đăng ký</button>
+        </div>
+      </div>
+
+      <!-- Quick Demo Account Banner -->
+      <div class="demo-account-hint">
+        <span>⚡ <strong>Tài khoản Demo nhanh:</strong></span>
+        <div class="demo-btn-group">
+          <button type="button" class="btn-demo" id="demo-advisor-btn">👨‍🏫 Cố vấn học tập</button>
+          <button type="button" class="btn-demo" id="demo-admin-btn">👩‍💼 Quản trị viên</button>
+        </div>
+      </div>
+
+      <!-- TAB 1: FORM ĐĂNG NHẬP -->
+      <form id="login-form" class="auth-form">
+        <div class="form-group">
+          <label for="login-email">Email hoặc Tên đăng nhập</label>
+          <input type="text" id="login-email" class="form-control" placeholder="advisor@university.edu.vn" required />
+        </div>
+        <div class="form-group">
+          <label for="login-pass">Mật khẩu</label>
+          <input type="password" id="login-pass" class="form-control" placeholder="••••••••" required />
+        </div>
+        <div class="auth-extras">
+          <label class="remember-label">
+            <input type="checkbox" id="login-remember" checked />
+            <span>Ghi nhớ đăng nhập</span>
+          </label>
+          <a href="#" class="forgot-link" id="forgot-pass-btn">Quên mật khẩu?</a>
+        </div>
+        <button type="submit" class="btn btn-primary btn-lg w-100">
+          <span>Đăng Nhập Vào Hệ Thống</span>
+        </button>
+      </form>
+
+      <!-- TAB 2: FORM ĐĂNG KÝ -->
+      <form id="register-form" class="auth-form hidden">
+        <div class="form-group">
+          <label for="reg-name">Họ và tên</label>
+          <input type="text" id="reg-name" class="form-control" placeholder="TS. Lê Văn Minh" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email công tác</label>
+          <input type="email" id="reg-email" class="form-control" placeholder="minh.le@university.edu.vn" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-role">Vai trò trong hệ thống</label>
+          <select id="reg-role" class="form-control">
+            <option value="advisor">Cố vấn học tập (Advisor)</option>
+            <option value="lecturer">Giảng viên bộ môn (Lecturer)</option>
+            <option value="admin">Quản trị viên đào tạo (Admin)</option>
+            <option value="researcher">Nghiên cứu sinh / Nhà khoa học</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="reg-pass">Mật khẩu</label>
+          <input type="password" id="reg-pass" class="form-control" placeholder="Tối thiểu 6 ký tự" required minlength="6" />
+        </div>
+        <button type="submit" class="btn btn-emerald btn-lg w-100">
+          <span>Tạo Tài Khoản Mới</span>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: CẤU HÌNH BACKEND API ==================== -->
+  <div id="backend-modal" class="modal-backdrop hidden" role="dialog" aria-modal="true">
+    <div class="modal-card modal-sm">
+      <button type="button" class="modal-close-btn" id="close-backend-modal" aria-label="Đóng">&times;</button>
+      <div class="modal-head-simple">
+        <div class="icon-bubble">⚙️</div>
+        <h3>Cấu Hình Máy Chủ Backend</h3>
+        <p class="text-muted">Kiểm tra kết nối hoặc đổi URL FastAPI nếu chạy khác cổng.</p>
+      </div>
+
+      <div class="form-group">
+        <label for="backend-url-input">Địa chỉ API Base:</label>
+        <input type="text" id="backend-url-input" class="form-control" placeholder="http://127.0.0.1:8000" spellcheck="false" />
+        <span class="field-hint">Mặc định: <code>http://127.0.0.1:8000</code></span>
+      </div>
+
+      <div class="backend-status-card">
+        <div class="status-summary-row">
+          <span>Trạng thái kết nối:</span>
+          <span id="backend-detail-badge" class="badge badge-ok">Đang kết nối</span>
+        </div>
+        <div class="status-summary-row">
+          <span>Mô hình nạp sẵn:</span>
+          <span id="backend-model-loaded" class="text-bold">Có (HCO-VNLS)</span>
+        </div>
+      </div>
+
+      <div class="modal-actions-row">
+        <button type="button" class="btn btn-secondary" id="ping-backend-btn">Kiểm tra lại (Ping)</button>
+        <button type="button" class="btn btn-primary" id="save-backend-btn">Lưu cấu hình</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/app.js"></script>
+</body>
+</html>
