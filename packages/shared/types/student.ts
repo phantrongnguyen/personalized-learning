@@ -49,10 +49,13 @@ export interface PredictionHistoryItem {
   features: StudentFeatures;
 }
 
+export type RoleCode = 'ADMIN' | 'ADVISOR' | 'LECTURER' | 'STUDENT';
+
 export interface UserProfile {
   name: string;
   email: string;
   role: string;
+  roleCode?: RoleCode;
   initials: string;
   department?: string;
   phone?: string;

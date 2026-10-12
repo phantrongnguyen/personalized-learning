@@ -13,6 +13,8 @@ import {
   LogIn,
   ShieldCheck,
   X,
+  UserCheck,
+  BookOpen,
 } from 'lucide-react';
 
 interface SidebarProps {
@@ -47,20 +49,52 @@ export const Sidebar: React.FC<SidebarProps> = ({
     label: string;
     icon: React.ReactNode;
     badge?: string;
-  }[] = [
-    {
-      id: 'dashboard',
-      label: 'Dashboard Phân tích',
-      icon: <LayoutDashboard className="w-5 h-5 shrink-0" />,
-      badge: 'Live AI',
-    },
-    {
-      id: 'profile',
-      label: 'Hồ sơ chuyên gia',
-      icon: <User className="w-5 h-5 shrink-0" />,
-      badge: 'Tier 1',
-    },
-  ];
+  }[] = (() => {
+    const roleItems: {
+      id: NavigationPage;
+      label: string;
+      icon: React.ReactNode;
+      badge?: string;
+    }[] = [];
+    if (user?.roleCode === 'ADVISOR') {
+      roleItems.push({
+        id: 'advisor',
+        label: 'Quản lý lớp chủ nhiệm',
+        icon: <UserCheck className="w-5 h-5 shrink-0" />,
+        badge: 'GVCN',
+      });
+    }
+    if (user?.roleCode === 'LECTURER') {
+      roleItems.push({
+        id: 'lecturer',
+        label: 'Lớp học phần phụ trách',
+        icon: <BookOpen className="w-5 h-5 shrink-0" />,
+        badge: 'GVBM',
+      });
+    }
+    if (user?.roleCode === 'STUDENT') {
+      roleItems.push({
+        id: 'student',
+        label: 'Dự báo & nhiệm vụ học tập',
+        icon: <GraduationCap className="w-5 h-5 shrink-0" />,
+        badge: 'SV',
+      });
+    }
+    return [
+      ...roleItems,
+      {
+        id: 'dashboard',
+        label: 'Dashboard Phân tích',
+        icon: <LayoutDashboard className="w-5 h-5 shrink-0" />,
+        badge: 'Live AI',
+      },
+      {
+        id: 'profile',
+        label: 'Hồ sơ cá nhân',
+        icon: <User className="w-5 h-5 shrink-0" />,
+      },
+    ];
+  })();
 
   // Secondary platform pages
   const secondaryNavItems: {

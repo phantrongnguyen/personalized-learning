@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
+import { updateProfileApi } from '../services/api';
 import {
   User,
   ShieldCheck,
@@ -19,7 +20,7 @@ import {
 } from 'lucide-react';
 
 export const ProfilePage: React.FC = () => {
-  const { user, login, logout, updateUser, history, addToast } = useApp();
+  const { user, logout, updateUser, history, addToast, apiBase, refreshUser, setIsAuthModalOpen } = useApp();
 
   // Form states
   const [name, setName] = useState(user?.name || 'Nguyễn Minh Khang');
@@ -41,32 +42,28 @@ export const ProfilePage: React.FC = () => {
   const highRiskCount = history.filter((h) => h.prediction === 1).length;
   const safeCount = history.filter((h) => h.prediction === 0).length;
 
-  const handleSaveProfile = (e: React.FormEvent) => {
+  const handleSaveProfile = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user) {
-      login({
-        name,
-        email,
-        role,
-        initials: name
-          .split(' ')
-          .map((n) => n[0])
-          .join('')
-          .slice(0, 2)
-          .toUpperCase(),
-        department,
-        phone,
-        organization,
+    try {
+      await updateProfileApi(apiBase, {
+        full_name: name,
+        phone_number: phone,
       });
-    } else {
-      updateUser({
-        name,
-        email,
-        role,
-        department,
-        phone,
-        organization,
-      });
+      const refreshed = await refreshUser();
+      if (refreshed) {
+        updateUser({
+          name: refreshed.name,
+          email: refreshed.email,
+          role: refreshed.role,
+          department: refreshed.department,
+          phone: refreshed.phone,
+          organization: refreshed.organization,
+        });
+      }
+      addToast('Cập nhật hồ sơ thành công trên máy chủ!', 'success');
+    } catch (err: unknown) {
+      const message = (err as Error).message || 'Không thể cập nhật hồ sơ.';
+      addToast(message, 'error', 5000);
     }
   };
 
@@ -143,14 +140,7 @@ export const ProfilePage: React.FC = () => {
             ) : (
               <button
                 type="button"
-                onClick={() =>
-                  login({
-                    name: 'Nguyễn Minh Khang',
-                    email: 'lead.advisor@edurisk.ai',
-                    role: 'Trưởng ban Cố vấn Học tập',
-                    initials: 'MK',
-                  })
-                }
+                onClick={() => setIsAuthModalOpen(true)}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-600/20 transition-all"
               >
                 <LogIn className="w-4 h-4" />

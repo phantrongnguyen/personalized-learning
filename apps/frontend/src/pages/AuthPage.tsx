@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
+import { loginApi, mapBackendUser } from '../services/api';
 import {
   GraduationCap,
   ShieldCheck,
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
-  const { login, addToast } = useApp();
+  const { login, addToast, apiBase } = useApp();
 
   const [activeTab, setActiveTab] = useState<'login' | 'register'>('login');
   const [loading, setLoading] = useState(false);
@@ -45,27 +46,28 @@ export const AuthPage: React.FC = () => {
   const [showRegPassword, setShowRegPassword] = useState(false);
   const [regAgreeTerms, setRegAgreeTerms] = useState(true);
 
-  // 1-Click Demo Accounts
-  const handleQuickLogin = (
-    name: string,
-    email: string,
-    role: string,
-    initials: string,
-    department: string
-  ) => {
+  // Xác thực trực tiếp qua Backend FastAPI (JWT + RBAC)
+  const authenticate = async (email: string, password: string) => {
+    setErrorMsg(null);
     setLoading(true);
-    setTimeout(() => {
-      login({
-        name,
-        email,
-        role,
-        initials,
-        department,
-        organization: 'Đại học Quốc gia & Viện Công nghệ Đào tạo',
-        phone: '0908 686 888',
-      });
+    try {
+      const { user } = await loginApi(apiBase, email, password);
+      login(mapBackendUser(user));
+    } catch (err: unknown) {
+      const message =
+        (err as Error).message || 'Đăng nhập không thành công. Vui lòng kiểm tra lại.';
+      setErrorMsg(message);
+      addToast(message, 'error', 5000);
+    } finally {
       setLoading(false);
-    }, 400);
+    }
+  };
+
+  // 1-Click Demo Accounts (tài khoản được seed sẵn trong Backend, mật khẩu: 123)
+  const handleQuickLogin = (email: string) => {
+    setLoginEmail(email);
+    setLoginPassword('123');
+    void authenticate(email, '123');
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -81,32 +83,7 @@ export const AuthPage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      const emailPrefix = loginEmail.split('@')[0] || 'User';
-      const formattedName =
-        emailPrefix.charAt(0).toUpperCase() + emailPrefix.slice(1).replace(/[._]/g, ' ');
-      const initials = formattedName
-        .split(' ')
-        .map((w) => w[0])
-        .join('')
-        .slice(0, 2)
-        .toUpperCase() || 'US';
-
-      login({
-        name: formattedName,
-        email: loginEmail,
-        role: loginEmail.includes('admin')
-          ? 'Quản trị viên Enterprise'
-          : loginEmail.includes('student')
-          ? 'Sinh viên'
-          : 'Cố vấn học tập',
-        initials,
-        department: 'Ban Đào tạo & Công tác Sinh viên',
-        organization: 'Học viện & Trường Đại học Đối tác',
-      });
-      setLoading(false);
-    }, 600);
+    void authenticate(loginEmail.trim(), loginPassword);
   };
 
   const handleRegisterSubmit = (e: React.FormEvent) => {
@@ -134,28 +111,13 @@ export const AuthPage: React.FC = () => {
       return;
     }
 
-    setLoading(true);
-    setTimeout(() => {
-      const initials =
-        regName
-          .trim()
-          .split(' ')
-          .map((p) => p[0])
-          .join('')
-          .slice(0, 2)
-          .toUpperCase() || 'SV';
-
-      login({
-        name: regName.trim(),
-        email: regEmail.trim(),
-        role: regRole,
-        initials,
-        department: regDepartment,
-        organization: 'Cơ sở Giáo dục Đại học Đối tác',
-      });
-      setLoading(false);
-      addToast('Đăng ký tài khoản thành công! Chào mừng bạn gia nhập EduRisk AI.', 'success');
-    }, 700);
+    // Backend hiện không mở đăng ký công khai; tài khoản do Quản trị viên cấp.
+    addToast(
+      'Chức năng đăng ký công khai đang tạm khóa. Vui lòng liên hệ Quản trị viên để được cấp tài khoản.',
+      'info',
+      6000
+    );
+    setErrorMsg('Đăng ký công khai tạm khóa. Tài khoản được Quản trị viên cấp qua phân hệ Admin.');
   };
 
   return (
@@ -305,64 +267,40 @@ export const AuthPage: React.FC = () => {
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={() =>
-                      handleQuickLogin(
-                        'TS. Nguyễn Minh Khang',
-                        'lead.advisor@edurisk.ai',
-                        'Trưởng ban Cố vấn Học tập',
-                        'MK',
-                        'Ban Quản trị & Cố vấn Đào tạo'
-                      )
-                    }
+                    onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
                     className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-emerald-500/50 text-left transition-all group"
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-emerald-300">
                       <UserCheck className="w-3.5 h-3.5 text-emerald-400" />
                       <span>Cố vấn</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">TS. Minh Khang</span>
+                    <span className="text-[10px] text-slate-400 truncate mt-0.5">advisor@huit.edu.vn</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={() =>
-                      handleQuickLogin(
-                        'Trần Hoàng Nam',
-                        'admin@edurisk.ai',
-                        'Quản trị viên Enterprise',
-                        'AD',
-                        'Phòng CNTT & Đảm bảo Chất lượng'
-                      )
-                    }
+                    onClick={() => handleQuickLogin('admin@huit.edu.vn')}
                     className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-teal-500/50 text-left transition-all group"
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-teal-300">
                       <ShieldCheck className="w-3.5 h-3.5 text-teal-400" />
                       <span>Quản trị viên</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">Admin Đào tạo</span>
+                    <span className="text-[10px] text-slate-400 truncate mt-0.5">admin@huit.edu.vn</span>
                   </button>
 
                   <button
                     type="button"
                     disabled={loading}
-                    onClick={() =>
-                      handleQuickLogin(
-                        'Lê Thu Hà',
-                        'thuha.le@edurisk.ai',
-                        'Sinh viên',
-                        'TH',
-                        'Khoa Công nghệ Thông tin (K65)'
-                      )
-                    }
+                    onClick={() => handleQuickLogin('student@huit.edu.vn')}
                     className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-cyan-500/50 text-left transition-all group"
                   >
                     <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-cyan-300">
                       <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
                       <span>Sinh viên</span>
                     </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">Lê Thu Hà (K65)</span>
+                    <span className="text-[10px] text-slate-400 truncate mt-0.5">student@huit.edu.vn</span>
                   </button>
                 </div>
               </div>
@@ -421,7 +359,7 @@ export const AuthPage: React.FC = () => {
                         required
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder="advisor@university.edu.vn"
+                        placeholder=""
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-sm placeholder:text-slate-600 focus:border-emerald-500 focus:outline-none transition-colors"
                       />
                     </div>
@@ -501,15 +439,7 @@ export const AuthPage: React.FC = () => {
                   <div className="text-center pt-2">
                     <button
                       type="button"
-                      onClick={() =>
-                        handleQuickLogin(
-                          'Khách Trải Nghiệm',
-                          'guest@edurisk.ai',
-                          'Cố vấn tham quan',
-                          'GE',
-                          'Tài khoản duyệt thử nghiệm'
-                        )
-                      }
+                      onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
                       className="text-xs text-slate-400 hover:text-emerald-400 transition-colors inline-flex items-center gap-1.5"
                     >
                       <Sparkles className="w-3.5 h-3.5 text-emerald-400" />
@@ -534,7 +464,7 @@ export const AuthPage: React.FC = () => {
                           required
                           value={regName}
                           onChange={(e) => setRegName(e.target.value)}
-                          placeholder="Nguyễn Văn A"
+                          placeholder=""
                           className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
                         />
                       </div>
@@ -542,13 +472,13 @@ export const AuthPage: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1">
-                        Mã định danh (MSSV/CB):
+                        Mã số sinh viên (MSSV):
                       </label>
                       <input
                         type="text"
                         value={regStudentId}
                         onChange={(e) => setRegStudentId(e.target.value)}
-                        placeholder="VD: 20210088 hoặc CB-991"
+                        placeholder=""
                         className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
@@ -565,7 +495,7 @@ export const AuthPage: React.FC = () => {
                         required
                         value={regEmail}
                         onChange={(e) => setRegEmail(e.target.value)}
-                        placeholder="nguyenvana@university.edu.vn"
+                        placeholder=""
                         className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
                       />
                     </div>
@@ -584,7 +514,7 @@ export const AuthPage: React.FC = () => {
                         <option value="Trưởng ban Cố vấn Học tập">Trưởng ban Cố vấn Học tập</option>
                         <option value="Giảng viên Phụ trách Học phần">Giảng viên Phụ trách</option>
                         <option value="Chuyên viên Phân tích Dữ liệu">Chuyên viên Dữ liệu</option>
-                        <option value="Sinh viên">Sinh viên / Học viên</option>
+                        <option value="Sinh viên">Sinh viên</option>
                       </select>
                     </div>
 
@@ -598,7 +528,7 @@ export const AuthPage: React.FC = () => {
                           type="text"
                           value={regDepartment}
                           onChange={(e) => setRegDepartment(e.target.value)}
-                          placeholder="Khoa CNTT"
+                          placeholder=""
                           className="w-full pl-9 pr-3 py-2 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-xs focus:border-emerald-500 focus:outline-none"
                         />
                       </div>

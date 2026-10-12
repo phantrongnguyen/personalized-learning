@@ -12,6 +12,9 @@ import { DashboardPage } from './pages/DashboardPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { ProfilePage } from './pages/ProfilePage';
+import { AdvisorPage } from './pages/AdvisorPage';
+import { LecturerPage } from './pages/LecturerPage';
+import { StudentPage } from './pages/StudentPage';
 
 const AppContent: React.FC = () => {
   const { currentView, user } = useApp();
@@ -76,6 +79,9 @@ const AppContent: React.FC = () => {
           {currentView === 'home' && <HomePage />}
           {currentView === 'about' && <AboutPage />}
           {currentView === 'contact' && <ContactPage />}
+          {currentView === 'advisor' && <AdvisorPage />}
+          {currentView === 'lecturer' && <LecturerPage />}
+          {currentView === 'student' && <StudentPage />}
         </main>
 
         {/* Enterprise Footer */}

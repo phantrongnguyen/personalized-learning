@@ -1,8 +1,47 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
-import { PredictionHistoryItem, UserProfile } from '@shared/types';
-import { checkBackendHealth } from '../services/api';
+import { PredictionHistoryItem, RoleCode, UserProfile } from '@shared/types';
+import {
+  checkBackendHealth,
+  getCurrentUserApi,
+  mapBackendUser,
+  clearStoredTokens,
+} from '../services/api';
 
-export type NavigationPage = 'home' | 'dashboard' | 'about' | 'contact' | 'profile';
+export type NavigationPage =
+  | 'home'
+  | 'dashboard'
+  | 'about'
+  | 'contact'
+  | 'profile'
+  | 'advisor'
+  | 'lecturer'
+  | 'student';
+
+const VALID_NAV_PAGES: NavigationPage[] = [
+  'home',
+  'dashboard',
+  'about',
+  'contact',
+  'profile',
+  'advisor',
+  'lecturer',
+  'student',
+];
+
+function defaultViewForRole(roleCode?: RoleCode): NavigationPage {
+  switch (roleCode) {
+    case 'ADVISOR':
+      return 'advisor';
+    case 'LECTURER':
+      return 'lecturer';
+    case 'STUDENT':
+      return 'student';
+    case 'ADMIN':
+      return 'dashboard';
+    default:
+      return 'home';
+  }
+}
 export type BackendStatus = 'checking' | 'ok' | 'down';
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -24,6 +63,7 @@ interface AppContextValue {
   login: (user: UserProfile) => void;
   logout: () => void;
   updateUser: (updated: Partial<UserProfile>) => void;
+  refreshUser: () => Promise<UserProfile | null>;
   history: PredictionHistoryItem[];
   addHistory: (item: PredictionHistoryItem) => void;
   removeHistoryItem: (id: string) => void;
@@ -90,8 +130,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '') as NavigationPage;
-      const valid: NavigationPage[] = ['home', 'dashboard', 'about', 'contact', 'profile'];
-      if (valid.includes(hash)) {
+      if (VALID_NAV_PAGES.includes(hash)) {
         setCurrentViewState(hash);
       } else {
         setCurrentViewState('home');
@@ -159,13 +198,34 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     setIsAuthModalOpen(false);
     addToast(`Chào mừng ${newUser.name} (${newUser.role})!`, 'success');
+
+    // Điều hướng tới không gian làm việc phù hợp với vai trò
+    setCurrentViewState(defaultViewForRole(newUser.roleCode));
   };
 
   const logout = () => {
     setUser(null);
     localStorage.removeItem(USER_KEY);
+    clearStoredTokens();
+    setCurrentViewState('home');
     addToast('Bạn đã đăng xuất khỏi hệ thống.', 'info');
   };
+
+  const refreshUser = useCallback(async (): Promise<UserProfile | null> => {
+    const backendUser = await getCurrentUserApi(apiBase);
+    if (backendUser) {
+      const mapped = mapBackendUser(backendUser);
+      setUser(mapped);
+      localStorage.setItem(USER_KEY, JSON.stringify(mapped));
+      return mapped;
+    }
+    return null;
+  }, [apiBase]);
+
+  useEffect(() => {
+    // Khôi phục phiên đăng nhập từ token đã lưu (nếu có)
+    refreshUser();
+  }, [refreshUser]);
 
   const updateUser = (updated: Partial<UserProfile>) => {
     if (!user) return;
@@ -212,6 +272,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         login,
         logout,
         updateUser,
+        refreshUser,
         history,
         addHistory,
         removeHistoryItem,

@@ -12,6 +12,9 @@ import {
   PhoneCall,
   PanelLeftClose,
   PanelLeftOpen,
+  UserCheck,
+  BookOpen,
+  GraduationCap,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -41,10 +44,28 @@ export const Navbar: React.FC<NavbarProps> = ({
           subtitle: 'Mô hình LightGBM Cutoff 75%',
           icon: <LayoutDashboard className="w-4 h-4 text-emerald-400" />,
         };
+      case 'advisor':
+        return {
+          title: 'Quản lý lớp chủ nhiệm',
+          subtitle: 'Danh sách lớp, sinh viên & kế hoạch can thiệp',
+          icon: <UserCheck className="w-4 h-4 text-cyan-400" />,
+        };
+      case 'lecturer':
+        return {
+          title: 'Lớp học phần phụ trách',
+          subtitle: 'Bảng cảnh báo nguy cơ & giao nhiệm vụ bổ trợ',
+          icon: <BookOpen className="w-4 h-4 text-purple-400" />,
+        };
+      case 'student':
+        return {
+          title: 'Không gian học tập cá nhân',
+          subtitle: 'Dự báo nguy cơ, Radar 6D & nhiệm vụ can thiệp',
+          icon: <GraduationCap className="w-4 h-4 text-cyan-400" />,
+        };
       case 'profile':
         return {
-          title: 'Hồ sơ Chuyên gia & Cài đặt',
-          subtitle: 'Phân quyền & Tích hợp LMS LTI 1.3',
+          title: 'Hồ sơ Cá nhân & Cài đặt',
+          subtitle: 'Thông tin tài khoản & tùy chỉnh phân hệ',
           icon: <User className="w-4 h-4 text-emerald-400" />,
         };
       case 'about':
