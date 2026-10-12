@@ -60,7 +60,7 @@ if serve_dir.exists():
 @app.get("/", tags=["Root"])
 def root():
     return {
-        "message": "Machine Learning API is running",
+        "message": "Personalized Learning Recommendation System API is running",
         "docs": "/docs",
         "frontend": "/app",
     }
@@ -69,4 +69,4 @@ def root():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
