@@ -1,0 +1,24 @@
+{
+  "model_count": 16,
+  "evaluated_on_test": false,
+  "search_rerun": false,
+  "input_hashes_unchanged": {
+    "CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/ket_qua/so_sanh_ba_bo_hoc_50_75.csv": "8892fcc4de1a1150f4b3d7bb3a7794747899aa1f84d048dfad2d004a2b2bc81f",
+    "apps/backend/model_store/model_hco_vnls_lightgbm_cutoff75.joblib": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db",
+    "apps/backend/model_store/THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json": "c80bc48dfb02130c5cbb4eaa464f312f29d03cb4bd7f888ba31576859778c301",
+    "CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/ket_qua/giao_thuc_catboost_50_75.json": "5928172e143e62f8df62b21d16e847f56da5bb5d59e8969ff7dc4d9d5f4c0e9e",
+    "CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/ket_qua/giao_thuc_xgboost_50_75.json": "e62ea70e6a35f7edcfaee801d52ea8104c2e78dc512e31569e26b49b9a449eb6",
+    "CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/ket_qua/du_lieu_cutoff_50.csv": "10a489a6f22ef2188ac17bdcc52cf9ececcfb152b8dbc4a7c8ec283d56224644",
+    "CLHT_GB_GITHUB/NghienCuu_HCO_VNLS/ket_qua/du_lieu_cutoff_75.csv": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23"
+  },
+  "max_metric_tolerance": 1e-12,
+  "checks": [
+    "all historical validation metrics",
+    "joblib reload predictions",
+    "native reload predictions",
+    "disjoint student groups",
+    "frozen mask order",
+    "production model unchanged"
+  ],
+  "source_results_lf_sha256": "56d0e641ac03d36e831cf3d20b7e00e3b262214d7e06f9d70d2e09074e5703d7"
+}
