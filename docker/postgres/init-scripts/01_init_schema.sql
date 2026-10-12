@@ -182,7 +182,64 @@ CREATE TABLE IF NOT EXISTS advising_notes (
 );
 
 -- ==============================================================================
--- 6. THIET LAP CHI MUC & TOI UU HOA TRUY VAN (INDEXES)
+-- 6. BANG MO RONG PHAN HE 4 VA!! VAI TRO (LECTURER / ADVISOR / HELP REQUESTS / AUDIT)
+-- ==============================================================================
+
+CREATE TABLE IF NOT EXISTS lecturer_profiles (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    lecturer_code VARCHAR(50) UNIQUE NOT NULL,
+    department VARCHAR(150) NOT NULL,
+    academic_rank VARCHAR(50) DEFAULT 'Giảng viên',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS course_lecturers (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    lecturer_id UUID NOT NULL REFERENCES lecturer_profiles(id) ON DELETE CASCADE,
+    presentation_id UUID NOT NULL REFERENCES course_presentations(id) ON DELETE CASCADE,
+    role_in_course VARCHAR(50) NOT NULL DEFAULT 'GIANG_VIEN_CHINH',
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_lecturer_presentation UNIQUE (lecturer_id, presentation_id)
+);
+
+CREATE TABLE IF NOT EXISTS advisor_students (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    advisor_id UUID NOT NULL REFERENCES advisor_profiles(id) ON DELETE CASCADE,
+    student_id UUID NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
+    academic_year VARCHAR(20) NOT NULL,
+    class_name VARCHAR(100) NOT NULL,
+    assigned_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    CONSTRAINT uq_advisor_student UNIQUE (advisor_id, student_id)
+);
+
+CREATE TABLE IF NOT EXISTS student_help_requests (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
+    target_role VARCHAR(20) NOT NULL CHECK (target_role IN ('ADVISOR', 'LECTURER')),
+    target_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    presentation_id UUID REFERENCES course_presentations(id) ON DELETE SET NULL,
+    subject VARCHAR(255) NOT NULL,
+    content TEXT NOT NULL,
+    status VARCHAR(30) NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED')),
+    response_note TEXT,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS audit_logs (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    user_id UUID REFERENCES users(id) ON DELETE SET NULL,
+    action VARCHAR(100) NOT NULL,
+    target_type VARCHAR(50),
+    target_id UUID,
+    detail TEXT,
+    ip_address VARCHAR(50),
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+);
+
+-- ==============================================================================
+-- 7. THIET LAP CHI MUC & TOI UU HOA TRUY VAN (INDEXES)
 -- ==============================================================================
 
 CREATE INDEX IF NOT EXISTS idx_student_profiles_code ON student_profiles(student_code);
