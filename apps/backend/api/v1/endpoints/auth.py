@@ -23,8 +23,8 @@ async def login(
     payload: LoginRequest,
     db: AsyncSession = Depends(get_db),
 ):
-    """Xác thực người dùng qua Email/Password và trả về Access + Refresh token"""
-    _, tokens = await authenticate_user(db, payload.email, payload.password)
+    """Đăng nhập bằng mã sinh viên hoặc email và mật khẩu."""
+    _, tokens = await authenticate_user(db, payload.username or str(payload.email), payload.password)
     return tokens
 
 

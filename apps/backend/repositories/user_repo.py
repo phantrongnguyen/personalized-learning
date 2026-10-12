@@ -5,6 +5,18 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from models.user import User, Role
+from models.profile import StudentProfile
+
+
+async def get_user_by_student_code(db: AsyncSession, student_code: str) -> Optional[User]:
+    query = (
+        select(User)
+        .join(StudentProfile, StudentProfile.user_id == User.id)
+        .where(StudentProfile.student_code == student_code, User.roles.any(Role.code == "STUDENT"))
+        .options(selectinload(User.roles), selectinload(User.student_profile), selectinload(User.advisor_profile))
+    )
+    result = await db.execute(query)
+    return result.scalars().first()
 
 
 async def get_user_by_id(db: AsyncSession, user_id: uuid.UUID) -> Optional[User]:

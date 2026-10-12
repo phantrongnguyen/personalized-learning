@@ -1,12 +1,23 @@
 import uuid
 from datetime import datetime
 from typing import Optional, List
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, model_validator
 
 
 class LoginRequest(BaseModel):
-    email: EmailStr = Field(..., example="admin@huit.edu.vn")
+    username: Optional[str] = Field(None, min_length=1, max_length=255)
+    email: Optional[EmailStr] = None
     password: str = Field(..., min_length=1, example="123")
+
+    @model_validator(mode="after")
+    def validate_identifier(self):
+        if self.username is not None:
+            self.username = self.username.strip()
+        if not self.username and not self.email:
+            raise ValueError("Vui lòng nhập mã số sinh viên hoặc email")
+        if self.username and self.email:
+            raise ValueError("Chỉ gửi một tên đăng nhập")
+        return self
 
 
 class TokenResponse(BaseModel):
@@ -52,6 +63,16 @@ class AdvisorProfileOut(BaseModel):
         from_attributes = True
 
 
+class LecturerProfileOut(BaseModel):
+    id: uuid.UUID
+    lecturer_code: str
+    department: str
+    academic_rank: str
+
+    class Config:
+        from_attributes = True
+
+
 class UserOut(BaseModel):
     id: uuid.UUID
     email: str
@@ -62,6 +83,7 @@ class UserOut(BaseModel):
     roles: List[RoleOut] = []
     student_profile: Optional[StudentProfileOut] = None
     advisor_profile: Optional[AdvisorProfileOut] = None
+    lecturer_profile: Optional[LecturerProfileOut] = None
     created_at: datetime
 
     class Config:

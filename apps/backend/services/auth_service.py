@@ -6,24 +6,25 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from core.config import settings
 from core.security import verify_password, create_access_token, create_refresh_token, decode_token
 from models.user import User
-from repositories.user_repo import get_user_by_email, get_user_by_id
+from repositories.user_repo import get_user_by_email, get_user_by_id, get_user_by_student_code
 
 
 async def authenticate_user(
-    db: AsyncSession, email: str, password: str
+    db: AsyncSession, username: str, password: str
 ) -> Tuple[User, Dict[str, Any]]:
     """Xác thực thông tin tài khoản và sinh cặp access/refresh token"""
-    user = await get_user_by_email(db, email)
+    username = username.strip()
+    user = await get_user_by_email(db, username) if "@" in username else await get_user_by_student_code(db, username)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email hoặc mật khẩu không chính xác",
+            detail="Tên đăng nhập hoặc mật khẩu không chính xác",
         )
 
     if not verify_password(password, user.hashed_password):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Email hoặc mật khẩu không chính xác",
+            detail="Tên đăng nhập hoặc mật khẩu không chính xác",
         )
 
     if not user.is_active:
