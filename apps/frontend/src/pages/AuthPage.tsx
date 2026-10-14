@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { loginApi, mapBackendUser } from '../services/api';
 import { BrandLogo } from '../components/common/BrandLogo';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
   GraduationCap,
   ShieldCheck,
-  UserCheck,
   User,
   Mail,
   Lock,
@@ -63,14 +63,6 @@ export const AuthPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 1-Click Demo Accounts (tài khoản được seed sẵn trong Backend, mật khẩu: 123)
-  const handleQuickLogin = (email: string) => {
-    setLoginMode('staff');
-    setLoginEmail(email);
-    setLoginPassword('123');
-    void authenticate(email, '123');
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -136,9 +128,10 @@ export const AuthPage: React.FC = () => {
 
       {/* Top Bar / Brand header */}
       <header className="relative z-10 w-full border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex min-w-0 items-center gap-3">
           <BrandLogo className="w-[200px] sm:w-[239px] max-w-full" />
         </div>
+        <ThemeToggle />
       </header>
 
       {/* Main Container */}
@@ -243,62 +236,14 @@ export const AuthPage: React.FC = () => {
           <div className="lg:col-span-6 w-full max-w-lg mx-auto">
             <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
               
-              {/* 1-Click Fast Demo Accounts Bar */}
-              <div className="mb-6 p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Khởi Chạy Nhanh (1-Click Demo)
-                  </span>
-                  <span className="text-[10px] text-slate-400">Không cần mật khẩu</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-brand-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-brand-300">
-                      <UserCheck className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Cố vấn</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">advisor@huit.edu.vn</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin('admin@huit.edu.vn')}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-brand-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-brand-300">
-                      <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Quản trị viên</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">admin@huit.edu.vn</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => {
-                      setActiveTab('login');
-                      setLoginMode('student');
-                      setLoginEmail('');
-                      setLoginPassword('');
-                      setErrorMsg(null);
-                    }}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-cyan-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-cyan-300">
-                      <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Sinh viên</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">Đăng nhập bằng MSSV</span>
-                  </button>
-                </div>
+              <div className="mb-6 flex justify-center">
+                <img
+                  src="./images/huit.jpg"
+                  alt="Logo Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT)"
+                  width={304}
+                  height={304}
+                  className="theme-logo h-28 w-28 sm:h-32 sm:w-32 object-contain"
+                />
               </div>
 
               {/* Tabs: Đăng nhập vs Đăng ký */}
@@ -446,17 +391,6 @@ export const AuthPage: React.FC = () => {
                     )}
                   </button>
 
-                  {/* Fast Guest Mode Link */}
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
-                      className="text-xs text-slate-400 hover:text-brand-400 transition-colors inline-flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Duyệt nhanh với tư cách Khách tham quan (Guest Mode)</span>
-                    </button>
-                  </div>
                 </form>
               )}
 

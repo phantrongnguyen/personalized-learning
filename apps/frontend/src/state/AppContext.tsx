@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { PredictionHistoryItem, RoleCode, UserProfile } from '@shared/types';
+import { applyTheme, getInitialTheme, THEME_KEY, Theme } from './theme';
 import {
   checkBackendHealth,
   getCurrentUserApi,
@@ -54,6 +55,8 @@ export interface ToastItem {
 }
 
 interface AppContextValue {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
   currentView: NavigationPage;
   setCurrentView: (view: NavigationPage) => void;
   apiBase: string;
@@ -98,6 +101,33 @@ function getDefaultApiBase(): string {
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+
+  const setTheme = useCallback((next: Theme) => {
+    applyTheme(next);
+    setThemeState(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // Switching still works when browser storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const syncTheme = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === THEME_KEY || event.key === null)) {
+        const next = event.newValue === 'dark' && event.key === THEME_KEY ? 'dark' : 'light';
+        applyTheme(next);
+        setThemeState(next);
+      }
+    };
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
   const [currentView, setCurrentViewState] = useState<NavigationPage>('home');
   const [apiBase, setApiBaseState] = useState<string>(() => {
     return localStorage.getItem(API_BASE_KEY) || getDefaultApiBase();
@@ -263,6 +293,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        theme,
+        setTheme,
         currentView,
         setCurrentView,
         apiBase,

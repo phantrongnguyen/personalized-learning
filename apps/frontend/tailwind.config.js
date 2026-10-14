@@ -1,5 +1,6 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: 'class',
   content: [
     "./index.html",
     "./src/**/*.{js,ts,jsx,tsx}",
@@ -22,6 +23,7 @@ export default {
           950: '#08233b',
         },
         slate: {
+          750: '#29364b',
           850: '#151e2e',
           900: '#0f172a',
           950: '#090d16',

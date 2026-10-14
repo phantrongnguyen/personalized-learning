@@ -8,6 +8,8 @@ Giao diện Single Page Application (SPA) chuẩn công nghiệp dành cho hệ 
 
 ## 🚀 Điểm Nổi Bật & Tính Năng
 
+- **Giao diện sáng/tối**: Nút biểu tượng mặt trăng/mặt trời ở trang đăng nhập và thanh điều hướng chuyển giữa Light/Dark. Mặc định là sáng; lựa chọn lưu tại `localStorage.edurisk_theme`, được áp dụng trước khi trang hiển thị và đồng bộ giữa các tab cùng origin. Không cần đăng nhập để đổi giao diện. Các trang, bảng quản trị, hồ sơ, hộp thoại và biểu đồ dùng bảng màu theo chế độ.
+
 - **Công nghệ Hiện Đại**: React 18, TypeScript nghiêm ngặt, Tailwind CSS v3, Vite 6 và icon Lucide.
 - **Chia sẻ Schemas & Types toàn dự án**: Tận dụng triệt để `packages/shared/types` và `packages/shared/constants` làm Single Source of Truth cho 17 đặc trưng học tập OULAD.
 - **Biểu Đồ Đối Sánh Năng Lực (Radar Competency Chart)**: Biểu đồ mạng nhện SVG tương tác độ phân giải cao, so sánh sinh viên với trung vị chuẩn của nhóm đạt Pass/Distinction trên 6 trục sư phạm.

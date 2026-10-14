@@ -1,5 +1,6 @@
 import React from 'react';
 import { useApp } from '../../state/AppContext';
+import { ThemeToggle } from './ThemeToggle';
 import {
   Menu,
   ChevronRight,
@@ -102,7 +103,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left: Sidebar Toggles & Breadcrumb */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Hamburger Drawer Toggle */}
             <button
               type="button"
@@ -128,7 +129,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Breadcrumb Path */}
-            <div className="flex items-center gap-2 text-xs">
+            <div className="flex min-w-0 items-center gap-2 text-xs">
               <span
                 onClick={() => setCurrentView('home')}
                 className="text-slate-400 hover:text-slate-200 cursor-pointer hidden sm:inline"
@@ -136,7 +137,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 EduRisk Platform
               </span>
               <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:inline" />
-              <div className="flex items-center gap-1.5 font-semibold text-slate-100">
+              <div className="flex min-w-0 items-center gap-1.5 font-semibold text-slate-100">
                 {currentInfo.icon}
                 <span className="text-sm font-bold truncate">{currentInfo.title}</span>
               </div>
@@ -144,7 +145,8 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Right: Actions (User Profile & Logout) */}
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <ThemeToggle />
             {/* Auth Profile / Login */}
             {user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
