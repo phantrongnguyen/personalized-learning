@@ -54,6 +54,38 @@ export const DashboardPage: React.FC = () => {
     }
   };
 
+  const handleApplyPresetAndPredict = async (presetFeatures: StudentFeatures, label: string) => {
+    if (loading) return;
+    setFeatures(presetFeatures);
+    setLoading(true);
+    try {
+      const data = await predictStudentRisk(apiBase, presetFeatures);
+      setResult(data);
+      setAnalyzedFeatures(presetFeatures);
+
+      const now = new Date();
+      addHistory({
+        id: Math.random().toString(36).slice(2, 9),
+        time: now.toLocaleTimeString('vi-VN'),
+        date: now.toLocaleDateString('vi-VN'),
+        module: presetFeatures.code_module,
+        age: presetFeatures.age_band,
+        credits: presetFeatures.studied_credits,
+        clicks: presetFeatures.total_clicks_to_t,
+        prediction: data.prediction,
+        confidence: data.confidence,
+        features: presetFeatures,
+      });
+
+      addToast(`Đã nạp ${label} và hoàn tất phân tích!`, 'success', 4000);
+    } catch (err: unknown) {
+      const error = err as Error;
+      addToast(error.message || 'Không thể thực hiện dự đoán cho mẫu.', 'error', 5000);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const atRisk = result ? result.prediction === 1 : false;
   const probability = result ? result.confidence : 0.42;
   const strategies = generateExplainedInterventions(result?.explanation, atRisk);
@@ -100,6 +132,7 @@ export const DashboardPage: React.FC = () => {
             onChange={setFeatures}
             onSubmit={handlePredict}
             loading={loading}
+            onApplyPresetAndPredict={handleApplyPresetAndPredict}
           />
         </div>
 
@@ -116,8 +149,8 @@ export const DashboardPage: React.FC = () => {
               </div>
               <h3 className="text-lg font-bold text-foreground mb-2">Chờ phân tích hồ sơ</h3>
               <p className="text-xs text-slate-400 max-w-xs leading-relaxed mb-6">
-                Nhấn nút <strong className="text-emerald-400">"Phân tích nguy cơ học tập"</strong> ở form bên
-                trái hoặc nạp mẫu thử nghiệm để xem kết quả đánh giá nguy cơ và đề xuất giải pháp.
+                Nhấn nút <strong className="text-emerald-400">"Mẫu SV Yếu"</strong> hoặc <strong className="text-emerald-400">"Phân tích nguy cơ học tập"</strong> ở form bên
+                trái để nạp mẫu thử nghiệm và xem kết quả đánh giá nguy cơ kèm đề xuất giải pháp.
               </p>
               <button
                 onClick={handlePredict}

@@ -46,6 +46,7 @@ Các hành động hỗ trợ là mẫu do con người thiết kế, chưa ch�
 - Sửa form không tự đổi kết quả cũ; dashboard nhắc phân tích lại.
 - Khóa form trong lúc gửi yêu cầu để tránh lệch hồ sơ và kết quả.
 - Ô số hỗ trợ nhập số thập phân.
+- Nút "Mẫu SV Yếu" và "Mẫu SV Tốt" tự động nạp ngẫu nhiên các hồ sơ sinh viên thực tế từ OULAD và kích hoạt phân tích ngay lập tức, không làm gián đoạn bởi thông báo lệch hồ sơ.
 
 ## 4. Hạn chế tràn và che chữ
 
@@ -113,6 +114,7 @@ Xem `README.md` để tạo môi trường backend và cài dependencies fronten
 - CORS hiện dùng `allow_private_network=True`; cần Starlette hỗ trợ tham số này.
   Môi trường đã thử dùng Starlette 1.7.0.
 - Không đưa `.venv`, `node_modules`, `dist`, `.env` hoặc ảnh kiểm tra cục bộ lên Git.
+
 
 
 

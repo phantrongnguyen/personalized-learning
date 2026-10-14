@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { StudentFeatures, FeatureGroup } from '@shared/types';
-import { FIELDS, PRESETS, DEFAULT_FEATURES } from '@shared/constants';
+import { FIELDS, WEAK_PRESETS, GOOD_PRESETS, DEFAULT_FEATURES } from '@shared/constants';
 import { UserX, UserCheck, RotateCcw, Search, Loader2 } from 'lucide-react';
 
 interface FeatureFormProps {
@@ -8,6 +8,7 @@ interface FeatureFormProps {
   onChange: (features: StudentFeatures) => void;
   onSubmit: () => Promise<void>;
   loading: boolean;
+  onApplyPresetAndPredict?: (presetFeatures: StudentFeatures, label: string) => Promise<void>;
 }
 
 export const FeatureForm: React.FC<FeatureFormProps> = ({
@@ -15,8 +16,11 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
   onChange,
   onSubmit,
   loading,
+  onApplyPresetAndPredict,
 }) => {
   const [activeGroup, setActiveGroup] = useState<FeatureGroup>('activity');
+  const [weakIndex, setWeakIndex] = useState(0);
+  const [goodIndex, setGoodIndex] = useState(0);
 
   const handleInputChange = (key: keyof StudentFeatures, val: string | number) => {
     onChange({
@@ -28,8 +32,23 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
   const handleApplyPreset = (type: 'weak' | 'good' | 'reset') => {
     if (type === 'reset') {
       onChange(DEFAULT_FEATURES);
+      return;
+    }
+
+    if (type === 'weak') {
+      const selected = WEAK_PRESETS[weakIndex % WEAK_PRESETS.length];
+      setWeakIndex((prev) => (prev + 1) % WEAK_PRESETS.length);
+      onChange(selected);
+      if (onApplyPresetAndPredict) {
+        onApplyPresetAndPredict(selected, `Mẫu SV Yếu (Môn ${selected.code_module})`);
+      }
     } else {
-      onChange(PRESETS[type]);
+      const selected = GOOD_PRESETS[goodIndex % GOOD_PRESETS.length];
+      setGoodIndex((prev) => (prev + 1) % GOOD_PRESETS.length);
+      onChange(selected);
+      if (onApplyPresetAndPredict) {
+        onApplyPresetAndPredict(selected, `Mẫu SV Tốt (Môn ${selected.code_module})`);
+      }
     }
   };
 
@@ -54,8 +73,8 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
           <button
             type="button"
             onClick={() => handleApplyPreset('weak')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition-all"
-            title="Nạp mẫu sinh viên có nguy cơ cao để thử nghiệm"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-rose-500/15 hover:bg-rose-500/25 text-rose-300 border border-rose-500/30 transition-all shadow-sm"
+            title="Nạp ngẫu nhiên 1 mẫu sinh viên nguy cơ cao và phân tích ngay"
           >
             <UserX className="w-3.5 h-3.5" />
             <span>Mẫu SV Yếu</span>
@@ -64,8 +83,8 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
           <button
             type="button"
             onClick={() => handleApplyPreset('good')}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all"
-            title="Nạp mẫu sinh viên an toàn, học lực tốt"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 border border-emerald-500/30 transition-all shadow-sm"
+            title="Nạp ngẫu nhiên 1 mẫu sinh viên an toàn và phân tích ngay"
           >
             <UserCheck className="w-3.5 h-3.5" />
             <span>Mẫu SV Tốt</span>
