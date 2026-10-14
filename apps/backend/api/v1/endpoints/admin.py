@@ -24,6 +24,8 @@ from schemas.auth import UserOut
 from schemas.admin import (
     AdminUserCreateIn,
     AdminUserUpdateIn,
+    AdminPasswordResetIn,
+    AdminPasswordResetOut,
     UserStatusUpdateIn,
     UserRolesUpdateIn,
     CourseCreateIn,
@@ -92,6 +94,33 @@ async def get_user_detail(user_id: uuid.UUID, current_user: User = Depends(requi
     if not user:
         raise HTTPException(404, "Người dùng không tồn tại")
     return user
+
+
+@router.put("/users/{user_id}/reset-password", response_model=AdminPasswordResetOut,
+            summary="Admin đặt lại mật khẩu tài khoản")
+async def reset_user_password(
+    user_id: uuid.UUID,
+    payload: AdminPasswordResetIn,
+    request: Request,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin cấp mật khẩu mới, không cần mật khẩu cũ; không trả mật khẩu/hash."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Người dùng không tồn tại")
+    try:
+        user.hashed_password = get_password_hash(payload.new_password.get_secret_value())
+        await write_audit_log(
+            db, user_id=current_user.id, action="RESET_USER_PASSWORD", target_type="USER",
+            target_id=user_id, detail="Quản trị viên đặt lại mật khẩu tài khoản",
+            ip_address=get_client_ip(request),
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+    return {"message": "Đã đặt lại mật khẩu tài khoản", "user_id": user_id}
 
 
 @router.put("/users/{user_id}", response_model=UserOut, summary="Sửa thông tin tài khoản")

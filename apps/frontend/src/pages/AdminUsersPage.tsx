@@ -4,6 +4,7 @@ import { AlertCircle, ChevronLeft, ChevronRight, Eye, EyeOff, Loader2, LockKeyho
 import { useApp } from '../state/AppContext';
 import { createAccount, CreateAccountPayload, listAccounts, setAccountStatus } from '../services/admin';
 import { AccountDetails } from '../components/admin/AccountDetails';
+import { ResetPasswordDialog } from '../components/admin/ResetPasswordDialog';
 
 const PAGE_SIZE = 25;
 const ROLE_LABELS: Record<RoleCode, string> = {
@@ -117,6 +118,7 @@ export const AdminUsersPage: React.FC = () => {
   const [roleFilter, setRoleFilter] = useState('ALL');
   const [statusFilter, setStatusFilter] = useState('ALL');
   const [createOpen, setCreateOpen] = useState(false);
+  const [passwordAccount, setPasswordAccount] = useState<BackendUser | null>(null);
   const [detail, setDetail] = useState<{ id: string; mode: 'view' | 'edit' | 'delete' } | null>(null);
   const [selected, setSelected] = useState<BackendUser | null>(null);
   const [updating, setUpdating] = useState(false);
@@ -182,7 +184,7 @@ export const AdminUsersPage: React.FC = () => {
               {loading ? <tr><td colSpan={6} className="p-12 text-center text-slate-500"><Loader2 size={22} className="mx-auto mb-3 animate-spin" />Đang tải tài khoản…</td></tr>
                 : filtered.length === 0 ? <tr><td colSpan={6} className="p-12 text-center text-slate-500">{accounts.length ? 'Không có tài khoản phù hợp với bộ lọc trong trang này.' : 'Chưa có tài khoản trong trang này.'}</td></tr>
                 : filtered.map((account) => <tr key={account.id} className="hover:bg-slate-50">
-                  <td className="px-5 py-4"><div className="font-semibold text-slate-900">{account.full_name}</div><div className="mt-1 text-xs text-slate-500">{account.email}</div><div className="mt-2 flex gap-3 text-xs"><button onClick={() => setDetail({ id: account.id, mode: 'view' })} className="text-brand-600 font-semibold">Xem</button><button onClick={() => setDetail({ id: account.id, mode: 'edit' })} className="text-brand-600 font-semibold">Sửa</button><button disabled={account.email === user?.email} onClick={() => setDetail({ id: account.id, mode: 'delete' })} className="text-rose-600 font-semibold disabled:opacity-30">Xóa</button></div></td>
+                  <td className="px-5 py-4"><div className="font-semibold text-slate-900">{account.full_name}</div><div className="mt-1 text-xs text-slate-500">{account.email}</div><div className="mt-2 flex flex-wrap gap-3 text-xs"><button onClick={() => setDetail({ id: account.id, mode: 'view' })} className="text-brand-600 font-semibold">Xem</button><button onClick={() => setDetail({ id: account.id, mode: 'edit' })} className="text-brand-600 font-semibold">Sửa</button><button onClick={() => setPasswordAccount(account)} className="text-brand-600 font-semibold">Đặt lại mật khẩu</button><button disabled={account.email === user?.email} onClick={() => setDetail({ id: account.id, mode: 'delete' })} className="text-rose-600 font-semibold disabled:opacity-30">Xóa</button></div></td>
                   <td className="px-5 py-4 font-mono text-xs text-slate-600">{account.student_profile?.student_code || account.lecturer_profile?.lecturer_code || '—'}</td>
                   <td className="px-5 py-4"><div className="flex flex-wrap gap-1">{account.roles.map((role) => <span key={role.code} className="rounded-lg bg-brand-50 px-2 py-1 text-xs font-medium text-brand-700">{ROLE_LABELS[role.code]}</span>)}</div></td>
                   <td className="px-5 py-4"><span className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${account.is_active ? 'bg-brand-50 text-brand-700' : 'bg-rose-50 text-rose-700'}`}><span className={`h-1.5 w-1.5 rounded-full ${account.is_active ? 'bg-brand-600' : 'bg-rose-600'}`} />{account.is_active ? 'Hoạt động' : 'Đã khóa'}</span></td>
@@ -198,6 +200,7 @@ export const AdminUsersPage: React.FC = () => {
       </section>
       {createOpen && <AccountForm onClose={() => setCreateOpen(false)} onCreated={(account) => { setCreateOpen(false); setPage(0); setRevision((v) => v + 1); setSearch(''); setRoleFilter('ALL'); setStatusFilter('ALL'); addToast(`Đã cấp tài khoản cho ${account.full_name}.`, 'success'); }} />}
       {detail && <AccountDetails key={detail.id + detail.mode} {...detail} onClose={() => setDetail(null)} onChanged={() => { setPage(0); setRevision(v => v + 1); }} />}
+      {passwordAccount && <ResetPasswordDialog key={passwordAccount.id} account={passwordAccount} onClose={() => setPasswordAccount(null)} />}
       {selected && <Modal title={selected.is_active ? 'Khóa tài khoản' : 'Mở khóa tài khoản'} busy={updating} onClose={() => setSelected(null)}>
         <div className="space-y-5 p-6"><p className="text-sm text-slate-600">{selected.is_active ? 'Tài khoản sẽ không thể đăng nhập hoặc sử dụng hệ thống.' : 'Tài khoản sẽ được phép đăng nhập và sử dụng hệ thống trở lại.'}</p><div className="rounded-xl bg-slate-50 p-4"><p className="font-semibold">{selected.full_name}</p><p className="mt-1 text-sm text-slate-500">{selected.email}</p></div>{statusError && <p role="alert" className="text-sm text-rose-700">{statusError}</p>}<div className="flex justify-end gap-3"><button disabled={updating} onClick={() => setSelected(null)} className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold">Hủy</button><button disabled={updating} onClick={confirmStatus} className={`flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold text-white disabled:opacity-50 ${selected.is_active ? 'bg-rose-600' : 'bg-brand-600'}`}>{updating && <Loader2 size={16} className="animate-spin" />}{selected.is_active ? 'Xác nhận khóa' : 'Xác nhận mở khóa'}</button></div></div>
       </Modal>}

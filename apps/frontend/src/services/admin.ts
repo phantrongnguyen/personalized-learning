@@ -23,6 +23,11 @@ export const updateAccount = (base: string, id: string, payload: UpdateAccountPa
 export const deleteAccount = (base: string, id: string) =>
   adminRequest<{ message: string }>(base, `/users/${encodeURIComponent(id)}`, { method: 'DELETE' });
 
+export const resetAccountPassword = (base: string, id: string, newPassword: string) =>
+  adminRequest<{ message: string; user_id: string }>(base, `/users/${encodeURIComponent(id)}/reset-password`, {
+    method: 'PUT', body: JSON.stringify({ new_password: newPassword }),
+  });
+
 async function adminRequest<T>(base: string, path: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
   if (!token) throw new Error('Vui lòng đăng nhập bằng tài khoản quản trị để tiếp tục.');

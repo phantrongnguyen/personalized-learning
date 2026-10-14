@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 
 # -------------------------------------------------------------
@@ -24,6 +24,26 @@ class AdminUserCreateIn(BaseModel):
 
 class UserStatusUpdateIn(BaseModel):
     is_active: bool
+
+
+class AdminPasswordResetIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    new_password: SecretStr = Field(..., min_length=6, max_length=72)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value: SecretStr):
+        password = value.get_secret_value()
+        if not password.strip():
+            raise ValueError("Mật khẩu không được chỉ chứa khoảng trắng")
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("Mật khẩu không được vượt quá 72 byte UTF-8")
+        return value
+
+
+class AdminPasswordResetOut(BaseModel):
+    message: str
+    user_id: uuid.UUID
 
 
 class AdminUserUpdateIn(BaseModel):
