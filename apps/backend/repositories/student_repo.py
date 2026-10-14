@@ -96,7 +96,7 @@ async def get_enrollment_prediction(
 
     # Sinh khuyến nghị sư phạm dựa trên rủi ro
     recs = []
-    if pred.risk_probability >= 0.5:
+    if pred.prediction_label == 1:
         recs.append("Cảnh báo nguy cơ không đạt học phần tại mốc 75% thời lượng môn học.")
         if snap.active_days_to_t < 20:
             recs.append("Tăng cường độ chuyên cần: Đăng nhập hệ thống học tập tối thiểu 3 ngày/tuần.")
@@ -112,10 +112,11 @@ async def get_enrollment_prediction(
         "code_module": course.code_module,
         "cutoff_stage": snap.cutoff_stage,
         "risk_probability": round(pred.risk_probability, 4),
-        "risk_level": "HIGH_RISK" if pred.risk_probability >= 0.5 else "SAFE",
+        "risk_level": "HIGH_RISK" if pred.prediction_label == 1 else "SAFE",
         "model_version": model.version,
         "predicted_at": pred.created_at,
         "pedagogical_recommendations": recs,
+        "data_source": (snap.raw_features_json or {}).get("data_source"),
     }
 
 

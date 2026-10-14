@@ -36,6 +36,7 @@ from schemas.admin import (
     AuditLogOut,
 )
 from services.audit_service import write_audit_log, get_client_ip
+from services.prediction_service import generate_database_predictions
 
 router = APIRouter()
 
@@ -445,99 +446,37 @@ async def activate_ml_model(
     return model
 
 
-@router.post("/ml/batch-predict", response_model=BatchPredictResultOut, summary="Quét và dự báo rủi ro hàng loạt mốc Cutoff 75%")
+@router.post("/ml/batch-predict", response_model=BatchPredictResultOut, summary="Dự báo bằng mô hình active từ snapshot mới nhất")
 async def batch_predict_all_students(
     request: Request,
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
+    enrollment_id: Optional[uuid.UUID] = None,
 ):
-    start_time = time.time()
-    # 1. Lấy mô hình đang active trong CSDL
-    active_model_res = await db.execute(select(MLModel).where(MLModel.is_active == True))
-    ml_model_record = active_model_res.scalars().first()
-    if not ml_model_record:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chưa có mô hình ML nào được kích hoạt")
-
-    model_pipeline = getattr(request.app.state, "model", None)
-    if not model_pipeline:
-        model_pipeline = load_model(settings.model_path)
-        request.app.state.model = model_pipeline
-
-    # 2. Lấy toàn bộ snapshots chưa có kết quả dự báo mới nhất
-    snapshots_res = await db.execute(select(StudentFeatureSnapshot))
-    snapshots = snapshots_res.scalars().all()
-
-    total_scanned = len(snapshots)
-    generated = 0
-    high_risk = 0
-    safe = 0
-
-    for snap in snapshots:
-        # Chuẩn bị feature dict tương thích với model
-        features_dict = {
-            "total_clicks_to_t": snap.total_clicks_to_t,
-            "clicks_resource_to_t": snap.clicks_resource_to_t,
-            "clicks_url_to_t": snap.clicks_url_to_t,
-            "active_days_to_t": snap.active_days_to_t,
-            "active_day_ratio": snap.active_day_ratio,
-            "days_since_last_activity": snap.days_since_last_activity,
-            "clicks_recent_7": snap.clicks_recent_7,
-            "clicks_recent_30": snap.clicks_recent_30,
-            "assessments_submitted_to_t": snap.assessments_submitted_to_t,
-            "late_submissions_to_t": snap.late_submissions_to_t,
-            "submission_rate": snap.submission_rate,
-            "date_registration": 0,
-            "studied_credits": 60,
-            "num_of_prev_attempts": 0,
-            "highest_education": "HE Qualification",
-            "age_band": "0-35",
-            "gender": "M",
-        }
-
-        try:
-            pred_out = predict(model_pipeline, features_dict)
-            risk_prob = pred_out["confidence"]
-            pred_label = pred_out["prediction"]
-        except Exception:
-            # Fallback nếu feature thiếu cột
-            risk_prob = 0.55 if snap.submission_rate < 0.7 else 0.2
-            pred_label = 1 if risk_prob >= 0.5 else 0
-
-        run = PredictionRun(
-            snapshot_id=snap.id,
-            model_id=ml_model_record.id,
-            prediction_label=pred_label,
-            risk_probability=risk_prob,
-            execution_time_ms=10,
-            triggered_by_user_id=current_user.id,
+    started = time.perf_counter()
+    try:
+        model, runs = await generate_database_predictions(db, current_user.id, enrollment_id)
+        high_risk = sum(run.prediction_label == 1 for run in runs)
+        await write_audit_log(
+            db, user_id=current_user.id, action="BATCH_PREDICT",
+            target_type="ML_MODEL", target_id=model.id,
+            detail=f"Dự báo ML thực tế {len(runs)} snapshot; enrollment={enrollment_id or 'ALL'}",
+            ip_address=get_client_ip(request),
         )
-        db.add(run)
-        generated += 1
-        if risk_prob >= 0.5:
-            high_risk += 1
-        else:
-            safe += 1
-
-    await db.commit()
-    exec_ms = int((time.time() - start_time) * 1000)
-
-    await write_audit_log(
-        db,
-        user_id=current_user.id,
-        action="BATCH_PREDICT",
-        target_type="ML_MODEL",
-        target_id=ml_model_record.id,
-        detail=f"Quét {total_scanned} snapshot, sinh {generated} dự báo ({high_risk} HIGH_RISK)",
-        ip_address=get_client_ip(request),
-    )
-    await db.commit()
-
+        await db.commit()
+    except HTTPException:
+        await db.rollback()
+        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        await db.rollback()
+        raise HTTPException(422, "Dữ liệu hoặc đầu vào mô hình không hợp lệ; không lưu dự báo") from exc
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể chạy/lưu dự báo ML; không lưu kết quả dự phòng") from exc
     return {
-        "total_snapshots_scanned": total_scanned,
-        "predictions_generated": generated,
-        "high_risk_count": high_risk,
-        "safe_count": safe,
-        "execution_time_ms": exec_ms,
+        "total_snapshots_scanned": len(runs), "predictions_generated": len(runs),
+        "high_risk_count": high_risk, "safe_count": len(runs) - high_risk,
+        "execution_time_ms": round((time.perf_counter() - started) * 1000),
     }
 
 

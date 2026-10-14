@@ -124,6 +124,7 @@ export interface StudentCourseItem {
 }
 
 export interface StudentRiskPrediction {
+  data_source?: string | null;
   enrollment_id: string;
   code_module: string;
   cutoff_stage: string;
@@ -142,6 +143,7 @@ export interface RadarDimensionItem {
 }
 
 export interface StudentRadarData {
+  data_source?: string | null;
   enrollment_id: string;
   code_module: string;
   dimensions: RadarDimensionItem[];

@@ -300,11 +300,12 @@ export async function getStudentCoursesApi(baseUrl: string): Promise<StudentCour
 export async function getStudentRiskPredictionApi(
   baseUrl: string,
   enrollmentId: string
-): Promise<StudentRiskPrediction> {
+): Promise<StudentRiskPrediction | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/risk-prediction`, {
     headers: authHeaders(),
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error('Không thể tải dự báo nguy cơ học tập');
   return res.json();
 }
@@ -312,11 +313,12 @@ export async function getStudentRiskPredictionApi(
 export async function getStudentRadarApi(
   baseUrl: string,
   enrollmentId: string
-): Promise<StudentRadarData> {
+): Promise<StudentRadarData | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/radar`, {
     headers: authHeaders(),
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error('Không thể tải biểu đồ Radar năng lực 6D');
   return res.json();
 }

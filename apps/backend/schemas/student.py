@@ -40,6 +40,7 @@ class RiskPredictionOut(BaseModel):
     model_version: str
     predicted_at: datetime
     pedagogical_recommendations: List[str] = []
+    data_source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -55,6 +56,7 @@ class RadarDataOut(BaseModel):
     enrollment_id: uuid.UUID
     code_module: str
     dimensions: List[RadarDimension]
+    data_source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 

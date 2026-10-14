@@ -131,6 +131,8 @@ async def get_my_course_radar(
     )
     snap_res = await db.execute(snap_query)
     snap = snap_res.scalars().first()
+    if snap is None:
+        raise HTTPException(404, "Học phần chưa có dữ liệu radar")
 
     snap_dict = {
         "total_clicks_to_t": snap.total_clicks_to_t if snap else 0,
@@ -146,6 +148,7 @@ async def get_my_course_radar(
         "enrollment_id": enr.id,
         "code_module": course.code_module,
         "dimensions": dimensions,
+        "data_source": (snap.raw_features_json or {}).get("data_source"),
     }
 
 

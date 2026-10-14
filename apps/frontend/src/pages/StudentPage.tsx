@@ -86,18 +86,23 @@ export const StudentPage: React.FC = () => {
   }, [loadCourses, loadTasks, loadHelpRequests]);
 
   useEffect(() => {
+    let cancelled = false;
+    setPrediction(null);
+    setRadar(null);
     if (!selectedEnrollment) return;
     setLoadingDetail(true);
-    Promise.all([
+    Promise.allSettled([
       getStudentRiskPredictionApi(apiBase, selectedEnrollment),
       getStudentRadarApi(apiBase, selectedEnrollment),
-    ])
-      .then(([pred, radarData]) => {
-        setPrediction(pred);
-        setRadar(radarData);
-      })
-      .catch((err) => addToast((err as Error).message, 'error', 5000))
-      .finally(() => setLoadingDetail(false));
+    ]).then(([pred, radarData]) => {
+      if (cancelled) return;
+      if (pred.status === 'fulfilled') setPrediction(pred.value);
+      else addToast((pred.reason as Error).message, 'error', 5000);
+      if (radarData.status === 'fulfilled') setRadar(radarData.value);
+      else addToast((radarData.reason as Error).message, 'error', 5000);
+      setLoadingDetail(false);
+    });
+    return () => { cancelled = true; };
   }, [selectedEnrollment, apiBase, addToast]);
 
   const selectedCourse = courses.find((c) => c.enrollment_id === selectedEnrollment);
@@ -249,6 +254,9 @@ export const StudentPage: React.FC = () => {
                     >
                       {prediction.risk_level === 'HIGH_RISK' ? 'NGUY CƠ CAO' : 'AN TOÀN'}
                     </span>
+                    {prediction.data_source === 'synthetic_demo' && (
+                      <p className="text-xs text-amber-300 mt-2">Dự báo từ dữ liệu minh họa</p>
+                    )}
                     <div className="text-[10px] text-slate-500 mt-2 font-mono">
                       {prediction.cutoff_stage} &bull; {prediction.model_version}
                     </div>
@@ -261,7 +269,7 @@ export const StudentPage: React.FC = () => {
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
                     <Lightbulb className="w-4 h-4 text-amber-400" />
-                    Khuyến nghị sư phạm từ mô hình
+                    Khuyến nghị theo nguy cơ và chỉ số học tập
                   </h3>
                   <ul className="space-y-2 text-xs">
                     {prediction.pedagogical_recommendations.map((rec, i) => (
@@ -273,14 +281,15 @@ export const StudentPage: React.FC = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Radar 6D */}
-              {radar && <Radar6DCard radar={radar} />}
             </>
           ) : (
             <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 border-dashed text-center text-slate-400 text-sm">
-              Chọn một môn học để xem dự báo rủi ro &amp; đối sánh năng lực.
+              {selectedEnrollment ? "Môn học chưa có kết quả dự báo." : "Chọn một môn học để xem dự báo và radar."}
             </div>
+          )}
+          {!loadingDetail && radar && <Radar6DCard radar={radar} />}
+          {!loadingDetail && selectedEnrollment && !radar && (
+            <p className="text-sm text-slate-400">Môn học chưa có dữ liệu radar.</p>
           )}
         </div>
       </div>
@@ -496,6 +505,9 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
         {radar.code_module} so với mức chuẩn của nhóm sinh viên Khá/Giỏi
       </p>
 
+      {radar.data_source === 'synthetic_demo' && (
+        <p className="text-xs text-amber-300 mb-3">Dữ liệu học tập minh họa</p>
+      )}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <svg viewBox="0 0 240 220" className="w-full max-w-xs mx-auto">
           <g>
@@ -516,20 +528,20 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
               );
             })}
             <polygon
-              points={dims.map((_, i) => chart.pt(dims[i].benchmark_value, i).join(',')).join(' ')}
+              points={dims.map((_, i) => chart.pt(100, i).join(',')).join(' ')}
               fill="rgba(59,130,246,0.12)"
               stroke="#60a5fa"
               strokeWidth="2"
               strokeDasharray="5,4"
             />
             <polygon
-              points={dims.map((_, i) => chart.pt(dims[i].student_value, i).join(',')).join(' ')}
+              points={dims.map((_, i) => chart.pt(dims[i].percentile, i).join(',')).join(' ')}
               fill="rgba(34,211,238,0.2)"
               stroke="#22d3ee"
               strokeWidth="2"
             />
             {dims.map((d, i) => {
-              const [x, y] = chart.pt(d.student_value, i);
+              const [x, y] = chart.pt(d.percentile, i);
               return <circle key={i} cx={x} cy={y} r="4" fill="#22d3ee" stroke="#0f172a" strokeWidth="1.5" />;
             })}
           </g>
