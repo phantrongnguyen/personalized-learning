@@ -1,10 +1,4 @@
-import {
-  ActionableRecourseResponse,
-  HistoricalCasesResponse,
-  PredictionRequest,
-  PredictionResponse,
-  StudentFeatures,
-} from '@shared/types';
+import { HistoricalCasesResponse, PredictionRequest, PredictionResponse, StudentFeatures } from '@shared/types';
 
 export interface HealthResponse {
   status: string;
@@ -92,33 +86,4 @@ export async function compareHistoricalCases(
     clearTimeout(timeout);
     signal.removeEventListener('abort', cancel);
   }
-}
-
-export async function fetchActionableRecourse(
-  baseUrl: string,
-  features: StudentFeatures,
-  signal?: AbortSignal,
-): Promise<ActionableRecourseResponse> {
-  const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/actionable-recourse/`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ features }),
-    signal: signal ?? AbortSignal.timeout(20000),
-  });
-
-  if (!res.ok) {
-    let errorDetail = `Lỗi HTTP ${res.status}`;
-    try {
-      const errorJson = await res.json();
-      if (typeof errorJson.detail === 'string') {
-        errorDetail = errorJson.detail;
-      }
-    } catch {
-      // Ignore
-    }
-    throw new Error(errorDetail);
-  }
-
-  return (await res.json()) as ActionableRecourseResponse;
 }

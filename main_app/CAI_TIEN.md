@@ -15,36 +15,6 @@ cần được hoàn thiện trước khi dùng chính thức tại trường.
 
 Chi tiết phương pháp, nguồn dữ liệu và cách chạy: [docs/DOI_CHIEU_LICH_SU.md](docs/DOI_CHIEU_LICH_SU.md).
 
-## Bổ sung: Mục tiêu can thiệp khả thi (Actionable Counterfactual Recourse) và Kế hoạch tự điều chỉnh (SRL)
-
-- Thêm khối **Kế Hoạch Đảo Ngược Nguy Cơ & Mục Tiêu Khả Thi** trên Dashboard ngay sau phần giải thích SHAP.
-- **Thuật toán Phản thực nghiệm khả thi (Actionable Counterfactual Recourse - DiCE / Wachter et al.):**
-  - Khóa hoàn toàn các biến nhân khẩu học và bối cảnh (tuổi, giới tính, học vấn, tín chỉ đăng ký, ngày đăng ký).
-  - Tối ưu hóa đơn điệu các biến hành vi học tập (xóa ngày gián đoạn học tập, nâng số bài đánh giá nộp, tăng tương tác học liệu resource và liên kết url).
-  - Cung cấp 2 kịch bản có căn cứ:
-    1. **⚡ Can thiệp Cấp bách (Quick-Win Re-engagement):** Xóa chuỗi ngày gián đoạn và hoàn thành 1 bài đánh giá nợ để đưa xác suất về mức an toàn cơ bản.
-    2. **🌱 Lộ trình Bền vững (Sustainable Mastery):** Duy trì nhịp học 3-4 ngày/tuần, tăng sâu lượt học liệu và hoàn thành 100% bài nộp để đưa nguy cơ xuống sâu dưới 30%.
-- **Lý thuyết Học tập Tự điều chỉnh (Self-Regulated Learning - SRL, Pardo et al. 2019 / Zimmerman):**
-  - Chuyển đổi các con số mục tiêu thành lộ trình 3 giai đoạn: Chuẩn bị & Kích hoạt lại (Forethought / 48h), Thực thi & Bù đắp nhiệm vụ (Performance / Tuần tiếp theo), Phản tỉnh & Rà soát cùng Cố vấn (Reflection).
-- **Chế độ Thử nghiệm Kịch bản (What-if Simulation):**
-  - Người dùng có thể nhấn **"Áp dụng vào Form (Thử nghiệm What-if)"** để tự động tải các giá trị mục tiêu vào form và kích hoạt mô hình LightGBM tính lại xác suất trực tiếp trong thời gian thực.
-  - Cung cấp nút **"Khôi phục ban đầu"** để quay lại hồ sơ gốc bất kỳ lúc nào.
-- **Minh bạch cơ sở khoa học:** Nêu rõ trích dẫn 4 bài báo quốc tế (Wachter 2017, Mothilal DiCE 2020, Pardo 2019, Karimi 2021) và các giới hạn học thuật (đo lường độ nhạy dự đoán, không thay thế nỗ lực học tập thực chất).
-
-## Bổ sung: Giao diện Sinh viên Tối giản chạy song song (Student-Centric View)
-
-- **Triết lý thiết kế phân quyền (Role-based UI):** Chạy song song 2 góc nhìn trong cùng 1 ứng dụng mà không làm mất công sức kỹ thuật trước đó:
-  1. **🎓 Góc nhìn Sinh viên (Tối giản - Thân thiện):** Truy cập tại menu hoặc hash #student.
-     - Loại bỏ hoàn toàn các thuật ngữ máy học kỹ thuật (log-odds, TreeSHAP, ma trận 17 biến).
-     - **Thẻ trạng thái học tập:** Điểm độ sẵn sàng qua môn (Progress Gauge) và thông điệp động viên nhẹ nhàng.
-     - **Checklist hành động tuần này (SRL Tasks):** Các nhiệm vụ cụ thể để sinh viên tick hoàn thành, kèm thanh tiến độ tiến độ hoàn thành tuần.
-     - **Mục tiêu ngắn hạn khả thi (tính toán từ DiCE):** Con số cụ thể về số buổi học và bài tập cần hoàn thành.
-     - **Kết nối Cố vấn:** Cung cấp modal gửi tin nhắn mẫu đến Cố vấn học tập của trường.
-     - **Bộ chuyển đổi kịch bản (Scenario Selector):** 4 tình huống người học mẫu (Nợ bài tập, Gián đoạn học tập, Ít tương tác, Học lực vững) để kiểm chứng trực quan.
-  2. **📊 Dashboard Cố vấn & Phân tích (Bản kỹ thuật đầy đủ):** Truy cập tại #dashboard.
-     - Giữ nguyên 100% các công cụ đo lường chuyên sâu: 17 đặc trưng, TreeSHAP, DiCE What-if simulator, đối chiếu 3.447 ca lịch sử, biểu đồ radar năng lực.
-- **Thanh chuyển đổi nhanh (Role Switcher):** Đặt ngay trên thanh Header/Navbar và Menu bên để chuyển đổi tức thời giữa 2 vai trò với 1 cú click.
-
 ## 1. Phạm vi và nguồn ứng dụng
 
 - Lấy app từ nhánh `phantrongnguyen`, commit nguồn `de1970b`, tách vào `main_app`.
@@ -143,5 +113,6 @@ Xem `README.md` để tạo môi trường backend và cài dependencies fronten
 - CORS hiện dùng `allow_private_network=True`; cần Starlette hỗ trợ tham số này.
   Môi trường đã thử dùng Starlette 1.7.0.
 - Không đưa `.venv`, `node_modules`, `dist`, `.env` hoặc ảnh kiểm tra cục bộ lên Git.
+
 
 

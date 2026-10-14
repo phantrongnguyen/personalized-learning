@@ -3,7 +3,7 @@ import { PredictionHistoryItem, UserProfile } from '@shared/types';
 import { checkBackendHealth } from '../services/api';
 import { normalizeThemePreference, readThemePreference, resolveThemePreference, ResolvedTheme, ThemePreference, THEME_STORAGE_KEY } from '../utils/theme';
 
-export type NavigationPage = 'home' | 'dashboard' | 'student' | 'about' | 'contact' | 'profile';
+export type NavigationPage = 'home' | 'dashboard' | 'about' | 'contact' | 'profile';
 export type BackendStatus = 'checking' | 'ok' | 'down';
 export type ToastType = 'success' | 'error' | 'warning' | 'info';
 
@@ -120,7 +120,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   useEffect(() => {
     const handleHashChange = () => {
       const hash = window.location.hash.replace(/^#\/?/, '') as NavigationPage;
-      const valid: NavigationPage[] = ['home', 'dashboard', 'student', 'about', 'contact', 'profile'];
+      const valid: NavigationPage[] = ['home', 'dashboard', 'about', 'contact', 'profile'];
       if (valid.includes(hash)) {
         setCurrentViewState(hash);
       } else {
@@ -269,4 +269,5 @@ export const useApp = () => {
   if (!ctx) throw new Error('useApp must be used within AppProvider');
   return ctx;
 };
+
 

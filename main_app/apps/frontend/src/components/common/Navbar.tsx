@@ -13,7 +13,6 @@ import {
   PhoneCall,
   PanelLeftClose,
   PanelLeftOpen,
-  GraduationCap,
 } from 'lucide-react';
 
 interface NavbarProps {
@@ -40,12 +39,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   const getViewInfo = () => {
     switch (currentView) {
-      case 'student':
-        return {
-          title: 'Cổng Sinh Viên Tối Giản',
-          subtitle: 'Lộ trình học tập & Mục tiêu tuần này',
-          icon: <GraduationCap className="w-4 h-4 text-sky-400" />,
-        };
       case 'dashboard':
         return {
           title: 'Dashboard Phân tích Nguy cơ',
@@ -129,37 +122,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
           {/* Right: Actions (API Status, User Profile) */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
-            {/* Role Switcher */}
-          <div className="hidden md:flex items-center p-1 rounded-xl bg-slate-900 border border-slate-800 text-xs font-semibold mr-1">
-            <button
-              type="button"
-              onClick={() => setCurrentView('student')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all ${
-                currentView === 'student'
-                  ? 'bg-sky-500/20 text-sky-300 border border-sky-500/30 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Chuyển sang Giao diện Sinh viên tối giản"
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              <span>Sinh viên</span>
-            </button>
-            <button
-              type="button"
-              onClick={() => setCurrentView('dashboard')}
-              className={`flex items-center gap-1.5 px-3 py-1 rounded-lg transition-all ${
-                currentView === 'dashboard'
-                  ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 font-bold shadow-sm'
-                  : 'text-slate-400 hover:text-slate-200'
-              }`}
-              title="Chuyển sang Bảng điều khiển chi tiết của Cố vấn"
-            >
-              <LayoutDashboard className="w-3.5 h-3.5" />
-              <span>Cố vấn AI</span>
-            </button>
-          </div>
-
-          {/* Backend status pill */}
+            {/* Backend status pill */}
             <button
               type="button"
               onClick={() => setIsBackendModalOpen(true)}

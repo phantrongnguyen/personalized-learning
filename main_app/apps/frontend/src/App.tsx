@@ -9,7 +9,6 @@ import { AuthModal } from './components/common/AuthModal';
 
 import { HomePage } from './pages/HomePage';
 import { DashboardPage } from './pages/DashboardPage';
-import { StudentDashboardPage } from './pages/StudentDashboardPage';
 import { AboutPage } from './pages/AboutPage';
 import { ContactPage } from './pages/ContactPage';
 import { ProfilePage } from './pages/ProfilePage';
@@ -63,7 +62,6 @@ const AppContent: React.FC = () => {
         {/* View Content */}
         <main className="flex-1 p-4 sm:p-6 lg:p-8">
           {currentView === 'dashboard' && <DashboardPage />}
-          {currentView === 'student' && <StudentDashboardPage />}
           {currentView === 'profile' && <ProfilePage />}
           {currentView === 'home' && <HomePage />}
           {currentView === 'about' && <AboutPage />}
@@ -91,4 +89,5 @@ export const App: React.FC = () => {
 };
 
 export default App;
+
 
