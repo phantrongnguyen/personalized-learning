@@ -1,696 +1,700 @@
-# KẾ HOẠCH THIẾT KẾ CƠ SỞ DỮ LIỆU (DATABASE DESIGN PLAN)
-### Hệ Thống Gợi Ý Chiến Lược Học Tập Cá Nhân Hóa (KLTN 13 - HUIT)
+# THIẾT KẾ CƠ SỞ DỮ LIỆU HỆ THỐNG
 
-> **Cơ quan chủ quản:** Trường Đại học Công Thương TP.HCM (HUIT) — Khoa Công Nghệ Thông Tin  
-> **Mã đề tài:** KLTN 13  
-> **Sinh viên thực hiện:** Phan Trọng Nguyên  
-> **Hệ quản trị CSDL:** PostgreSQL 15  
-> **ORM & Migration Framework:** SQLAlchemy 2.0 (Async) & Alembic  
+### Hệ thống gợi ý chiến lược học tập cá nhân hóa — KLTN 13, HUIT
 
----
+> **Sinh viên thực hiện:** Phan Trọng Nguyên<br>
+> **Cập nhật:** 14/10/2026<br>
+> **CSDL:** PostgreSQL 15 — `personalized_learning_db`, schema `public`<br>
+> **ORM:** SQLAlchemy 2.0 Async, driver `asyncpg`
 
-## 📌 MỤC LỤC
-1. [Tổng Quan & Mục Tiêu Thiết Kế](#1-tổng-quan--mục-tiêu-thiết-kế)
-2. [Phân Vùng Các Phân Hệ Dữ Liệu (Schema Domains)](#2-phân-vùng-các-phân-hệ-dữ-liệu-schema-domains)
-3. [Sơ Đồ Thực Thể Quan Hệ (ERD - Entity Relationship Diagram)](#3-sơ-đồ-thực-thể-quan-hệ-erd---entity-relationship-diagram)
-   - 3.1. [Sơ Đồ Quan Hệ CSDL Mức Vật Lý Chi Tiết (Detailed Physical ERD)](#31-sơ-đồ-quan-hệ-csdl-mức-vật-lý-chi-tiết-detailed-physical-erd)
-   - 3.2. [Ma Trận Quan Hệ Giữa Các Bảng (Relationship Matrix)](#32-ma-trận-quan-hệ-giữa-các-bảng-relationship-matrix)
-   - 3.3. [Luồng Dữ Liệu Thực Thi Liên Bảng (Data Flow & Life-cycle)](#33-luồng-dữ-liệu-thực-thi-liên-bảng-data-flow--life-cycle)
-4. [Đặc Tả Chi Tiết Các Bảng Dữ Liệu (Table Specifications)](#4-đặc-tả-chi-tiết-các-bảng-dữ-liệu-table-specifications)
-   - 4.1. [Phân hệ 1: Xác Thực & Người Dùng (Auth & Identity)](#41-phân-hệ-1-xác-thực--người-dùng-auth--identity)
-   - 4.2. [Phân hệ 2: Học Phần & Đào Tạo (Academic & Courses)](#42-phân-hệ-2-học-phần--đào-tạo-academic--courses)
-   - 4.3. [Phân hệ 3: Đặc Trưng Hành Vi Học Tập (Feature Snapshots)](#43-phân-hệ-3-đặc-trưng-hành-vi-học-tập-feature-snapshots)
-   - 4.4. [Phân hệ 4: Dự Báo Học Máy & Giám Sát Mô Hình (ML Models & Predictions)](#44-phân-hệ-4-dự-báo-học-máy--giám-sát-mô-hình-ml-models--predictions)
-   - 4.5. [Phân hệ 5: Kế Hoạch Can Thiệp & Cố Vấn (Interventions & Advising)](#45-phân-hệ-5-kế-hoạch-can-thiệp--cố-vấn-interventions--advising)
-5. [Thiết Lập Chỉ Mục & Tối Ưu Hóa Truy Vấn (Indexes & Performance)](#5-thiết-lập-chỉ-mục--tối-ưu-hóa-truy-vấn-indexes--performance)
-6. [Kịch Bản SQL Khởi Tạo DDL (PostgreSQL Initial DDL Script)](#6-kịch-bản-sql-khởi-tạo-ddl-postgresql-initial-ddl-script)
+## 1. Phạm vi và nguồn đối chiếu
 
----
+Tài liệu mô tả **19 bảng** hiện có trong SQL khởi tạo và ORM. Đặc tả vật lý ở mục 4 lấy **SQL khởi tạo** làm chuẩn; các khác biệt với ORM được ghi riêng ở mục 8. Đây là đối chiếu mã nguồn repository, chưa phải kiểm tra schema của database đang chạy.
 
-## 1. Tổng Quan & Mục Tiêu Thiết Kế
+| Nguồn | Vai trò |
+| :--- | :--- |
+| [01_init_schema.sql](../docker/postgres/init-scripts/01_init_schema.sql) | DDL, khóa, CHECK, UNIQUE, mặc định và index |
+| [02_seed_data.sql](../docker/postgres/init-scripts/02_seed_data.sql) | Vai trò, tài khoản, mô hình và dữ liệu minh họa |
+| [models](../apps/backend/models/) | Ánh xạ ORM của 19 bảng |
+| [database.py](../apps/backend/core/database.py) | Async engine, session và rollback khi có lỗi |
+| [endpoints](../apps/backend/api/v1/endpoints/) | Hành vi đọc/ghi, kiểm tra phạm vi quyền |
+| [prediction.py](../apps/backend/schemas/prediction.py) | Hợp đồng 17 đặc trưng đầu vào ML |
+| [docker-compose.yml](../docker-compose.yml) | PostgreSQL 15, volume và khởi tạo |
 
-Nhằm giải quyết triệt để hạn chế lưu trữ tạm thời (`localStorage`) ở Frontend và tính trạng thái "Stateless" của Backend hiện tại, cơ sở dữ liệu được thiết kế nhằm phục vụ 5 mục tiêu nghiệp vụ cốt lõi:
+Repository chưa có cấu hình/revision Alembic; backend không gọi `Base.metadata.create_all()` trong vòng đời khởi động. Alembic chưa phải cơ chế migration đã triển khai.
 
-1. **Chuẩn hóa & Bảo toàn dữ liệu (Data Integrity)**: Thiết kế đạt chuẩn 3NF, bảo đảm tính toàn vẹn dữ liệu học thuật của sinh viên theo chuẩn bộ dữ liệu quốc tế Open University Learning Analytics Dataset (OULAD).
-2. **Quản lý danh tính & Phân quyền đa cấp (RBAC)**: Tách bạch rõ vai trò giữa Quản trị viên (Admin), Cố vấn học tập (Advisor), Giảng viên bộ môn (Lecturer) và Sinh viên (Student).
-3. **Lưu vết và kiểm toán học máy (ML Audit & Reproducibility)**: Lưu trữ đầy đủ vector đặc trưng đầu vào, kết quả dự báo nhị phân, điểm xác suất nguy cơ rủi ro (`risk_probability`), thời gian suy luận và phiên bản mô hình được kích hoạt.
-4. **Theo dõi kế hoạch can thiệp cá nhân hóa (Prescriptive Tracking)**: Chuyển hóa các khuyến nghị sư phạm thành danh sách nhiệm vụ có thể giám sát trạng thái hoàn thành (`TODO`, `IN_PROGRESS`, `COMPLETED`), giúp sinh viên cải thiện kết quả học tập theo thời gian thực.
-5. **Nhật ký tư vấn tương tác (Advisory Collaboration)**: Cho phép cố vấn học tập ghi chú biên bản các buổi gặp mặt hỗ trợ, đo lường sự tiến bộ của sinh viên giữa các mốc quan sát (Cutoff).
+## 2. Các phân hệ dữ liệu
 
----
+| Phân hệ | Bảng | Mục đích |
+| :--- | :--- | :--- |
+| Danh tính và quyền (6) | users, roles, user_roles, student_profiles, advisor_profiles, lecturer_profiles | Tài khoản, nhiều vai trò và hồ sơ |
+| Đào tạo (3) | courses, course_presentations, student_enrollments | Môn, đợt mở môn và đăng ký |
+| Đặc trưng (1) | student_feature_snapshots | 11 chỉ số hành vi tại mốc quan sát |
+| ML và dự báo (2) | ml_models, prediction_runs | Phiên bản và lịch sử dự báo |
+| Can thiệp/tư vấn (3) | intervention_plans, intervention_tasks, advising_notes | Kế hoạch, nhiệm vụ, biên bản |
+| Phân công (2) | course_lecturers, advisor_students | Phạm vi giảng viên/cố vấn |
+| Hỗ trợ/kiểm toán (2) | student_help_requests, audit_logs | Yêu cầu và lịch sử thao tác |
 
-## 2. Phân Vùng Các Phân Hệ Dữ Liệu (Schema Domains)
+Các phân hệ là nhóm nghiệp vụ, không phải các PostgreSQL schema riêng. Quyền được kiểm tra tại backend bằng vai trò và phân công; DDL chưa có chính sách Row Level Security.
 
-Cơ sở dữ liệu được phân chia thành **5 phân hệ chức năng**:
+## 3. Sơ đồ thực thể và quan hệ
 
-```
-┌────────────────────────────────────────────────────────────────────────────────────────┐
-│                                 HỆ THỐNG CƠ SỞ DỮ LIỆU                                  │
-├─────────────────────┬─────────────────────┬────────────────────────────────────────────┤
-│ 1. Auth & Users     │ 2. Academic & LMS   │ 3. Feature Snapshots                       │
-│ • users             │ • courses           │ • student_feature_snapshots                │
-│ • roles             │ • presentations     │   (Lưu 17 đặc trưng OULAD tại Cutoff 75%)   │
-│ • user_roles        │ • enrollments       │                                            │
-│ • student_profiles  │                     │                                            │
-│ • advisor_profiles  │                     │                                            │
-├─────────────────────┴─────────────────────┼────────────────────────────────────────────┤
-│ 4. Predictions & ML Models                │ 5. Interventions & Advisory                │
-│ • ml_models                               │ • intervention_plans                       │
-│ • prediction_runs                         │ • intervention_tasks                       │
-│                                           │ • advising_notes                           │
-└───────────────────────────────────────────┴────────────────────────────────────────────┘
-```
+### 3.1. ERD vật lý
 
----
-
-## 3. Sơ Đồ Thực Thể Quan Hệ (ERD - Entity Relationship Diagram)
-
-### 3.1. Sơ Đồ Quan Hệ CSDL Mức Vật Lý Chi Tiết (Detailed Physical ERD)
-Sơ đồ dưới đây thể hiện chi tiết toàn bộ các thực thể, thuộc tính, kiểu dữ liệu, các ràng buộc Khóa chính (PK), Khóa ngoại (FK), Khóa duy nhất (UK) và bản số quan hệ (Cardinality: 1-1, 1-N, N-N) giữa 13 bảng trong hệ thống:
+PK: khóa chính; FK: khóa ngoại; UK: duy nhất đơn cột. UNIQUE ghép ghi tại mục 4. Quan hệ cha tùy chọn tương ứng FK cho phép NULL.
 
 ```mermaid
 erDiagram
     USERS {
-        uuid id PK "gen_random_uuid()"
-        varchar email UK "Email đăng nhập"
-        varchar hashed_password "Mật khẩu mã hóa"
-        varchar full_name "Họ và tên"
-        varchar avatar_url "Link ảnh đại diện"
-        varchar phone_number "Số điện thoại"
-        boolean is_active "Trạng thái kích hoạt"
-        timestamptz created_at "Thời điểm tạo"
-        timestamptz updated_at "Thời điểm sửa"
+        UUID id PK
+        VARCHAR(255) email UK
+        VARCHAR(255) hashed_password
+        VARCHAR(150) full_name
+        VARCHAR(500) avatar_url
+        VARCHAR(20) phone_number
+        BOOLEAN is_active
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
     }
-
     ROLES {
-        smallint id PK "Tự tăng"
-        varchar code UK "ADMIN, ADVISOR, ..."
-        varchar name "Tên vai trò hiển thị"
-        text description "Mô tả vai trò"
+        SMALLSERIAL id PK
+        VARCHAR(50) code UK
+        VARCHAR(100) name
+        TEXT description
     }
-
     USER_ROLES {
-        uuid user_id PK,FK "Tham chiếu users.id"
-        smallint role_id PK,FK "Tham chiếu roles.id"
+        UUID user_id PK,FK
+        SMALLINT role_id PK,FK
     }
-
     STUDENT_PROFILES {
-        uuid id PK "gen_random_uuid()"
-        uuid user_id FK,UK "Tham chiếu users.id"
-        varchar student_code UK "Mã số sinh viên (id_student)"
-        varchar gender "M: Nam, F: Nữ"
-        varchar highest_education "Bậc học cao nhất"
-        varchar age_band "0-35, 35-55, 55<="
-        varchar imd_band "Phân vị kinh tế xã hội"
-        varchar region "Khu vực địa lý"
-        varchar disability "Khuyết tật (Y/N)"
+        UUID id PK
+        UUID user_id FK,UK
+        VARCHAR(50) student_code UK
+        VARCHAR(10) gender
+        VARCHAR(100) highest_education
+        VARCHAR(20) age_band
+        VARCHAR(50) imd_band
+        VARCHAR(100) region
+        VARCHAR(10) disability
     }
-
     ADVISOR_PROFILES {
-        uuid id PK "gen_random_uuid()"
-        uuid user_id FK,UK "Tham chiếu users.id"
-        varchar department "Khoa / Ban chuyên môn"
-        varchar office_location "Phòng làm việc"
-        varchar lms_api_key "API Key LMS kết nối"
+        UUID id PK
+        UUID user_id FK,UK
+        VARCHAR(150) department
+        VARCHAR(255) office_location
+        VARCHAR(255) lms_api_key
     }
-
     COURSES {
-        uuid id PK "gen_random_uuid()"
-        varchar code_module UK "Mã môn OULAD (AAA, BBB...)"
-        varchar name "Tên môn học"
-        int credits_default "Số tín chỉ định mức"
-        text description "Mô tả học phần"
+        UUID id PK
+        VARCHAR(20) code_module UK
+        VARCHAR(255) name
+        INT credits_default
+        TEXT description
     }
-
     COURSE_PRESENTATIONS {
-        uuid id PK "gen_random_uuid()"
-        uuid course_id FK "Tham chiếu courses.id"
-        varchar code_presentation "Học kỳ (2013J, 2014B...)"
-        date start_date "Ngày bắt đầu khóa học"
-        int module_presentation_length "Tổng số ngày học"
+        UUID id PK
+        UUID course_id FK
+        VARCHAR(20) code_presentation
+        DATE start_date
+        INT module_presentation_length
     }
-
     STUDENT_ENROLLMENTS {
-        uuid id PK "gen_random_uuid()"
-        uuid student_id FK "Tham chiếu student_profiles.id"
-        uuid presentation_id FK "Tham chiếu course_presentations.id"
-        int date_registration "Ngày đăng ký trước/sau kỳ"
-        int date_unregistration "Ngày hủy đăng ký (nếu có)"
-        int studied_credits "Số tín chỉ đăng ký kỳ này"
-        int num_of_prev_attempts "Số lần học lại môn này"
-        varchar final_result "Pass, Distinction, Fail, Withdrawn"
+        UUID id PK
+        UUID student_id FK
+        UUID presentation_id FK
+        INT date_registration
+        INT date_unregistration
+        INT studied_credits
+        INT num_of_prev_attempts
+        VARCHAR(20) final_result
     }
-
     STUDENT_FEATURE_SNAPSHOTS {
-        uuid id PK "gen_random_uuid()"
-        uuid enrollment_id FK "Tham chiếu student_enrollments.id"
-        varchar cutoff_stage "CUTOFF_75, WEEK_4..."
-        int total_clicks_to_t "Tổng click VLE đến mốc t"
-        int clicks_resource_to_t "Click tài liệu PDF/slide"
-        int clicks_url_to_t "Click liên kết ngoài"
-        int active_days_to_t "Số ngày thực tế học"
-        float active_day_ratio "Tỷ lệ ngày hoạt động"
-        int days_since_last_activity "Số ngày gián đoạn học gần nhất"
-        int clicks_recent_7 "Click 7 ngày gần nhất"
-        int clicks_recent_30 "Click 30 ngày gần nhất"
-        int assessments_submitted_to_t "Số bài kiểm tra đã nộp"
-        int late_submissions_to_t "Số bài nộp trễ hạn"
-        float submission_rate "Tỷ lệ hoàn thành bài kiểm tra"
-        jsonb raw_features_json "Mở rộng 30 đặc trưng thô"
-        timestamptz created_at "Thời điểm chụp dữ liệu"
+        UUID id PK
+        UUID enrollment_id FK
+        VARCHAR(30) cutoff_stage
+        INT total_clicks_to_t
+        INT clicks_resource_to_t
+        INT clicks_url_to_t
+        INT active_days_to_t
+        FLOAT active_day_ratio
+        INT days_since_last_activity
+        INT clicks_recent_7
+        INT clicks_recent_30
+        INT assessments_submitted_to_t
+        INT late_submissions_to_t
+        FLOAT submission_rate
+        JSONB raw_features_json
+        TIMESTAMPTZ created_at
     }
-
     ML_MODELS {
-        uuid id PK "gen_random_uuid()"
-        varchar model_name "HCO-VNLS + LightGBM..."
-        varchar version UK "v1.0.0-cutoff75"
-        varchar model_file_path "Đường dẫn file .joblib"
-        float threshold "Ngưỡng phân loại (0.5)"
-        float cutoff_fraction "Mốc huấn luyện (0.75)"
-        float accuracy "Độ chính xác kiểm nghiệm"
-        float roc_auc "Chỉ số ROC-AUC kiểm nghiệm"
-        boolean is_active "Đang phục vụ API"
-        jsonb metadata_json "Siêu dữ liệu đào tạo"
-        timestamptz created_at "Ngày nạp mô hình"
+        UUID id PK
+        VARCHAR(150) model_name
+        VARCHAR(30) version UK
+        VARCHAR(500) model_file_path
+        FLOAT threshold
+        FLOAT cutoff_fraction
+        FLOAT accuracy
+        FLOAT roc_auc
+        BOOLEAN is_active
+        JSONB metadata_json
+        TIMESTAMPTZ created_at
     }
-
     PREDICTION_RUNS {
-        uuid id PK "gen_random_uuid()"
-        uuid snapshot_id FK "Tham chiếu student_feature_snapshots.id"
-        uuid model_id FK "Tham chiếu ml_models.id"
-        smallint prediction_label "1: At Risk, 0: Safe"
-        float risk_probability "Xác suất nguy cơ rớt môn"
-        int execution_time_ms "Thời gian suy luận (ms)"
-        uuid triggered_by_user_id FK "Người kích hoạt dự báo"
-        timestamptz created_at "Thời điểm thực thi"
+        UUID id PK
+        UUID snapshot_id FK
+        UUID model_id FK
+        SMALLINT prediction_label
+        FLOAT risk_probability
+        INT execution_time_ms
+        UUID triggered_by_user_id FK
+        TIMESTAMPTZ created_at
     }
-
     INTERVENTION_PLANS {
-        uuid id PK "gen_random_uuid()"
-        uuid prediction_run_id FK "Tham chiếu prediction_runs.id"
-        uuid student_id FK "Tham chiếu student_profiles.id"
-        varchar status "ACTIVE, COMPLETED, DISMISSED"
-        date target_completion_date "Hạn chót hoàn thành"
-        text advisor_note_summary "Định hướng của cố vấn"
-        timestamptz created_at "Ngày tạo kế hoạch"
-        timestamptz updated_at "Ngày cập nhật gần nhất"
+        UUID id PK
+        UUID prediction_run_id FK
+        UUID student_id FK
+        VARCHAR(30) status
+        DATE target_completion_date
+        TEXT advisor_note_summary
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
     }
-
     INTERVENTION_TASKS {
-        uuid id PK "gen_random_uuid()"
-        uuid plan_id FK "Tham chiếu intervention_plans.id"
-        varchar category "chuyen_can, hoc_thuat, tien_do..."
-        varchar priority "HIGH, MEDIUM, LOW"
-        varchar title "Tiêu đề hành động can thiệp"
-        text description "Nội dung hướng dẫn chi tiết"
-        varchar target_metric "Chỉ số mục tiêu định lượng"
-        boolean is_completed "Đã hoàn thành hay chưa"
-        timestamptz completed_at "Thời điểm hoàn thành"
-        text student_feedback "Phản hồi của sinh viên"
+        UUID id PK
+        UUID plan_id FK
+        VARCHAR(50) category
+        VARCHAR(20) priority
+        VARCHAR(255) title
+        TEXT description
+        VARCHAR(255) target_metric
+        BOOLEAN is_completed
+        TIMESTAMPTZ completed_at
+        TEXT student_feedback
     }
-
     ADVISING_NOTES {
-        uuid id PK "gen_random_uuid()"
-        uuid enrollment_id FK "Tham chiếu student_enrollments.id"
-        uuid advisor_id FK "Tham chiếu advisor_profiles.id"
-        date meeting_date "Ngày tư vấn hỗ trợ"
-        varchar meeting_type "IN_PERSON, ONLINE, EMAIL"
-        text content "Nội dung nhận định sư phạm"
-        text agreed_actions "Hành động hai bên thống nhất"
-        timestamptz created_at "Thời điểm lưu ghi chú"
+        UUID id PK
+        UUID enrollment_id FK
+        UUID advisor_id FK
+        DATE meeting_date
+        VARCHAR(50) meeting_type
+        TEXT content
+        TEXT agreed_actions
+        TIMESTAMPTZ created_at
     }
-
-    %% Quan hệ Định danh & Phân quyền
+    LECTURER_PROFILES {
+        UUID id PK
+        UUID user_id FK,UK
+        VARCHAR(50) lecturer_code UK
+        VARCHAR(150) department
+        VARCHAR(50) academic_rank
+        TIMESTAMPTZ created_at
+    }
+    COURSE_LECTURERS {
+        UUID id PK
+        UUID lecturer_id FK
+        UUID presentation_id FK
+        VARCHAR(50) role_in_course
+        TIMESTAMPTZ assigned_at
+    }
+    ADVISOR_STUDENTS {
+        UUID id PK
+        UUID advisor_id FK
+        UUID student_id FK
+        VARCHAR(20) academic_year
+        VARCHAR(100) class_name
+        TIMESTAMPTZ assigned_at
+    }
+    STUDENT_HELP_REQUESTS {
+        UUID id PK
+        UUID student_id FK
+        VARCHAR(20) target_role
+        UUID target_user_id FK
+        UUID presentation_id FK
+        VARCHAR(255) subject
+        TEXT content
+        VARCHAR(30) status
+        TEXT response_note
+        TIMESTAMPTZ created_at
+        TIMESTAMPTZ updated_at
+    }
+    AUDIT_LOGS {
+        UUID id PK
+        UUID user_id FK
+        VARCHAR(100) action
+        VARCHAR(50) target_type
+        UUID target_id
+        TEXT detail
+        VARCHAR(50) ip_address
+        TIMESTAMPTZ created_at
+    }
     USERS ||--o{ USER_ROLES : "user_id"
     ROLES ||--o{ USER_ROLES : "role_id"
-    USERS ||--o| STUDENT_PROFILES : "user_id (1-1)"
-    USERS ||--o| ADVISOR_PROFILES : "user_id (1-1)"
-
-    %% Quan hệ Đào tạo & Học phần
+    USERS ||--o| STUDENT_PROFILES : "user_id"
+    USERS ||--o| ADVISOR_PROFILES : "user_id"
     COURSES ||--o{ COURSE_PRESENTATIONS : "course_id"
     STUDENT_PROFILES ||--o{ STUDENT_ENROLLMENTS : "student_id"
     COURSE_PRESENTATIONS ||--o{ STUDENT_ENROLLMENTS : "presentation_id"
-
-    %% Quan hệ Trích xuất đặc trưng & Nhật ký tư vấn
     STUDENT_ENROLLMENTS ||--o{ STUDENT_FEATURE_SNAPSHOTS : "enrollment_id"
-    STUDENT_ENROLLMENTS ||--o{ ADVISING_NOTES : "enrollment_id"
-    ADVISOR_PROFILES ||--o{ ADVISING_NOTES : "advisor_id"
-
-    %% Quan hệ Dự báo Học máy
     STUDENT_FEATURE_SNAPSHOTS ||--o{ PREDICTION_RUNS : "snapshot_id"
     ML_MODELS ||--o{ PREDICTION_RUNS : "model_id"
-    USERS ||--o{ PREDICTION_RUNS : "triggered_by_user_id"
-
-    %% Quan hệ Kế hoạch can thiệp & Nhiệm vụ
+    USERS |o--o{ PREDICTION_RUNS : "triggered_by_user_id"
     PREDICTION_RUNS ||--o{ INTERVENTION_PLANS : "prediction_run_id"
     STUDENT_PROFILES ||--o{ INTERVENTION_PLANS : "student_id"
     INTERVENTION_PLANS ||--o{ INTERVENTION_TASKS : "plan_id"
+    STUDENT_ENROLLMENTS ||--o{ ADVISING_NOTES : "enrollment_id"
+    ADVISOR_PROFILES ||--o{ ADVISING_NOTES : "advisor_id"
+    USERS ||--o| LECTURER_PROFILES : "user_id"
+    LECTURER_PROFILES ||--o{ COURSE_LECTURERS : "lecturer_id"
+    COURSE_PRESENTATIONS ||--o{ COURSE_LECTURERS : "presentation_id"
+    ADVISOR_PROFILES ||--o{ ADVISOR_STUDENTS : "advisor_id"
+    STUDENT_PROFILES ||--o{ ADVISOR_STUDENTS : "student_id"
+    STUDENT_PROFILES ||--o{ STUDENT_HELP_REQUESTS : "student_id"
+    USERS |o--o{ STUDENT_HELP_REQUESTS : "target_user_id"
+    COURSE_PRESENTATIONS |o--o{ STUDENT_HELP_REQUESTS : "presentation_id"
+    USERS |o--o{ AUDIT_LOGS : "user_id"
 ```
 
----
+### 3.2. Ma trận khóa ngoại
 
-### 3.2. Ma Trận Quan Hệ Giữa Các Bảng (Relationship Matrix)
+| Bảng cha | Bảng con | FK → cột cha | Quan hệ | FK cho phép NULL | ON DELETE |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| `users` | `user_roles` | `user_id → id` | 1 : N | Không | `CASCADE` |
+| `roles` | `user_roles` | `role_id → id` | 1 : N | Không | `CASCADE` |
+| `users` | `student_profiles` | `user_id → id` | 1 : 0..1 | Không | `CASCADE` |
+| `users` | `advisor_profiles` | `user_id → id` | 1 : 0..1 | Không | `CASCADE` |
+| `courses` | `course_presentations` | `course_id → id` | 1 : N | Không | `CASCADE` |
+| `student_profiles` | `student_enrollments` | `student_id → id` | 1 : N | Không | `CASCADE` |
+| `course_presentations` | `student_enrollments` | `presentation_id → id` | 1 : N | Không | `CASCADE` |
+| `student_enrollments` | `student_feature_snapshots` | `enrollment_id → id` | 1 : N | Không | `CASCADE` |
+| `student_feature_snapshots` | `prediction_runs` | `snapshot_id → id` | 1 : N | Không | `CASCADE` |
+| `ml_models` | `prediction_runs` | `model_id → id` | 1 : N | Không | `RESTRICT` |
+| `users` | `prediction_runs` | `triggered_by_user_id → id` | 1 : N | Có | `SET NULL` |
+| `prediction_runs` | `intervention_plans` | `prediction_run_id → id` | 1 : N | Không | `CASCADE` |
+| `student_profiles` | `intervention_plans` | `student_id → id` | 1 : N | Không | `CASCADE` |
+| `intervention_plans` | `intervention_tasks` | `plan_id → id` | 1 : N | Không | `CASCADE` |
+| `student_enrollments` | `advising_notes` | `enrollment_id → id` | 1 : N | Không | `CASCADE` |
+| `advisor_profiles` | `advising_notes` | `advisor_id → id` | 1 : N | Không | `CASCADE` |
+| `users` | `lecturer_profiles` | `user_id → id` | 1 : 0..1 | Không | `CASCADE` |
+| `lecturer_profiles` | `course_lecturers` | `lecturer_id → id` | 1 : N | Không | `CASCADE` |
+| `course_presentations` | `course_lecturers` | `presentation_id → id` | 1 : N | Không | `CASCADE` |
+| `advisor_profiles` | `advisor_students` | `advisor_id → id` | 1 : N | Không | `CASCADE` |
+| `student_profiles` | `advisor_students` | `student_id → id` | 1 : N | Không | `CASCADE` |
+| `student_profiles` | `student_help_requests` | `student_id → id` | 1 : N | Không | `CASCADE` |
+| `users` | `student_help_requests` | `target_user_id → id` | 1 : N | Có | `SET NULL` |
+| `course_presentations` | `student_help_requests` | `presentation_id → id` | 1 : N | Có | `SET NULL` |
+| `users` | `audit_logs` | `user_id → id` | 1 : N | Có | `SET NULL` |
 
-Bảng đối chiếu dưới đây mô tả chính xác mối quan hệ liên kết giữa các bảng, khóa ngoại sử dụng, bản số và hành vi ràng buộc toàn vẹn khi xóa dữ liệu:
+CASCADE có thể xóa dây chuyền từ tài khoản/hồ sơ/đăng ký tới snapshot, dự báo và kế hoạch. SET NULL giữ bản ghi con khi mất người thao tác/người nhận/học phần tùy chọn. RESTRICT ở prediction_runs.model_id theo DDL bảo vệ mô hình đã có lịch sử.
 
-| Bảng nguồn (Parent Table) | Bảng đích (Child Table) | Khóa liên kết (FK Field) | Loại quan hệ | Ràng buộc `ON DELETE` | Mục đích nghiệp vụ |
-| :--- | :--- | :--- | :---: | :---: | :--- |
-| `users` | `user_roles` | `user_id` $\rightarrow$ `users.id` | $1 : N$ | `CASCADE` | Gán nhiều vai trò cho 1 tài khoản |
-| `roles` | `user_roles` | `role_id` $\rightarrow$ `roles.id` | $1 : N$ | `CASCADE` | Ánh xạ danh mục quyền hệ thống |
-| `users` | `student_profiles` | `user_id` $\rightarrow$ `users.id` | $1 : 1$ | `CASCADE` | Mở rộng thông tin nhân khẩu cho sinh viên |
-| `users` | `advisor_profiles` | `user_id` $\rightarrow$ `users.id` | $1 : 1$ | `CASCADE` | Mở rộng thông tin chuyên môn cho cố vấn |
-| `courses` | `course_presentations` | `course_id` $\rightarrow$ `courses.id` | $1 : N$ | `CASCADE` | Một môn học có nhiều kỳ mở lớp |
-| `student_profiles` | `student_enrollments` | `student_id` $\rightarrow$ `student_profiles.id` | $1 : N$ | `CASCADE` | Sinh viên đăng ký nhiều học phần |
-| `course_presentations` | `student_enrollments` | `presentation_id` $\rightarrow$ `course_presentations.id` | $1 : N$ | `CASCADE` | Một kỳ mở lớp có nhiều sinh viên đăng ký |
-| `student_enrollments` | `student_feature_snapshots` | `enrollment_id` $\rightarrow$ `student_enrollments.id` | $1 : N$ | `CASCADE` | Lưu vector 17 đặc trưng tại các mốc |
-| `student_feature_snapshots` | `prediction_runs` | `snapshot_id` $\rightarrow$ `student_feature_snapshots.id` | $1 : N$ | `CASCADE` | Đầu vào dữ liệu chạy mô hình ML |
-| `ml_models` | `prediction_runs` | `model_id` $\rightarrow$ `ml_models.id` | $1 : N$ | `RESTRICT` | Bảo vệ mô hình, không cho xóa mô hình đã có log |
-| `users` | `prediction_runs` | `triggered_by_user_id` $\rightarrow$ `users.id` | $1 : N$ | `SET NULL` | Giữ lịch sử dự báo kể cả khi user bị xóa |
-| `prediction_runs` | `intervention_plans` | `prediction_run_id` $\rightarrow$ `prediction_runs.id` | $1 : N$ | `CASCADE` | Mỗi dự báo rủi ro sinh ra kế hoạch can thiệp |
-| `student_profiles` | `intervention_plans` | `student_id` $\rightarrow$ `student_profiles.id` | $1 : N$ | `CASCADE` | Gán kế hoạch can thiệp cho sinh viên |
-| `intervention_plans` | `intervention_tasks` | `plan_id` $\rightarrow$ `intervention_plans.id` | $1 : N$ | `CASCADE` | Chi tiết các đầu việc hành động cần làm |
-| `student_enrollments` | `advising_notes` | `enrollment_id` $\rightarrow$ `student_enrollments.id` | $1 : N$ | `CASCADE` | Nhật ký cố vấn gắn với lần học cụ thể |
-| `advisor_profiles` | `advising_notes` | `advisor_id` $\rightarrow$ `advisor_profiles.id` | $1 : N$ | `CASCADE` | Xác định cố vấn nào là người tư vấn |
+## 4. Đặc tả chi tiết 19 bảng
 
----
+Kiểu và ràng buộc dưới đây lấy từ DDL. Cột không có NOT NULL hoặc PRIMARY KEY cho phép NULL. Mặc định là mặc định phía PostgreSQL; mặc định phía Python có thể khác (mục 8). UUID id có DEFAULT gen_random_uuid(); roles.id dùng SMALLSERIAL.
 
-### 3.3. Luồng Dữ Liệu Thực Thi Liên Bảng (Data Flow & Life-cycle)
+### 4.1. `users`
 
-Chu trình tương tác dữ liệu giữa các bảng trong hệ thống diễn ra theo 4 bước liên hoàn:
+Tài khoản dùng chung; mật khẩu lưu dạng hash. Đăng nhập bằng email hoặc mã sinh viên qua student_profiles với vai trò STUDENT. is_active dùng để khóa/kích hoạt tài khoản.
 
-1. **Giai đoạn Đăng ký & Tích lũy Hành vi**:
-   * Khi sinh viên tham gia kỳ học $\rightarrow$ tạo bản ghi `student_enrollments`.
-   * Hệ thống ghi nhận tương tác LMS/VLE và điểm kiểm tra. Khi đến mốc quan sát (vd: Cutoff 75% thời lượng môn học) $\rightarrow$ Trích xuất và lưu vào `student_feature_snapshots`.
-2. **Giai đoạn Dự báo Nguy cơ (Inference Pipeline)**:
-   * Backend lấy dữ liệu từ `student_feature_snapshots` đưa vào mô hình đang hoạt động trong `ml_models` (LightGBM).
-   * Tạo bản ghi `prediction_runs` lưu nhãn `prediction_label` (0 hoặc 1), xác suất rủi ro `risk_probability` và thời gian thực thi `execution_time_ms`.
-3. **Giai đoạn Kê đơn Can thiệp (Prescriptive Engine)**:
-   * Nếu xác suất rủi ro cao $\rightarrow$ Hệ thống tự động sinh bản ghi `intervention_plans` liên kết với `prediction_runs.id`.
-   * Thuật toán phân tích khoảng cách năng lực (Gap Analysis) bóc tách các điểm yếu (nộp trễ, ít tương tác tài nguyên, vắng mặt kéo dài) và chèn danh sách nhiệm vụ vào `intervention_tasks` với thứ tự ưu tiên (`HIGH`, `MEDIUM`, `LOW`).
-4. **Giai đoạn Đồng hành & Đánh giá (Advising & Monitoring)**:
-   * Sinh viên đăng nhập vào hệ thống, đánh dấu trạng thái `is_completed = TRUE` cho từng nhiệm vụ khi đã khắc phục.
-   * Cố vấn học tập theo dõi tiến độ trên Dashboard và lưu biên bản trao đổi định kỳ vào `advising_notes`.
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `email` | `VARCHAR(255)` | `UNIQUE NOT NULL` |
+| `hashed_password` | `VARCHAR(255)` | `NOT NULL` |
+| `full_name` | `VARCHAR(150)` | `NOT NULL` |
+| `avatar_url` | `VARCHAR(500)` | Cho phép NULL; không có mặc định |
+| `phone_number` | `VARCHAR(20)` | Cho phép NULL; không có mặc định |
+| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT TRUE` |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
 
----
+### 4.2. `roles`
 
-## 4. Đặc Tả Chi Tiết Các Bảng Dữ Liệu (Table Specifications)
+Danh mục ADMIN, ADVISOR, LECTURER, STUDENT. Gán vai trò không tự tạo hồ sơ chuyên biệt.
 
-### 4.1. Phân hệ 1: Xác Thực & Người Dùng (Auth & Identity)
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `SMALLSERIAL` | `PRIMARY KEY` |
+| `code` | `VARCHAR(50)` | `UNIQUE NOT NULL` |
+| `name` | `VARCHAR(100)` | `NOT NULL` |
+| `description` | `TEXT` | Cho phép NULL; không có mặc định |
 
-#### Bảng `users` (Tài khoản người dùng hệ thống)
-* Lưu trữ thông tin tài khoản đăng nhập, chứng thực bảo mật và thông tin liên hệ cơ bản.
+### 4.3. `user_roles`
 
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Định danh người dùng duy nhất |
-| `email` | `VARCHAR(255)` | UNIQUE, NOT NULL | Địa chỉ email đăng nhập hệ thống |
-| `hashed_password` | `VARCHAR(255)` | NOT NULL | Mật khẩu mã hóa bảo mật (Argon2 / Bcrypt) |
-| `full_name` | `VARCHAR(150)` | NOT NULL | Họ và tên đầy đủ |
-| `avatar_url` | `VARCHAR(500)` | NULL | Đường dẫn ảnh đại diện |
-| `phone_number` | `VARCHAR(20)` | NULL | Số điện thoại liên lạc |
-| `is_active` | `BOOLEAN` | NOT NULL, DEFAULT `TRUE` | Trạng thái hoạt động của tài khoản |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm tạo tài khoản |
-| `updated_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm cập nhật thông tin gần nhất |
+Liên kết N–N tài khoản–vai trò; khóa chính ghép ngăn gán trùng vai trò.
 
-#### Bảng `roles` (Danh mục vai trò)
-* Định nghĩa các vai trò trong hệ thống: `ADMIN`, `ADVISOR`, `LECTURER`, `STUDENT`.
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `user_id` | `UUID` | `NOT NULL REFERENCES users(id) ON DELETE CASCADE` |
+| `role_id` | `SMALLINT` | `NOT NULL REFERENCES roles(id) ON DELETE CASCADE` |
+| *(Ràng buộc bảng)* | — | `PRIMARY KEY (user_id, role_id)` |
 
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `SMALLSERIAL` | PRIMARY KEY | Khóa chính tự tăng |
-| `code` | `VARCHAR(30)` | UNIQUE, NOT NULL | Mã vai trò (vd: `ADMIN`, `ADVISOR`) |
-| `name` | `VARCHAR(100)` | NOT NULL | Tên vai trò hiển thị (vd: Cố vấn học tập) |
-| `description` | `TEXT` | NULL | Diễn giải trách nhiệm và phạm vi quyền hạn |
+### 4.4. `student_profiles`
 
-#### Bảng `user_roles` (Bảng trung gian phân quyền)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `user_id` | `UUID` | FK(`users.id`), ON DELETE CASCADE | Khóa ngoại người dùng |
-| `role_id` | `SMALLINT` | FK(`roles.id`), ON DELETE CASCADE | Khóa ngoại vai trò |
-| PRIMARY KEY (`user_id`, `role_id`) | | | Khóa chính phức hợp |
+Hồ sơ sinh viên theo OULAD; một hồ sơ cho mỗi tài khoản, mã sinh viên duy nhất.
 
-#### Bảng `student_profiles` (Hồ sơ sinh viên mở rộng)
-* Ánh xạ 1-1 với `users` khi người dùng là sinh viên. Chứa các biến nhân khẩu học tương thích OULAD.
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `user_id` | `UUID` | `UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE` |
+| `student_code` | `VARCHAR(50)` | `UNIQUE NOT NULL` |
+| `gender` | `VARCHAR(10)` | `NOT NULL CHECK (gender IN ('M', 'F'))` |
+| `highest_education` | `VARCHAR(100)` | `NOT NULL` |
+| `age_band` | `VARCHAR(20)` | `NOT NULL CHECK (age_band IN ('0-35', '35-55', '55<='))` |
+| `imd_band` | `VARCHAR(50)` | Cho phép NULL; không có mặc định |
+| `region` | `VARCHAR(100)` | Cho phép NULL; không có mặc định |
+| `disability` | `VARCHAR(10)` | `NOT NULL DEFAULT 'N'` |
 
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính hồ sơ sinh viên |
-| `user_id` | `UUID` | FK(`users.id`), UNIQUE, ON DELETE CASCADE | Liên kết tài khoản đăng nhập |
-| `student_code` | `VARCHAR(50)` | UNIQUE, NOT NULL | Mã số sinh viên (MSSV / `id_student`) |
-| `gender` | `VARCHAR(10)` | NOT NULL, CHECK in ('M', 'F') | Giới tính ('M': Nam, 'F': Nữ) |
-| `highest_education`| `VARCHAR(100)` | NOT NULL | Bậc học cao nhất ('A Level', 'HE Qualification'...) |
-| `age_band` | `VARCHAR(20)` | NOT NULL, CHECK in ('0-35', '35-55', '55<=') | Nhóm tuổi học viên |
-| `imd_band` | `VARCHAR(50)` | NULL | Chỉ số thiếu thốn kinh tế xã hội (Index of Multiple Deprivation) |
-| `region` | `VARCHAR(100)` | NULL | Khu vực địa lý cư trú |
-| `disability` | `VARCHAR(10)` | NOT NULL, DEFAULT 'N' | Tình trạng khuyết tật ('Y', 'N') |
+### 4.5. `advisor_profiles`
 
-#### Bảng `advisor_profiles` (Hồ sơ cố vấn học tập / Giảng viên)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính hồ sơ cố vấn |
-| `user_id` | `UUID` | FK(`users.id`), UNIQUE, ON DELETE CASCADE | Liên kết tài khoản đăng nhập |
-| `department` | `VARCHAR(150)` | NOT NULL | Khoa / Ban chuyên môn phụ trách |
-| `office_location` | `VARCHAR(255)` | NULL | Phòng làm việc |
-| `lms_api_key` | `VARCHAR(255)` | NULL | Khóa API tích hợp LMS (đã mã hóa) |
+Hồ sơ cố vấn, khoa, phòng làm việc và trường kết nối LMS tùy chọn.
 
----
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `user_id` | `UUID` | `UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE` |
+| `department` | `VARCHAR(150)` | `NOT NULL` |
+| `office_location` | `VARCHAR(255)` | Cho phép NULL; không có mặc định |
+| `lms_api_key` | `VARCHAR(255)` | Cho phép NULL; không có mặc định |
 
-### 4.2. Phân hệ 2: Học Phần & Đào Tạo (Academic & Courses)
+### 4.6. `courses`
 
-#### Bảng `courses` (Danh mục môn học)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Mã môn học hệ thống |
-| `code_module` | `VARCHAR(20)` | UNIQUE, NOT NULL | Mã học phần OULAD (vd: 'AAA', 'BBB', 'CCC'...) |
-| `name` | `VARCHAR(255)` | NOT NULL | Tên môn học hiển thị |
-| `credits_default` | `INT` | NOT NULL, DEFAULT 30 | Số tín chỉ định mức |
-| `description` | `TEXT` | NULL | Mô tả tóm tắt nội dung môn học |
+Danh mục môn học; code_module là mã môn dùng trong dữ liệu và mô hình.
 
-#### Bảng `course_presentations` (Học kỳ / Đợt mở lớp môn học)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Mã đợt mở môn |
-| `course_id` | `UUID` | FK(`courses.id`), NOT NULL | Thuộc môn học nào |
-| `code_presentation`| `VARCHAR(20)` | NOT NULL | Mã đợt mở (vd: '2013J', '2014B', '2014J') |
-| `start_date` | `DATE` | NULL | Ngày khai giảng khóa học |
-| `module_presentation_length` | `INT` | NOT NULL, DEFAULT 260 | Tổng số ngày kéo dài của học phần |
-| UNIQUE (`course_id`, `code_presentation`) | | | Ràng buộc duy nhất theo đợt |
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `code_module` | `VARCHAR(20)` | `UNIQUE NOT NULL` |
+| `name` | `VARCHAR(255)` | `NOT NULL` |
+| `credits_default` | `INT` | `NOT NULL DEFAULT 30` |
+| `description` | `TEXT` | Cho phép NULL; không có mặc định |
 
-#### Bảng `student_enrollments` (Đăng ký học phần của sinh viên)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Mã bản ghi đăng ký |
-| `student_id` | `UUID` | FK(`student_profiles.id`), NOT NULL | Sinh viên tham gia học |
-| `presentation_id` | `UUID` | FK(`course_presentations.id`), NOT NULL | Học kỳ mở môn |
-| `date_registration`| `INT` | NOT NULL, DEFAULT -10 | Số ngày đăng ký trước/sau ngày bắt đầu học |
-| `date_unregistration`| `INT` | NULL | Số ngày hủy đăng ký (nếu bỏ học giữa chừng) |
-| `studied_credits` | `INT` | NOT NULL, DEFAULT 60 | Tổng số tín chỉ sinh viên đang học trong kỳ này |
-| `num_of_prev_attempts`| `INT` | NOT NULL, DEFAULT 0 | Số lần đã học lại môn này trước đó |
-| `final_result` | `VARCHAR(20)` | NULL | Kết quả thực tế cuối môn ('Pass', 'Distinction', 'Fail', 'Withdrawn') |
-| UNIQUE (`student_id`, `presentation_id`) | | | Một sinh viên chỉ đăng ký 1 lần trong 1 kỳ môn |
+### 4.7. `course_presentations`
 
----
+Đợt mở môn/học kỳ; mã đợt chỉ duy nhất trong một môn. Thời lượng đo bằng ngày.
 
-### 4.3. Phân hệ 3: Đặc Trưng Hành Vi Học Tập (Feature Snapshots)
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `course_id` | `UUID` | `NOT NULL REFERENCES courses(id) ON DELETE CASCADE` |
+| `code_presentation` | `VARCHAR(20)` | `NOT NULL` |
+| `start_date` | `DATE` | Cho phép NULL; không có mặc định |
+| `module_presentation_length` | `INT` | `NOT NULL DEFAULT 260` |
+| *(Ràng buộc bảng)* | — | `CONSTRAINT uq_course_presentation UNIQUE (course_id, code_presentation)` |
 
-#### Bảng `student_feature_snapshots` (Chỉ số học tập tại các mốc thời gian)
-* Lưu trữ chính xác vector 17 đặc trưng tại mốc **Cutoff 75%** theo đúng chuẩn Input của mô hình LightGBM đã huấn luyện.
+### 4.8. `student_enrollments`
 
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả tương ứng với Feature OULAD |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính bản ghi snapshot |
-| `enrollment_id` | `UUID` | FK(`student_enrollments.id`), NOT NULL | Lần học của sinh viên |
-| `cutoff_stage` | `VARCHAR(30)` | NOT NULL, DEFAULT 'CUTOFF_75' | Mốc quan sát ('CUTOFF_75', 'WEEK_4', 'WEEK_8') |
-| `total_clicks_to_t` | `INT` | NOT NULL, DEFAULT 0 | Tổng lượt click VLE tích lũy đến mốc $t$ |
-| `clicks_resource_to_t`| `INT` | NOT NULL, DEFAULT 0 | Lượt xem tài liệu phụ trợ (`resource`) |
-| `clicks_url_to_t` | `INT` | NOT NULL, DEFAULT 0 | Lượt click liên kết ngoài (`url`) |
-| `active_days_to_t` | `INT` | NOT NULL, DEFAULT 0 | Số ngày thực tế có đăng nhập học |
-| `active_day_ratio` | `FLOAT` | NOT NULL, DEFAULT 0.0 | Tỷ lệ số ngày hoạt động trên thời gian học |
-| `days_since_last_activity` | `INT` | NOT NULL, DEFAULT 0 | Số ngày gián đoạn kể từ phiên học gần nhất |
-| `clicks_recent_7` | `INT` | NOT NULL, DEFAULT 0 | Lượt tương tác VLE trong 7 ngày gần đây |
-| `clicks_recent_30` | `INT` | NOT NULL, DEFAULT 0 | Lượt tương tác VLE trong 30 ngày gần đây |
-| `assessments_submitted_to_t` | `INT` | NOT NULL, DEFAULT 0 | Số lượng bài đánh giá đã nộp đến mốc $t$ |
-| `late_submissions_to_t`| `INT` | NOT NULL, DEFAULT 0 | Số bài tập nộp sau hạn chót deadline |
-| `submission_rate` | `FLOAT` | NOT NULL, DEFAULT 0.0 | Tỷ lệ nộp bài kiểm tra ($[0.0, 1.0]$) |
-| `raw_features_json`| `JSONB` | NULL | Bản sao lưu định dạng JSON mở rộng cho các thuộc tính khác |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm tính toán & chụp dữ liệu |
+Đăng ký sinh viên–đợt mở môn. date_registration và date_unregistration là số ngày tương đối so với đầu kỳ, không phải DATE. final_result có thể NULL; các nhãn Pass, Distinction, Fail, Withdrawn không được CHECK tại DB.
 
----
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `student_id` | `UUID` | `NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE` |
+| `presentation_id` | `UUID` | `NOT NULL REFERENCES course_presentations(id) ON DELETE CASCADE` |
+| `date_registration` | `INT` | `NOT NULL DEFAULT -10` |
+| `date_unregistration` | `INT` | Cho phép NULL; không có mặc định |
+| `studied_credits` | `INT` | `NOT NULL DEFAULT 60` |
+| `num_of_prev_attempts` | `INT` | `NOT NULL DEFAULT 0` |
+| `final_result` | `VARCHAR(20)` | Cho phép NULL; không có mặc định |
+| *(Ràng buộc bảng)* | — | `CONSTRAINT uq_student_presentation UNIQUE (student_id, presentation_id)` |
 
-### 4.4. Phân hệ 4: Dự Báo Học Máy & Giám Sát Mô Hình (ML Models & Predictions)
+### 4.9. `student_feature_snapshots`
 
-#### Bảng `ml_models` (Quản lý phiên bản mô hình Machine Learning)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính mô hình |
-| `model_name` | `VARCHAR(150)` | NOT NULL | Tên mô hình (vd: `HCO-VNLS + LightGBM Cutoff 75%`) |
-| `version` | `VARCHAR(30)` | UNIQUE, NOT NULL | Phiên bản (vd: `v1.0.0-cutoff75`) |
-| `model_file_path` | `VARCHAR(500)` | NOT NULL | Đường dẫn file artifact (.joblib) |
-| `threshold` | `FLOAT` | NOT NULL, DEFAULT 0.5 | Ngưỡng quyết định nhị phân |
-| `cutoff_fraction` | `FLOAT` | NOT NULL, DEFAULT 0.75 | Tỷ lệ tiến độ học phần lúc huấn luyện (75%) |
-| `accuracy` | `FLOAT` | NULL | Độ chính xác kiểm nghiệm trên tập Test (0.8741) |
-| `roc_auc` | `FLOAT` | NULL | Chỉ số ROC-AUC kiểm nghiệm (0.8968) |
-| `is_active` | `BOOLEAN` | NOT NULL, DEFAULT `TRUE` | Trạng thái mô hình đang phục vụ API |
-| `metadata_json` | `JSONB` | NULL | Thông số siêu tham số, thư viện, thời gian fit |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Ngày phát hành mô hình |
+Snapshot 11 chỉ số hành vi, thường tại CUTOFF_75. Cho phép nhiều snapshot cùng enrollment và cutoff_stage. raw_features_json là dữ liệu mở rộng tùy chọn, chưa có schema JSON được DB kiểm tra.
 
-#### Bảng `prediction_runs` (Nhật ký thực thi dự báo)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính phiên dự đoán |
-| `snapshot_id` | `UUID` | FK(`student_feature_snapshots.id`), NOT NULL | Bộ đặc trưng đầu vào |
-| `model_id` | `UUID` | FK(`ml_models.id`), NOT NULL | Mô hình ML được triệu gọi |
-| `prediction_label`| `SMALLINT` | NOT NULL, CHECK in (0, 1) | Kết quả nhị phân (1: Nguy cơ rớt, 0: An toàn) |
-| `risk_probability`| `FLOAT` | NOT NULL | Xác suất rủi ro dự báo ($[0.0, 1.0]$) |
-| `execution_time_ms`| `INT` | NULL | Thời gian phản hồi suy luận (mili-giây) |
-| `triggered_by_user_id` | `UUID` | FK(`users.id`), NULL | Tài khoản thực hiện dự đoán (cố vấn hoặc sinh viên) |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm thực hiện dự báo |
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `enrollment_id` | `UUID` | `NOT NULL REFERENCES student_enrollments(id) ON DELETE CASCADE` |
+| `cutoff_stage` | `VARCHAR(30)` | `NOT NULL DEFAULT 'CUTOFF_75'` |
+| `total_clicks_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `clicks_resource_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `clicks_url_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `active_days_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `active_day_ratio` | `FLOAT` | `NOT NULL DEFAULT 0.0` |
+| `days_since_last_activity` | `INT` | `NOT NULL DEFAULT 0` |
+| `clicks_recent_7` | `INT` | `NOT NULL DEFAULT 0` |
+| `clicks_recent_30` | `INT` | `NOT NULL DEFAULT 0` |
+| `assessments_submitted_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `late_submissions_to_t` | `INT` | `NOT NULL DEFAULT 0` |
+| `submission_rate` | `FLOAT` | `NOT NULL DEFAULT 0.0` |
+| `raw_features_json` | `JSONB` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
 
----
+### 4.10. `ml_models`
 
-### 4.5. Phân hệ 5: Kế Hoạch Can Thiệp & Cố Vấn (Interventions & Advising)
+Đăng ký phiên bản mô hình, artifact, ngưỡng, cutoff và chỉ số đánh giá. DB chưa ngăn nhiều mô hình cùng active. Chỉ số trong seed là số liệu được cung cấp, chưa đánh giá lại trong lần cập nhật tài liệu.
 
-#### Bảng `intervention_plans` (Kế hoạch hành động tổng thể)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính kế hoạch |
-| `prediction_run_id`| `UUID` | FK(`prediction_runs.id`), NOT NULL | Phiên dự báo kích hoạt kế hoạch |
-| `student_id` | `UUID` | FK(`student_profiles.id`), NOT NULL | Sinh viên được can thiệp |
-| `status` | `VARCHAR(30)` | NOT NULL, DEFAULT 'ACTIVE' | Trạng thái ('ACTIVE', 'COMPLETED', 'DISMISSED') |
-| `target_completion_date` | `DATE` | NULL | Hạn chót hoàn thành các mục tiêu đề xuất |
-| `advisor_note_summary` | `TEXT` | NULL | Tóm lược định hướng từ cố vấn học tập |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm khởi tạo kế hoạch |
-| `updated_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Cập nhật tiến độ gần nhất |
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `model_name` | `VARCHAR(150)` | `NOT NULL` |
+| `version` | `VARCHAR(30)` | `UNIQUE NOT NULL` |
+| `model_file_path` | `VARCHAR(500)` | `NOT NULL` |
+| `threshold` | `FLOAT` | `NOT NULL DEFAULT 0.5` |
+| `cutoff_fraction` | `FLOAT` | `NOT NULL DEFAULT 0.75` |
+| `accuracy` | `FLOAT` | Cho phép NULL; không có mặc định |
+| `roc_auc` | `FLOAT` | Cho phép NULL; không có mặc định |
+| `is_active` | `BOOLEAN` | `NOT NULL DEFAULT TRUE` |
+| `metadata_json` | `JSONB` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
 
-#### Bảng `intervention_tasks` (Nhiệm vụ can thiệp cụ thể)
-* Sinh ra từ thuật toán phân tích khoảng cách năng lực (Prescriptive Engine) hoặc do cố vấn bổ sung thủ công.
+### 4.11. `prediction_runs`
 
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính nhiệm vụ |
-| `plan_id` | `UUID` | FK(`intervention_plans.id`), ON DELETE CASCADE | Thuộc kế hoạch nào |
-| `category` | `VARCHAR(50)` | NOT NULL | 'chuyen_can', 'hoc_thuat', 'tien_do', 'tam_ly' |
-| `priority` | `VARCHAR(20)` | NOT NULL, CHECK in ('HIGH', 'MEDIUM', 'LOW') | Mức độ ưu tiên sư phạm |
-| `title` | `VARCHAR(255)` | NOT NULL | Tiêu đề hành động ngắn gọn |
-| `description` | `TEXT` | NOT NULL | Hướng dẫn chi tiết phương pháp học tập cải thiện |
-| `target_metric`| `VARCHAR(255)` | NOT NULL | Chỉ số mục tiêu cần đạt (vd: Đăng nhập lại trong 24h) |
-| `is_completed` | `BOOLEAN` | NOT NULL, DEFAULT `FALSE` | Trạng thái đã hoàn thành hay chưa |
-| `completed_at` | `TIMESTAMPTZ` | NULL | Thời điểm sinh viên đánh dấu hoàn thành |
-| `student_feedback` | `TEXT` | NULL | Phản hồi từ sinh viên về tính hiệu quả của nhiệm vụ |
+Lịch sử dự báo theo snapshot và mô hình. Nhãn 1: nguy cơ; 0: an toàn theo quy ước mô hình. DB chưa CHECK risk_probability trong khoảng [0,1].
 
-#### Bảng `advising_notes` (Sổ tay ghi chú cố vấn)
-| Tên trường | Kiểu dữ liệu | Ràng buộc | Mô tả |
-| :--- | :--- | :--- | :--- |
-| `id` | `UUID` | PRIMARY KEY, DEFAULT `gen_random_uuid()` | Khóa chính ghi chú |
-| `enrollment_id` | `UUID` | FK(`student_enrollments.id`), NOT NULL | Lần học của sinh viên |
-| `advisor_id` | `UUID` | FK(`advisor_profiles.id`), NOT NULL | Cố vấn thực hiện tư vấn |
-| `meeting_date` | `DATE` | NOT NULL, DEFAULT `CURRENT_DATE` | Ngày gặp mặt trao đổi |
-| `meeting_type` | `VARCHAR(50)` | NOT NULL, DEFAULT 'IN_PERSON' | Hình thức ('IN_PERSON', 'ONLINE', 'EMAIL') |
-| `content` | `TEXT` | NOT NULL | Nội dung buổi trao đổi, nhận định tâm lý |
-| `agreed_actions`| `TEXT` | NULL | Cam kết hành động giữa sinh viên và cố vấn |
-| `created_at` | `TIMESTAMPTZ` | NOT NULL, DEFAULT `NOW()` | Thời điểm ghi nhận |
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `snapshot_id` | `UUID` | `NOT NULL REFERENCES student_feature_snapshots(id) ON DELETE CASCADE` |
+| `model_id` | `UUID` | `NOT NULL REFERENCES ml_models(id) ON DELETE RESTRICT` |
+| `prediction_label` | `SMALLINT` | `NOT NULL CHECK (prediction_label IN (0, 1))` |
+| `risk_probability` | `FLOAT` | `NOT NULL` |
+| `execution_time_ms` | `INT` | Cho phép NULL; không có mặc định |
+| `triggered_by_user_id` | `UUID` | `REFERENCES users(id) ON DELETE SET NULL` |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
 
----
+### 4.12. `intervention_plans`
 
-## 5. Thiết Lập Chỉ Mục & Tối Ưu Hóa Truy Vấn (Indexes & Performance)
+Kế hoạch gắn với dự báo và sinh viên. ACTIVE, COMPLETED, DISMISSED là quy ước chưa có CHECK. Không có UNIQUE giới hạn một kế hoạch/dự báo; chưa kiểm tra student_id trùng sinh viên của snapshot.
 
-Nhằm đáp ứng khả năng truy vấn thời gian thực trên giao diện Dashboard khi lượng sinh viên và bản ghi log tương tác tăng cao:
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `prediction_run_id` | `UUID` | `NOT NULL REFERENCES prediction_runs(id) ON DELETE CASCADE` |
+| `student_id` | `UUID` | `NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE` |
+| `status` | `VARCHAR(30)` | `NOT NULL DEFAULT 'ACTIVE'` |
+| `target_completion_date` | `DATE` | Cho phép NULL; không có mặc định |
+| `advisor_note_summary` | `TEXT` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+### 4.13. `intervention_tasks`
+
+Nhiệm vụ có nhóm, ưu tiên, mô tả và mục tiêu. Tiến độ lưu bằng is_completed, completed_at; không có cột trạng thái TODO/IN_PROGRESS/COMPLETED. DB chưa buộc thời điểm hoàn thành nhất quán với cờ hoàn thành.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `plan_id` | `UUID` | `NOT NULL REFERENCES intervention_plans(id) ON DELETE CASCADE` |
+| `category` | `VARCHAR(50)` | `NOT NULL` |
+| `priority` | `VARCHAR(20)` | `NOT NULL CHECK (priority IN ('HIGH', 'MEDIUM', 'LOW'))` |
+| `title` | `VARCHAR(255)` | `NOT NULL` |
+| `description` | `TEXT` | `NOT NULL` |
+| `target_metric` | `VARCHAR(255)` | `NOT NULL` |
+| `is_completed` | `BOOLEAN` | `NOT NULL DEFAULT FALSE` |
+| `completed_at` | `TIMESTAMPTZ` | Cho phép NULL; không có mặc định |
+| `student_feedback` | `TEXT` | Cho phép NULL; không có mặc định |
+
+### 4.14. `advising_notes`
+
+Biên bản cố vấn cho enrollment. IN_PERSON, ONLINE, EMAIL là quy ước chưa có CHECK. DB không kiểm tra cố vấn đã được phân công sinh viên này.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `enrollment_id` | `UUID` | `NOT NULL REFERENCES student_enrollments(id) ON DELETE CASCADE` |
+| `advisor_id` | `UUID` | `NOT NULL REFERENCES advisor_profiles(id) ON DELETE CASCADE` |
+| `meeting_date` | `DATE` | `NOT NULL DEFAULT CURRENT_DATE` |
+| `meeting_type` | `VARCHAR(50)` | `NOT NULL DEFAULT 'IN_PERSON'` |
+| `content` | `TEXT` | `NOT NULL` |
+| `agreed_actions` | `TEXT` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+### 4.15. `lecturer_profiles`
+
+Hồ sơ giảng viên, mã giảng viên duy nhất, khoa và chức danh.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `user_id` | `UUID` | `UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE` |
+| `lecturer_code` | `VARCHAR(50)` | `UNIQUE NOT NULL` |
+| `department` | `VARCHAR(150)` | `NOT NULL` |
+| `academic_rank` | `VARCHAR(50)` | `DEFAULT 'Giảng viên'` |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+### 4.16. `course_lecturers`
+
+Phân công giảng viên–đợt mở môn; UNIQUE ghép ngăn trùng cặp, không giới hạn số giảng viên chính.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `lecturer_id` | `UUID` | `NOT NULL REFERENCES lecturer_profiles(id) ON DELETE CASCADE` |
+| `presentation_id` | `UUID` | `NOT NULL REFERENCES course_presentations(id) ON DELETE CASCADE` |
+| `role_in_course` | `VARCHAR(50)` | `NOT NULL DEFAULT 'GIANG_VIEN_CHINH'` |
+| `assigned_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+| *(Ràng buộc bảng)* | — | `CONSTRAINT uq_lecturer_presentation UNIQUE (lecturer_id, presentation_id)` |
+
+### 4.17. `advisor_students`
+
+Phân công cố vấn–sinh viên kèm năm học và lớp. UNIQUE chỉ gồm advisor_id, student_id nên không lưu được nhiều bản ghi cùng cặp qua các năm; sinh viên vẫn có thể có nhiều cố vấn khác nhau.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `advisor_id` | `UUID` | `NOT NULL REFERENCES advisor_profiles(id) ON DELETE CASCADE` |
+| `student_id` | `UUID` | `NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE` |
+| `academic_year` | `VARCHAR(20)` | `NOT NULL` |
+| `class_name` | `VARCHAR(100)` | `NOT NULL` |
+| `assigned_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+| *(Ràng buộc bảng)* | — | `CONSTRAINT uq_advisor_student UNIQUE (advisor_id, student_id)` |
+
+### 4.18. `student_help_requests`
+
+Yêu cầu gửi ADVISOR/LECTURER, tùy chọn người nhận và học phần. Phản hồi nằm ở response_note, chưa có bảng hội thoại. DB không kiểm tra vai trò thực tế của người nhận.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `student_id` | `UUID` | `NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE` |
+| `target_role` | `VARCHAR(20)` | `NOT NULL CHECK (target_role IN ('ADVISOR', 'LECTURER'))` |
+| `target_user_id` | `UUID` | `REFERENCES users(id) ON DELETE SET NULL` |
+| `presentation_id` | `UUID` | `REFERENCES course_presentations(id) ON DELETE SET NULL` |
+| `subject` | `VARCHAR(255)` | `NOT NULL` |
+| `content` | `TEXT` | `NOT NULL` |
+| `status` | `VARCHAR(30)` | `NOT NULL DEFAULT 'PENDING' CHECK (status IN ('PENDING', 'IN_PROGRESS', 'RESOLVED'))` |
+| `response_note` | `TEXT` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+| `updated_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+### 4.19. `audit_logs`
+
+Nhật ký thao tác. target_id là UUID tham chiếu logic theo target_type, không phải FK. Xóa đối tượng không tự xóa log; chưa có trigger tự ghi hoặc cơ chế bất biến cho audit.
+
+| Cột | Kiểu PostgreSQL | Ràng buộc / mặc định |
+| :--- | :--- | :--- |
+| `id` | `UUID` | `PRIMARY KEY DEFAULT gen_random_uuid()` |
+| `user_id` | `UUID` | `REFERENCES users(id) ON DELETE SET NULL` |
+| `action` | `VARCHAR(100)` | `NOT NULL` |
+| `target_type` | `VARCHAR(50)` | Cho phép NULL; không có mặc định |
+| `target_id` | `UUID` | Cho phép NULL; không có mặc định |
+| `detail` | `TEXT` | Cho phép NULL; không có mặc định |
+| `ip_address` | `VARCHAR(50)` | Cho phép NULL; không có mặc định |
+| `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+## 5. Đặc trưng ML và luồng dữ liệu
+
+### 5.1. Nguồn của 17 đặc trưng đầu vào
+
+Snapshot chỉ có **11 cột hành vi**, không chứa toàn bộ 17 đặc trưng trong hợp đồng `StudentFeatures`:
+
+| Nguồn | Đặc trưng | Số lượng |
+| :--- | :--- | :---: |
+| `courses` qua presentation/enrollment | `code_module` | 1 |
+| `student_profiles` | `gender`, `highest_education`, `age_band` | 3 |
+| `student_enrollments` | `studied_credits`, `date_registration` | 2 |
+| `student_feature_snapshots` | `total_clicks_to_t`, `clicks_resource_to_t`, `clicks_url_to_t`, `active_days_to_t`, `assessments_submitted_to_t`, `late_submissions_to_t`, `active_day_ratio`, `submission_rate`, `days_since_last_activity`, `clicks_recent_7`, `clicks_recent_30` | 11 |
+
+`num_of_prev_attempts`, `imd_band`, `region`, `disability` được lưu cho nghiệp vụ nhưng không nằm trong 17 trường của `StudentFeatures` hiện tại. Predictor dùng `feature_columns` trong artifact để chọn cột và tính xác suất của lớp 1; `confidence` trong response là xác suất nguy cơ, không phải xác suất của nhãn bất kỳ được chọn. `raw_features_json` không được predictor tự đọc.
+
+### 5.2. Luồng thực thi hiện tại
+
+1. **Danh tính:** tạo `users`, gán `user_roles` và hồ sơ theo vai trò. Đăng nhập tra cứu email hoặc mã sinh viên; backend kiểm tra tài khoản hoạt động và vai trò.
+2. **Đào tạo và phân công:** tạo môn, đợt mở môn, đăng ký; `course_lecturers` và `advisor_students` xác định phạm vi dữ liệu giảng viên/cố vấn được xử lý.
+3. **Snapshot:** dữ liệu chỉ số được nạp vào `student_feature_snapshots`. DDL không có bảng log VLE thô, bảng assessment hoặc pipeline ETL tự động trích xuất chỉ số.
+4. **Dự báo trực tiếp:** `POST /api/v1/predictions/` suy luận trên payload bằng mô hình trong bộ nhớ và trả kết quả; endpoint này không ghi `prediction_runs` hoặc tạo kế hoạch.
+5. **Dự báo của admin:** lấy snapshot mới nhất của mỗi enrollment, hoặc một enrollment được chỉ định; ghép đủ 17 đặc trưng từ DB và suy luận bằng artifact của mô hình active. Lưu `prediction_runs` và audit `BATCH_PREDICT` trong cùng transaction. Chạy lại tạo thêm lịch sử; chưa tự tạo `intervention_plans`/`intervention_tasks`.
+6. **Can thiệp:** kế hoạch và nhiệm vụ đã được lưu được hiển thị theo phạm vi sinh viên/phân công; cố vấn cập nhật kế hoạch, thêm nhiệm vụ. Khi sinh viên hoàn thành nhiệm vụ, backend ghi `is_completed=True`, `completed_at` và phản hồi tùy chọn. Không có trigger tự hoàn tất kế hoạch khi mọi task hoàn thành.
+7. **Tư vấn và hỗ trợ:** cố vấn lưu ghi chú theo enrollment; yêu cầu hỗ trợ lưu trạng thái và phản hồi trong `student_help_requests`.
+8. **Kiểm toán:** backend gọi `write_audit_log()` cho các thao tác được triển khai, gồm tạo/sửa/xóa/khóa tài khoản, đổi vai trò, đặt lại mật khẩu, nạp/kích hoạt mô hình và dự báo hàng loạt. Không phải mọi thay đổi DB đều tự có audit.
+
+**Kiểm tra luồng dự báo:** yêu cầu đúng một mô hình active, threshold DB khớp artifact và snapshot ở CUTOFF_75. Chỉ số phải hữu hạn, không âm, tỷ lệ trong [0,1]. Lỗi suy luận rollback, không lưu fallback; execution_time_ms được đo thực tế. Có thể chạy riêng bằng query enrollment_id hoặc scripts/predict_enrollment.py. Nguồn dữ liệu minh họa được đánh dấu synthetic_demo và hiển thị trên trang sinh viên.
+
+### 5.3. Giao dịch và thời gian
+
+`get_db()` cung cấp AsyncSession, rollback khi có ngoại lệ và đóng session; việc commit do endpoint/repository thực hiện. Engine dùng `pool_pre_ping=True`, `pool_size=10`, `max_overflow=20`. `write_audit_log()` chỉ flush để caller quyết định commit; một số luồng hiện commit dữ liệu và audit riêng, nên chưa bảo đảm toàn bộ thao tác và log luôn nguyên tử.
+
+DDL dùng `TIMESTAMPTZ DEFAULT NOW()`. ORM tạo thời gian theo UTC và có `onupdate` cho `users`, `intervention_plans`, `student_help_requests`. SQL chưa có trigger tự cập nhật `updated_at`: UPDATE trực tiếp bằng SQL phải chủ động gán trường này. Ngày buổi tư vấn/hạn hoàn thành dùng DATE.
+
+## 6. Chỉ mục và ràng buộc
+
+### 6.1. Index khai báo trong SQL khởi tạo
 
 ```sql
--- 1. Tối ưu tìm kiếm sinh viên và đăng ký môn học
-CREATE INDEX idx_student_profiles_code ON student_profiles(student_code);
-CREATE INDEX idx_enrollments_student ON student_enrollments(student_id);
-CREATE INDEX idx_enrollments_presentation ON student_enrollments(presentation_id);
-
--- 2. Tối ưu tra cứu nhanh ảnh chụp đặc trưng theo lần học
-CREATE INDEX idx_feature_snapshots_enrollment ON student_feature_snapshots(enrollment_id, cutoff_stage);
-
--- 3. Tối ưu sắp xếp lịch sử dự báo theo thời gian (giảm tải cho HistoryTable)
-CREATE INDEX idx_predictions_created_at_desc ON prediction_runs(created_at DESC);
-CREATE INDEX idx_predictions_snapshot ON prediction_runs(snapshot_id);
-
--- 4. Tối ưu bảng kế hoạch can thiệp và kiểm tra nhiệm vụ chưa hoàn thành
-CREATE INDEX idx_intervention_plans_student ON intervention_plans(student_id, status);
-CREATE INDEX idx_intervention_tasks_plan_status ON intervention_tasks(plan_id, is_completed);
+CREATE INDEX IF NOT EXISTS idx_student_profiles_code ON student_profiles(student_code);
+CREATE INDEX IF NOT EXISTS idx_enrollments_student ON student_enrollments(student_id);
+CREATE INDEX IF NOT EXISTS idx_enrollments_presentation ON student_enrollments(presentation_id);
+CREATE INDEX IF NOT EXISTS idx_feature_snapshots_enrollment ON student_feature_snapshots(enrollment_id, cutoff_stage);
+CREATE INDEX IF NOT EXISTS idx_predictions_created_at_desc ON prediction_runs(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_predictions_snapshot ON prediction_runs(snapshot_id);
+CREATE INDEX IF NOT EXISTS idx_intervention_plans_student ON intervention_plans(student_id, status);
+CREATE INDEX IF NOT EXISTS idx_intervention_tasks_plan_status ON intervention_tasks(plan_id, is_completed);
 ```
 
----
+PK và UNIQUE tạo index hỗ trợ tương ứng. `idx_student_profiles_code` trùng cột với UNIQUE `student_code`. PostgreSQL không tự tạo index cho mọi FK; các bảng phân công, yêu cầu hỗ trợ và audit chưa có index riêng trong script ngoài index từ PK/UNIQUE. ORM còn khai báo index ở email, roles.code, courses.code_module, course_presentations.code_presentation, lecturer_profiles.lecturer_code, audit_logs.action; chúng không tự xuất hiện trong database được tạo chỉ bằng SQL init.
 
-## 6. Kịch Bản SQL Khởi Tạo DDL (PostgreSQL Initial DDL Script)
+### 6.2. Những quy tắc chưa được ràng buộc tại DB
 
-Đoạn mã SQL dưới đây có thể nạp trực tiếp vào file `docker/postgres/init.sql` hoặc sử dụng làm file tạo bảng ban đầu:
+Các cải tiến dưới đây là đề xuất, chưa có trong schema: CHECK xác suất/tỷ lệ trong [0,1] và số đếm không âm; thống nhất trạng thái và miền giá trị; bảo đảm chỉ một mô hình active; xác minh sinh viên của kế hoạch tương ứng dự báo; kiểm tra người nhận hỗ trợ đúng vai trò/phân công; quy định lịch sử phân công theo năm học; bổ sung index sau khi đo truy vấn thực tế. Không giả định các quy tắc này đã được DB bảo đảm.
+
+## 7. Khởi tạo, dữ liệu mẫu và kiểm tra
+
+Nguồn DDL thực thi là [01_init_schema.sql](../docker/postgres/init-scripts/01_init_schema.sql), gồm 19 bảng, 25 FK, 8 CREATE INDEX và extensions `uuid-ossp`, `pgcrypto`. UUID mặc định dùng `gen_random_uuid()`; script hiện vẫn bật cả hai extensions.
+
+```powershell
+docker compose up -d postgres pgadmin
+docker exec -it kltn13_postgres psql -U postgres -d personalized_learning_db
+```
+
+Docker mount `docker/postgres/init-scripts/` vào `/docker-entrypoint-initdb.d/`: chạy `01_init_schema.sql` rồi `02_seed_data.sql` khi thư mục dữ liệu PostgreSQL được khởi tạo lần đầu. Volume `postgres_data` lưu dữ liệu bền vững; sửa script hoặc restart container không cập nhật schema của volume đã tồn tại. `CREATE TABLE IF NOT EXISTS` cũng không sửa định nghĩa bảng cũ. Thay đổi schema đang sử dụng cần migration có kiểm soát.
+
+| Kết nối | Host | Cổng mặc định |
+| :--- | :--- | :--- |
+| Từ máy host | localhost | 5433 (`POSTGRES_HOST_PORT`) |
+| Từ backend/pgAdmin trong Docker | postgres | 5432 |
+| Giao diện pgAdmin | localhost | 5050 (`PGADMIN_PORT`) |
+
+Thông tin đăng nhập/kết nối lấy từ biến môi trường; hướng dẫn chi tiết tại [database_setup_guide.md](../docs/database_setup_guide.md). Số bảng ghi trong hướng dẫn cũ chưa phản ánh schema 19 bảng hiện tại.
+
+Seed gồm 4 vai trò, tài khoản minh họa, học phần/đợt mở môn và mô hình `v1.0.0-cutoff75`, threshold 0.5, cutoff_fraction 0.75. Dữ liệu seed phục vụ demo, không đồng nghĩa có nguồn LMS hoặc ETL thực tế. [demo_student_2045230069_ccc.sql](demo_student_2045230069_ccc.sql) bổ sung snapshot minh họa cho môn CCC của sinh viên 2045230069; script không tạo enrollment và không ghi đè snapshot hiện có.
+
+Các truy vấn chỉ đọc để kiểm tra database đang chạy:
 
 ```sql
--- ==============================================================================
--- KHOA LUAN TOT NGHIEP KLTN 13 - HUIT
--- KICH BAN KHOI TAO CO SO DU LIEU: personalized_learning_db
--- ==============================================================================
+SELECT table_name
+FROM information_schema.tables
+WHERE table_schema = 'public' AND table_type = 'BASE TABLE'
+ORDER BY table_name;
 
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
-CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+SELECT tablename, indexname, indexdef
+FROM pg_indexes
+WHERE schemaname = 'public'
+ORDER BY tablename, indexname;
 
--- 1. BANG NGUOI DUNG VA PHAN QUYEN
-CREATE TABLE users (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    email VARCHAR(255) UNIQUE NOT NULL,
-    hashed_password VARCHAR(255) NOT NULL,
-    full_name VARCHAR(150) NOT NULL,
-    avatar_url VARCHAR(500),
-    phone_number VARCHAR(20),
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
+SELECT conrelid::regclass AS table_name, conname,
+       pg_get_constraintdef(oid) AS definition
+FROM pg_constraint
+WHERE connamespace = 'public'::regnamespace
+ORDER BY conrelid::regclass::text, conname;
 
-CREATE TABLE roles (
-    id SMALLSERIAL PRIMARY KEY,
-    code VARCHAR(30) UNIQUE NOT NULL,
-    name VARCHAR(100) NOT NULL,
-    description TEXT
-);
-
-CREATE TABLE user_roles (
-    user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    role_id SMALLINT NOT NULL REFERENCES roles(id) ON DELETE CASCADE,
-    PRIMARY KEY (user_id, role_id)
-);
-
-CREATE TABLE student_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    student_code VARCHAR(50) UNIQUE NOT NULL,
-    gender VARCHAR(10) NOT NULL CHECK (gender IN ('M', 'F')),
-    highest_education VARCHAR(100) NOT NULL,
-    age_band VARCHAR(20) NOT NULL CHECK (age_band IN ('0-35', '35-55', '55<=')),
-    imd_band VARCHAR(50),
-    region VARCHAR(100),
-    disability VARCHAR(10) NOT NULL DEFAULT 'N'
-);
-
-CREATE TABLE advisor_profiles (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    user_id UUID UNIQUE NOT NULL REFERENCES users(id) ON DELETE CASCADE,
-    department VARCHAR(150) NOT NULL,
-    office_location VARCHAR(255),
-    lms_api_key VARCHAR(255)
-);
-
--- 2. BANG HOC PHAN VA DANG KY
-CREATE TABLE courses (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    code_module VARCHAR(20) UNIQUE NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    credits_default INT NOT NULL DEFAULT 30,
-    description TEXT
-);
-
-CREATE TABLE course_presentations (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    course_id UUID NOT NULL REFERENCES courses(id) ON DELETE CASCADE,
-    code_presentation VARCHAR(20) NOT NULL,
-    start_date DATE,
-    module_presentation_length INT NOT NULL DEFAULT 260,
-    CONSTRAINT uq_course_presentation UNIQUE (course_id, code_presentation)
-);
-
-CREATE TABLE student_enrollments (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    student_id UUID NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
-    presentation_id UUID NOT NULL REFERENCES course_presentations(id) ON DELETE CASCADE,
-    date_registration INT NOT NULL DEFAULT -10,
-    date_unregistration INT,
-    studied_credits INT NOT NULL DEFAULT 60,
-    num_of_prev_attempts INT NOT NULL DEFAULT 0,
-    final_result VARCHAR(20),
-    CONSTRAINT uq_student_presentation UNIQUE (student_id, presentation_id)
-);
-
--- 3. BANG DAC TRUNG HANH VI HOC TAP (OULAD 17 FEATURES AT CUTOFF 75%)
-CREATE TABLE student_feature_snapshots (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    enrollment_id UUID NOT NULL REFERENCES student_enrollments(id) ON DELETE CASCADE,
-    cutoff_stage VARCHAR(30) NOT NULL DEFAULT 'CUTOFF_75',
-    total_clicks_to_t INT NOT NULL DEFAULT 0,
-    clicks_resource_to_t INT NOT NULL DEFAULT 0,
-    clicks_url_to_t INT NOT NULL DEFAULT 0,
-    active_days_to_t INT NOT NULL DEFAULT 0,
-    active_day_ratio FLOAT NOT NULL DEFAULT 0.0,
-    days_since_last_activity INT NOT NULL DEFAULT 0,
-    clicks_recent_7 INT NOT NULL DEFAULT 0,
-    clicks_recent_30 INT NOT NULL DEFAULT 0,
-    assessments_submitted_to_t INT NOT NULL DEFAULT 0,
-    late_submissions_to_t INT NOT NULL DEFAULT 0,
-    submission_rate FLOAT NOT NULL DEFAULT 0.0,
-    raw_features_json JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 4. BANG MO HINH ML VA LICH SU DU BAO
-CREATE TABLE ml_models (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    model_name VARCHAR(150) NOT NULL,
-    version VARCHAR(30) UNIQUE NOT NULL,
-    model_file_path VARCHAR(500) NOT NULL,
-    threshold FLOAT NOT NULL DEFAULT 0.5,
-    cutoff_fraction FLOAT NOT NULL DEFAULT 0.75,
-    accuracy FLOAT,
-    roc_auc FLOAT,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    metadata_json JSONB,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE prediction_runs (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    snapshot_id UUID NOT NULL REFERENCES student_feature_snapshots(id) ON DELETE CASCADE,
-    model_id UUID NOT NULL REFERENCES ml_models(id) ON DELETE RESTRICT,
-    prediction_label SMALLINT NOT NULL CHECK (prediction_label IN (0, 1)),
-    risk_probability FLOAT NOT NULL,
-    execution_time_ms INT,
-    triggered_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- 5. BANG KE HOACH CAN THIEP VA GHI CHU CO VAN
-CREATE TABLE intervention_plans (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    prediction_run_id UUID NOT NULL REFERENCES prediction_runs(id) ON DELETE CASCADE,
-    student_id UUID NOT NULL REFERENCES student_profiles(id) ON DELETE CASCADE,
-    status VARCHAR(30) NOT NULL DEFAULT 'ACTIVE',
-    target_completion_date DATE,
-    advisor_note_summary TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
-CREATE TABLE intervention_tasks (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    plan_id UUID NOT NULL REFERENCES intervention_plans(id) ON DELETE CASCADE,
-    category VARCHAR(50) NOT NULL,
-    priority VARCHAR(20) NOT NULL CHECK (priority IN ('HIGH', 'MEDIUM', 'LOW')),
-    title VARCHAR(255) NOT NULL,
-    description TEXT NOT NULL,
-    target_metric VARCHAR(255) NOT NULL,
-    is_completed BOOLEAN NOT NULL DEFAULT FALSE,
-    completed_at TIMESTAMPTZ,
-    student_feedback TEXT
-);
-
-CREATE TABLE advising_notes (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    enrollment_id UUID NOT NULL REFERENCES student_enrollments(id) ON DELETE CASCADE,
-    advisor_id UUID NOT NULL REFERENCES advisor_profiles(id) ON DELETE CASCADE,
-    meeting_date DATE NOT NULL DEFAULT CURRENT_DATE,
-    meeting_type VARCHAR(50) NOT NULL DEFAULT 'IN_PERSON',
-    content TEXT NOT NULL,
-    agreed_actions TEXT,
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
-);
-
--- CHEN DU LIEU DANH MUC VAI TRO MAC DINH
-INSERT INTO roles (code, name, description) VALUES
-('ADMIN', 'Quản trị viên', 'Toàn quyền cấu hình hệ thống và quản lý tài khoản'),
-('ADVISOR', 'Cố vấn học tập', 'Theo dõi nguy cơ học tập của sinh viên và kê đơn can thiệp'),
-('LECTURER', 'Giảng viên bộ môn', 'Quản lý điểm số và nhật ký học phần phụ trách'),
-('STUDENT', 'Sinh viên', 'Tra cứu rủi ro cá nhân và thực hiện kế hoạch can thiệp');
+SELECT version, is_active, threshold, cutoff_fraction FROM ml_models;
 ```
+
+## 8. Khác biệt giữa SQL khởi tạo và ORM
+
+Bảng dưới đây ghi nhận khác biệt từ mã nguồn; không khẳng định schema của database đã triển khai giống hoàn toàn một trong hai nguồn. Default của ORM là phía Python, không tự trở thành DEFAULT ở DB.
+
+| Thành phần | SQL khởi tạo | ORM hiện tại |
+| :--- | :--- | :--- |
+| UUID id | DEFAULT gen_random_uuid() | default=uuid.uuid4 phía Python |
+| Timestamp tạo/sửa | DEFAULT NOW(); không có trigger update | default UTC phía Python; một số updated_at có onupdate |
+| advisor_profiles.office_location | VARCHAR(255) | String(100) |
+| lecturer_profiles.academic_rank | Cho phép NULL, DEFAULT 'Giảng viên' | nullable=False, default 'Giảng viên' |
+| course_presentations.module_presentation_length | DEFAULT 260 | Không khai báo default |
+| course_presentations | UNIQUE(course_id, code_presentation) | Không khai báo UNIQUE ghép |
+| student_enrollments.date_registration | DEFAULT -10 | default 0 |
+| student_enrollments | UNIQUE(student_id, presentation_id) | Không khai báo UNIQUE ghép |
+| student_feature_snapshots.cutoff_stage | VARCHAR(30) | String(50) |
+| ml_models.model_name | VARCHAR(150) | String(100) |
+| ml_models.version | VARCHAR(30), UNIQUE | String(50), không unique |
+| ml_models.model_file_path | VARCHAR(500) | String(255) |
+| ml_models.is_active | DEFAULT TRUE | default False |
+| prediction_runs.model_id | ON DELETE RESTRICT | ON DELETE CASCADE |
+| intervention_tasks.priority | CHECK HIGH/MEDIUM/LOW; không default | default MEDIUM; không CheckConstraint |
+| intervention_tasks.target_metric | VARCHAR(255) | String(100) |
+| advising_notes.meeting_date | DEFAULT CURRENT_DATE | Không khai báo default |
+| advising_notes.meeting_type | DEFAULT IN_PERSON | default ONLINE |
+| CHECK miền giá trị | gender, age_band, prediction_label, priority, target_role, help request status | Không khai báo các CheckConstraint tương ứng |
+| Index | 8 index tường minh trong mục 6 | Các index=True khác danh sách SQL |
+
+Đặc biệt, tạo DB bằng ORM thuần sẽ không có UNIQUE phiên bản mô hình để hỗ trợ `ON CONFLICT (version)` trong seed và có hành vi xóa mô hình khác SQL init. Cần thống nhất DDL/ORM và xây dựng migration trước khi thay đổi phương thức tạo database. Lần cập nhật này chỉ sửa tài liệu, không thay đổi schema, model hoặc dữ liệu đang chạy.
