@@ -13,7 +13,7 @@ INSERT INTO roles (code, name, description) VALUES
 ON CONFLICT (code) DO NOTHING;
 
 -- 2. CHEN TAI KHOAN QUAN TRI HE THONG MAC DINH (ADMIN DEFAULT ACCOUNT)
--- Mat khau mac dinh la: admin_password_123 (duoc hash bang thuat toan blowfish/bcrypt qua pgcrypto)
+-- Mat khau mac dinh la: admin (duoc hash bang thuat toan blowfish/bcrypt qua pgcrypto)
 DO $$
 DECLARE
     admin_user_id UUID;
@@ -34,7 +34,7 @@ BEGIN
         ) VALUES (
             gen_random_uuid(),
             'admin@huit.edu.vn',
-            crypt('admin_password_123', gen_salt('bf', 10)),
+            crypt('admin', gen_salt('bf', 10)),
             'Quản trị viên Hệ thống KLTN 13',
             '0901234567',
             TRUE,
