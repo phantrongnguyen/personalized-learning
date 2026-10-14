@@ -9,8 +9,6 @@ Biểu đồ được xây dựng từ [backend API](../apps/backend/api/v1/endp
 
 Use case biểu diễn mục tiêu người dùng thực hiện qua backend hiện tại. Database, mô hình LightGBM và các service nội bộ nằm trong ranh giới hệ thống, không được xem là actor bên ngoài. Bên gọi API là người hoặc ứng dụng gọi các endpoint công khai; chưa giả định có hệ thống LMS tích hợp.
 
-Biểu đồ phản ánh workingtree ngày 14/10/2026; chức năng đặt lại mật khẩu thuộc thay đổi quản lý tài khoản đang phát triển riêng, ngoài phạm vi commit dự báo.
-
 Bản tổng quan dùng ký pháp UML PlantUML chuẩn (actor, use case, ranh giới hệ thống, kế thừa actor). Các sơ đồ Mermaid bên dưới hiển thị trực tiếp trong trình xem Markdown có hỗ trợ Mermaid, dùng nút dạng bầu dục cho use case và hình chữ nhật cho actor vì Mermaid không có cú pháp use case UML riêng. Đường liền là liên kết actor–use case, không biểu thị thứ tự thao tác.
 
 Đăng nhập hợp lệ là **điều kiện trước** của chức năng được bảo vệ, không phải quan hệ `include` bắt buộc thực hiện lại ở mỗi thao tác. Không dùng `extend` để biểu diễn đơn thuần việc thao tác này xảy ra sau thao tác khác.

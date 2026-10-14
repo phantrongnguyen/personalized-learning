@@ -1,245 +1,382 @@
-# 🎓 EduRisk AI — Nền Tảng Dự Đoán & Can Thiệp Nguy Cơ Học Tập Cá Nhân Hóa
+# EduRisk AI — Hệ thống gợi ý chiến lược học tập cá nhân hóa
 
-> **Thuật toán cốt lõi:** Human Conception Optimization (HCO) cải tiến kết hợp Variable Neighborhood Local Search (VNLS)  
-> **Kiến trúc mô hình:** LightGBM Classifier tại mốc quan sát Cutoff 75%  
-> **Tập dữ liệu chuẩn:** Open University Learning Analytics Dataset (OULAD) — hơn 32.500 hồ sơ học tập  
-> **Phiên bản:** v2.4 Enterprise Edition  
+Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT). Hệ thống kết hợp dự báo nguy cơ học tập bằng LightGBM với các không gian làm việc dành cho quản trị viên, cố vấn học tập, giảng viên và sinh viên.
 
-[![Python](https://img.shields.io/badge/Python-3.12%2B-blue.svg)](https://www.python.org/)
-[![FastAPI](https://img.shields.io/badge/FastAPI-0.115%2B-009688.svg)](https://fastapi.tiangolo.com/)
-[![React](https://img.shields.io/badge/React-18.3-61dafb.svg)](https://react.dev/)
-[![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178c6.svg)](https://www.typescriptlang.org/)
-[![TailwindCSS](https://img.shields.io/badge/TailwindCSS-3.4-38bdf8.svg)](https://tailwindcss.com/)
-[![License](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
-[![Status](https://img.shields.io/badge/Status-Production%20Ready-brightgreen.svg)](#)
+**Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
 
----
+## Mục lục
 
-## 📌 1. Giới Thiệu Dự Án (Overview)
+- [Mục tiêu và kiến trúc](#mục-tiêu-và-kiến-trúc)
+- [Chức năng đã thực hiện](#chức-năng-đã-thực-hiện)
+- [Mô hình và dữ liệu](#mô-hình-và-dữ-liệu)
+- [Cấu trúc dự án](#cấu-trúc-dự-án)
+- [Cài đặt và chạy local](#cài-đặt-và-chạy-local)
+- [Tài khoản và phân quyền](#tài-khoản-và-phân-quyền)
+- [API chính](#api-chính)
+- [Kiểm thử](#kiểm-thử)
+- [Giới hạn và công việc tiếp theo](#giới-hạn-và-công-việc-tiếp-theo)
+- [Tài liệu và quy trình Git](#tài-liệu-và-quy-trình-git)
 
-Trong môi trường giáo dục trực tuyến và đại học hiện đại (EdTech & LMS), người học đối mặt với nhiều rào cản: thiếu kỷ luật tự giác, bắt nhịp chậm ở giai đoạn đầu kỳ, tương tác VLE ngắt quãng và nộp bài trễ hạn. Việc thiếu cơ chế cảnh báo sớm dẫn đến tỷ lệ học viên bỏ học (*Dropout*) hoặc thi trượt (*Fail*) luôn ở mức cao.
+## Mục tiêu và kiến trúc
 
-**EduRisk AI** giải quyết bài toán trên bằng cách chuyển dịch mạnh mẽ từ **Phân tích dự đoán (Predictive Analytics)** sang **Kê đơn giải pháp (Prescriptive Analytics)**:
-1. **Lựa chọn đặc trưng tối ưu (Feature Selection):** Ứng dụng giải thuật phỏng sinh học lai **HCO-VNLS** loại bỏ hơn 72% – 86% số chiều dữ liệu dư thừa/nhiễu từ nhật ký hành vi LMS.
-2. **Dự báo nguy cơ học tập thời gian thực:** Phân loại nhị phân chính xác học viên có nguy cơ rớt môn hoặc bỏ học (*At-Risk* vs *Safe*) tại thời điểm vàng **Cutoff 75%** trước kỳ thi.
-3. **Đề xuất chiến lược can thiệp sư phạm cá nhân hóa:** Phân tích khoảng cách năng lực (*Gap Analysis*) và đối sánh qua biểu đồ **Radar Competency Chart** so với chuẩn học viên giỏi, tự động kê đơn kế hoạch hành động cụ thể kèm mục tiêu định lượng đo lường được.
+Hệ thống hướng đến phát hiện sinh viên có nguy cơ học tập tại mốc quan sát 75% thời lượng học phần, trình bày các chỉ số hành vi học tập và hỗ trợ theo dõi kế hoạch can thiệp, nhiệm vụ bổ trợ, yêu cầu trợ giúp.
 
----
+| Thành phần | Công nghệ và nhiệm vụ |
+| --- | --- |
+| Frontend | React 18, TypeScript 5.7, Vite 6, Tailwind CSS 3.4, Lucide; SPA điều hướng bằng hash |
+| Backend | Python 3.12, FastAPI, Pydantic 2; API, xác thực và nghiệp vụ học tập |
+| Database | PostgreSQL 15; SQLAlchemy 2 async và driver asyncpg |
+| Xác thực | JWT access/refresh token; mật khẩu bcrypt; vai trò ADMIN, ADVISOR, LECTURER, STUDENT |
+| Machine Learning | LightGBM, pandas, scikit-learn và artifact joblib; metadata HCO-VNLS tại cutoff 75% |
+| Mã dùng chung | TypeScript types và định nghĩa đặc trưng trong `packages/shared` |
+| Hạ tầng local | Docker Compose cho PostgreSQL và pgAdmin; backend/frontend chạy bằng Python và Node.js |
 
-## 🎯 2. Tiến Độ & Kết Quả Hoàn Thành (Implementation Status)
+Luồng tổng quát: frontend gọi REST API → backend kiểm tra tài khoản/quyền trên các phân hệ → repository truy cập PostgreSQL; luồng dự báo sử dụng pipeline mô hình được nạp khi backend khởi động.
 
-Hệ thống đã được hiện thực hóa trọn gói theo kiến trúc Monorepo tiêu chuẩn công nghiệp:
+## Chức năng đã thực hiện
 
-- [x] **Khảo sát & Nghiên cứu lý thuyết:** Tổng hợp các tài liệu học thuật về Phân tích học tập (Learning Analytics), cơ sở toán học thuật toán **HCO** (Acharya & Das, 2022) và **VNLS** (Hansen et al., 2017) lưu trữ tại `docs/architecture/` và `docs/data/`.
-- [x] **Dữ liệu thực tế OULAD:** Thu thập và tích hợp toàn diện 7 bảng của bộ dữ liệu chuẩn quốc tế **Open University Learning Analytics Dataset** (32.593 bản ghi sinh viên, hơn 10 triệu bản ghi tương tác VLE).
-- [x] **Pipeline Tiền xử lý & Kỹ thuật đặc trưng vector hóa:** Xử lý missing values, chuẩn hóa phân loại, trích xuất đặc trưng đa chiều (điểm bài tập có trọng số, độ trễ hạn, clickstream theo mốc thời gian) lưu tại `packages/ml/src/features/engineering.py` và `packages/ml/src/preprocessing/pipeline.py`.
-- [x] **Cài đặt thuật toán tối ưu hóa cải tiến HCO-VNLS:**
-  - Cài đặt **HCO thuần túy** (`packages/ml/src/optimization/hco.py`): Cơ chế chọn lọc dịch nhầy và pha siêu hoạt hóa (Hyperactivation) bằng nhiễu Cauchy.
-  - Cài đặt **VNLS** (`packages/ml/src/optimization/vnls.py`): Toán tử $1\text{-flip}$, $2\text{-flip}$, Bit Swap và Feature Drop.
-  - Cài đặt **Lai ghép HCO-VNLS** (`packages/ml/src/optimization/hco_vnls.py`): Cân bằng tối ưu giữa Thăm dò toàn cục (Exploration) và Khai thác cục bộ (Exploitation).
-- [x] **Mô hình đối chứng Benchmark:** Cài đặt đối chứng đầy đủ với **Genetic Algorithm (GA)** và **Particle Swarm Optimization (PSO)** (`packages/ml/src/optimization/baselines.py`).
-- [x] **Mô hình Gợi ý Chiến lược Học tập Cá nhân hóa:** Xây dựng `LearningRecommendationEngine` (`packages/ml/src/models/recommendation/engine.py`) so sánh điểm lệch hành vi so với nhóm khá giỏi để sinh lộ trình can thiệp hành động thực tế.
-- [x] **Đóng gói & Lưu trữ Mô hình (Artifacts):** Serialize model pipeline (`.joblib`), metadata đặc trưng và ngưỡng phân loại tại `apps/backend/artifacts/` và `packages/ml/artifacts/`.
-- [x] **Chuỗi 3 Jupyter Notebooks Thực Nghiệm Hoàn Chỉnh:** 
-  1. [`01_data_understanding.ipynb`](notebooks/01_data_understanding.ipynb): Khám phá phân phối dữ liệu và trích xuất đặc trưng.
-  2. [`02_hco_vnls_model_and_recommendation.ipynb`](notebooks/02_hco_vnls_model_and_recommendation.ipynb): Thực nghiệm Benchmark so sánh GA, PSO, HCO, HCO-VNLS và phân tích hội tụ.
-  3. [`03_save_and_load_best_model.ipynb`](notebooks/03_save_and_load_best_model.ipynb): Đóng gói, sanity check nạp model và mô phỏng suy luận.
-- [x] **Tích hợp Web Service RESTful API (FastAPI Backend):** Xây dựng server FastAPI với kiến trúc tách lớp Clean Architecture (`api/`, `core/`, `ml/`, `schemas/`, `services/`), phục vụ các endpoint `/api/v1/health`, `/api/v1/predictions/` và tự động mount Static SPA tại `/app/`.
-- [x] **Giao diện Người dùng Hiện đại (React 18 + TypeScript + Tailwind CSS SPA):**
-  - **Sidebar cánh trái** hỗ trợ thu gọn/mở rộng, định tuyến nhanh giữa **Dashboard** và **Hồ sơ chuyên gia (Profile)**.
-  - **Dashboard**: Nhập 17 đặc trưng học tập theo nhóm, nạp mẫu thử nghiệm SV Yếu/Tốt, hiển thị đồng hồ **Radial Risk Gauge** SVG và biểu đồ **Radar Competency Chart** đối sánh chuẩn năng lực.
-  - **Kê đơn can thiệp**: Tự động sinh danh sách hành động theo mức độ ưu tiên (High / Medium / Low) kèm nút sao chép 1-click.
-  - **Lịch sử & Xuất báo cáo**: Quản lý lịch sử phân tích trong phiên và xuất báo cáo CSV có UTF-8 BOM hiển thị tiếng Việt chuẩn trên Excel.
-  - **Hồ sơ chuyên gia & Cài đặt (`/profile`)**: Quản lý thông tin cố vấn, giám sát số ca rủi ro và mã tích hợp LMS API Key (chuẩn LTI 1.3).
-  - **Giám sát kết nối**: Đèn trạng thái Live Ping Monitor đo độ trễ API theo thời gian thực.
-  - **Footer chuẩn doanh nghiệp**: Dải đăng ký nhận tin, điều hướng đa cột, trạng thái hệ thống SLA 99.9% và liên kết pháp lý bảo mật (ISO 27001, GDPR, FERPA).
+### Giao diện và nhận diện
 
----
+- Giao diện nền trắng, chữ và viền phù hợp nền sáng; màu chủ đạo xanh dương `#005a9c`.
+- Logo HUIT qua component `BrandLogo`, sử dụng tại sidebar, footer và trang đăng nhập.
+- Sidebar thu gọn, navbar, thông báo kết quả và hộp thoại thao tác.
+- Các trang Home, About, Contact, dashboard và không gian theo vai trò.
+- Bỏ dòng hiển thị địa chỉ máy chủ ở dashboard/RiskGauge, giữ cấu hình kết nối API phục vụ nội bộ.
 
-## 🔬 3. Cơ Sở Toán Học Thuật Toán Đề Xuất (HCO-VNLS)
+Logo hiện được tải từ [cổng sinh viên HUIT](https://sinhvien.huit.edu.vn/Content/AConfig/images/sv_logo_dashboard.png), phụ thuộc khả năng truy cập nguồn ngoài.
 
-```
-┌─────────────────────────────────────────────────────────┐
-│        1. Khởi tạo Quần thể Phối tử (Binary Pop)        │
-│          Xi ∈ {0, 1}^D qua hàm truyền Sigmoid           │
-└───────────────────────────┬─────────────────────────────┘
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│     2. Đánh giá Hàm thích nghi Đa mục tiêu (Fitness)    │
-│   Fitness(x) = α · F1_Score + (1 - α) · (1 - |x| / D)   │
-└───────────────────────────┬─────────────────────────────┘
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│    3. Tìm kiếm Cục bộ VNLS quanh Cá thể Tốt nhất        │
-│    (Toán tử 1-flip, 2-flip, Bit Swap, Feature Drop)     │
-└───────────────────────────┬─────────────────────────────┘
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│     4. Cập nhật Vận tốc & Vị trí HCO (Mucus Guidance)   │
-│     + Pha Siêu hoạt hóa Hyperactivation (Nhiễu Cauchy)  │
-└───────────────────────────┬─────────────────────────────┘
-                            ▼
-┌─────────────────────────────────────────────────────────┐
-│     5. Trích xuất Tập đặc trưng Tối ưu & Suy luận       │
-└─────────────────────────────────────────────────────────┘
-```
+### Dashboard phân tích
 
-### Hàm Mục Tiêu Đa Tiêu Chí (Fitness Function)
-$$\text{Fitness}(x) = \alpha \cdot F_1(X_x, y) + (1 - \alpha) \cdot \left(1 - \frac{\sum_{i=1}^D x_i}{D}\right)$$
-* $\alpha = 0.85$: Tối đa hóa chất lượng phân loại và độ tin cậy $F_1\text{-score}$.
-* $1 - \alpha = 0.15$: Khuyến khích loại bỏ thuộc tính dư thừa, tối ưu hóa kích thước mô hình (Feature Parsimony).
+- Form 17 đặc trưng đầu vào và các mẫu dữ liệu để thử giao diện.
+- Gọi API dự báo, hiển thị nhãn nguy cơ và xác suất lớp nguy cơ.
+- Đồng hồ RiskGauge, biểu đồ radar và gợi ý can thiệp theo chỉ số học tập.
+- Lịch sử phân tích lưu trên trình duyệt; xuất CSV với UTF-8 BOM.
 
----
+Gợi ý ở dashboard được xây dựng từ các quy tắc frontend trong `utils/recommendations.ts`. Lịch sử trình duyệt không phải nhật ký học tập tập trung hoặc dữ liệu đã được tách riêng theo tài khoản.
 
-## 📊 4. Kết Quả Thực Nghiệm Đối Chứng (Benchmark Results)
+### Quản trị viên
 
-Kết quả đánh giá trên tập kiểm thử độc lập gồm **6.519 sinh viên** (tách 20% độc lập từ tập OULAD đã trích xuất):
+Trang `#admin-users` đã tích hợp với API backend:
 
-| Phương Pháp Tối Ưu | Số Đặc Trưng Chọn | Tỷ Lệ Giảm Thuộc Tính (%) | Accuracy | F1-Score | ROC-AUC |
-| :--- | :---: | :---: | :---: | :---: | :---: |
-| **Baseline (Tất cả đặc trưng)** | 30 / 30 | 0.0% | 93.04% | 0.9304 | 0.9799 |
-| **Genetic Algorithm (GA)** | 12 / 30 | 60.0% | 91.84% | 0.9184 | 0.9727 |
-| **Particle Swarm Optimization (PSO)** | 5 / 30 | 83.3% | 93.02% | 0.9303 | 0.9783 |
-| **HCO Thuần túy** | 12 / 30 | 60.0% | 93.39% | 0.9339 | 0.9810 |
-| **HCO-VNLS Đề Xuất** | **4 / 30** | **86.7%** | **93.04%** | **0.9304** | **0.9785** |
+- Danh sách phân trang 25 tài khoản; thống kê trên trang hiện tại.
+- Tìm tên, email, mã sinh viên/giảng viên; lọc vai trò và trạng thái trong trang đang tải.
+- Cấp tài khoản sinh viên, giảng viên hoặc cố vấn, tạo hồ sơ phù hợp.
+- Xem chi tiết, sửa thông tin và các trường hồ sơ tương ứng.
+- Khóa/mở khóa tài khoản; chặn tự khóa ở backend.
+- Xóa tài khoản với xác nhận bằng email; chặn tự xóa ở backend.
+- Ghi audit log khi sửa/xóa; rollback khi gặp lỗi ràng buộc dữ liệu.
+- Đặt lại mật khẩu với xác nhận mật khẩu mới, kiểm tra giới hạn bcrypt và thông báo kết quả.
 
-> **Đóng góp khoa học:** Thuật toán lai **HCO-VNLS** giảm được **86.7% số chiều dữ liệu** (chỉ giữ lại 4 đặc trưng then chốt nhất) mà hiệu năng phân loại vẫn tương đương với mô hình sử dụng toàn bộ 30 thuộc tính, giúp hệ thống suy luận thời gian thực với độ trễ cực thấp.
+API admin còn có quản lý học phần, mở lớp học phần, phân công cố vấn/giảng viên, danh sách và kích hoạt mô hình, nạp lại mô hình, dự báo hàng loạt và tra cứu audit log. Chưa có giao diện quản trị đầy đủ cho tất cả API này.
 
----
+**Xóa tài khoản là xóa vĩnh viễn:** các hồ sơ và dữ liệu học tập phụ thuộc có thể bị xóa theo khóa ngoại CASCADE. Muốn giữ dữ liệu, dùng thao tác khóa tài khoản.
 
-## 📂 5. Cấu Trúc Thư Mục Dự Án (Monorepo Architecture)
+### Cố vấn học tập
+
+Đã có trang `#advisor` và API cho danh sách lớp, sinh viên phụ trách, thống kê lớp, tổng quan/radar sinh viên, kế hoạch can thiệp, nhiệm vụ, ghi chú tư vấn và xuất báo cáo rủi ro Excel. Mức độ tích hợp giao diện tùy từng chức năng; quyền trên từng bản ghi cần tiếp tục rà soát.
+
+### Giảng viên
+
+Đã có trang `#lecturer` và API cho lớp học phần phụ trách, bảng nguy cơ, danh sách sinh viên, cập nhật đánh giá/tiến độ, giao nhiệm vụ bổ trợ và cảnh báo tới cố vấn.
+
+### Sinh viên
+
+Đã có trang `#student` và API cho hồ sơ cá nhân, học phần, dự báo/radar theo đăng ký học, kế hoạch can thiệp, nhiệm vụ, đánh dấu hoàn thành và gửi/xem yêu cầu trợ giúp.
+
+### Hồ sơ và đăng nhập
+
+- Trang `#profile` thay đổi nội dung và lối tắt theo vai trò.
+- Sinh viên hiển thị MSSV; giảng viên hiển thị mã giảng viên, học hàm/học vị; cố vấn hiển thị đơn vị và phòng làm việc.
+- Người dùng tự sửa họ tên và điện thoại; email và vai trò ở trang hồ sơ chỉ đọc.
+- Sinh viên đăng nhập bằng MSSV; giảng viên, cố vấn, admin đăng nhập bằng email.
+- Backend nhận `username` và giữ tương thích với payload `email` cũ.
+- Tài khoản do admin cấp; chưa mở đăng ký công khai.
+- API đổi mật khẩu cá nhân đã có; admin có thể đặt lại mật khẩu trên trang Quản lý tài khoản.
+
+## Mô hình và dữ liệu
+
+Nguồn metadata hiện tại: [THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json](apps/backend/artifacts/THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json).
+
+| Thuộc tính | Giá trị được ghi trong metadata |
+| --- | --- |
+| Tên mô hình | HCO-VNLS + LightGBM 80 cây — cutoff 75% |
+| Mốc quan sát | `cutoff_fraction = 0.75` |
+| Schema đầu vào | 17 cột |
+| Nhãn nguy cơ | `positive_label = 1` |
+| Ngưỡng phân loại | `threshold = 0.5` |
+| Số dòng huấn luyện cuối | 19.712 |
+| Số dòng test loại khỏi fit | 3.447 |
+| Accuracy tham chiếu validation | 0,8741 |
+| Average precision lớp nguy cơ | 0,8968 |
+| Recall lớp nguy cơ | 0,6898 |
+
+Ba chỉ số trên thuộc `validation_reference_train_only`, không phải kết quả test độc lập mới chạy. Không đồng nhất average precision với ROC-AUC; dữ liệu seed hiện gán giá trị gần 0,8968 vào cột `roc_auc`, cần chuẩn hóa lại ý nghĩa chỉ số.
+
+Pipeline dự báo trả `prediction` bằng cách so xác suất lớp 1 với ngưỡng trong artifact. `confidence` là xác suất lớp nguy cơ, kể cả khi nhãn trả về là 0.
+
+17 đặc trưng gồm thông tin học phần/nhân khẩu học, tín chỉ, thời điểm đăng ký, tổng click, click tài nguyên/URL, ngày hoạt động, bài nộp/trễ hạn, tỷ lệ hoạt động/nộp bài, số ngày không hoạt động và click trong 7/30 ngày gần nhất. Xem [schema đầu vào](apps/backend/schemas/prediction.py) và [định nghĩa frontend](packages/shared/constants/fields.ts).
+
+Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Đường dẫn notebook/dữ liệu ghi trong metadata là nguồn gốc thực nghiệm, không bảo đảm còn có trong checkout. Dữ liệu OULAD đầy đủ cũng không được đóng gói vào repository.
+
+## Cấu trúc dự án
 
 ```text
-kltn13-personalized-learning-recommendation/
-├── apps/                               # CÁC ỨNG DỤNG ĐẦU CUỐI
-│   ├── backend/                        # API Server với FastAPI (Python 3.12)
-│   │   ├── api/v1/endpoints/           # Router health.py, predictions.py
-│   │   ├── artifacts/                  # Model LightGBM & Scaler đã serialize (.joblib)
-│   │   ├── core/config.py              # Cấu hình Pydantic BaseSettings
-│   │   ├── ml/                         # model_loader.py, predictor.py
-│   │   ├── schemas/                    # Pydantic schemas cho đầu vào/đầu ra
-│   │   ├── services/                   # Prediction service layer
-│   │   └── main.py                     # Entry point FastAPI, CORS & StaticFiles mount
-│   │
-│   └── frontend/                       # Modern React 18 SPA (TypeScript + Vite + Tailwind)
-│       ├── dist/                       # Bản đóng gói sản xuất (phục vụ tại /app)
-│       ├── legacy/                     # Bản sao lưu phiên bản Vanilla HTML/CSS/JS cũ
-│       ├── src/
-│       │   ├── components/
-│       │   │   ├── common/             # Sidebar.tsx, Navbar.tsx, Footer.tsx, Modals, Toast
-│       │   │   ├── dashboard/          # FeatureForm.tsx, RiskGauge.tsx, HistoryTable.tsx
-│       │   │   └── recommendation/     # RadarCompetencyChart.tsx, InterventionList.tsx
-│       │   ├── pages/                  # HomePage, DashboardPage, ProfilePage, AboutPage, ContactPage
-│       │   ├── services/api.ts         # Axios/Fetch API client kết nối backend
-│       │   ├── state/AppContext.tsx    # State management toàn cục (Auth, Ping, History)
-│       │   ├── utils/                  # recommendations.ts, csv.ts
-│       │   ├── App.tsx                 # Root layout & Hash router
-│       │   └── main.tsx                # React DOM entry point
+personalized-learning/
+├── apps/
+│   ├── backend/
+│   │   ├── api/v1/endpoints/   # auth, admin, advisor, lecturer, student, health, predictions
+│   │   ├── artifacts/          # Artifact mô hình và metadata
+│   │   ├── core/               # Config, database, JWT và permissions
+│   │   ├── ml/                 # Tải mô hình và suy luận
+│   │   ├── models/             # SQLAlchemy models
+│   │   ├── repositories/       # Truy vấn dữ liệu
+│   │   ├── schemas/            # Pydantic request/response
+│   │   ├── services/           # Xác thực, dự báo, audit
+│   │   ├── tests/              # Unit test và kiểm thử luồng học tập
+│   │   └── main.py             # FastAPI, lifespan, CORS, static mount
+│   └── frontend/
+│       ├── src/components/     # common, dashboard, recommendation, admin
+│       ├── src/pages/          # Các trang SPA theo vai trò
+│       ├── src/services/       # API client và admin client
+│       ├── src/state/          # AppContext
+│       ├── src/utils/          # CSV và gợi ý can thiệp
 │       ├── package.json
-│       ├── vite.config.ts
-│       └── tailwind.config.js
-│
-├── packages/                           # CÁC GÓI MÃ NGUỒN DÙNG CHUNG
-│   ├── ml/                             # Gói Machine Learning & Tối ưu hóa cốt lõi
-│   │   ├── artifacts/                  # Serialized models, scalers, encoders
-│   │   └── src/
-│   │       ├── features/engineering.py # Trích xuất 30 đặc trưng OULAD
-│   │       ├── preprocessing/          # DataPipeline làm sạch, mã hóa, chuẩn hóa
-│   │       ├── optimization/           # hco.py, vnls.py, hco_vnls.py, baselines.py
-│   │       └── models/recommendation/  # engine.py (Recommendation Engine)
-│   │
-│   └── shared/                         # Schemas và Constants dùng chung toàn monorepo
-│       ├── constants/fields.ts         # 17 features OULAD, Presets SV yếu/tốt, Benchmarks
-│       └── types/student.ts            # TypeScript interfaces cho Feature, User, Prediction
-│
-├── data/                               # QUẢN TRỊ DỮ LIỆU
-│   ├── raw/                            # 7 bảng CSV OULAD thô (studentInfo, studentVle...)
-│   └── processed/                      # oulad_features_engineered.csv (Dữ liệu sạch)
-│
-├── notebooks/                          # 3 NOTEBOOKS THỰC NGHIỆM KHOA HỌC
-│   ├── 01_data_understanding.ipynb
-│   ├── 02_hco_vnls_model_and_recommendation.ipynb
-│   └── 03_save_and_load_best_model.ipynb
-│
-├── docs/                               # TÀI LIỆU HỌC THUẬT & BÁO CÁO KIẾN TRÚC
+│       └── vite.config.ts
+├── packages/shared/            # Types và constants frontend
+├── docker/postgres/init-scripts/# Schema và dữ liệu khởi tạo
+├── database/                   # Thiết kế database
+├── data/                       # Vùng dữ liệu local, dữ liệu lớn không commit
+├── docs/                       # Kiến trúc, hướng dẫn database
+├── reports/                    # Báo cáo tiến độ và kế hoạch
+├── .agents/                    # Quy định làm việc và Conventional Commits
+├── .env.example
 ├── docker-compose.yml
 ├── requirements.txt
 └── README.md
 ```
 
----
+## Cài đặt và chạy local
 
-## 🚀 6. Hướng Dẫn Cài Đặt & Khởi Chạy (Quickstart)
+### 1. Yêu cầu
 
-### Bước 1: Chuẩn bị môi trường Python & Cài đặt phụ thuộc
+- Python 3.12; Node.js 20.19+ hoặc 22.12+ và npm cho môi trường Vite 6.
+- Docker Desktop đang chạy nếu dùng PostgreSQL trong Compose.
+- Artifact `apps/backend/artifacts/model_hco_vnls_lightgbm_cutoff75.joblib` tồn tại và tương thích thư viện.
 
-```bash
-# Tạo và kích hoạt môi trường ảo Python 3.12+
-python -m venv venv
+Các lệnh dưới đây dùng PowerShell, bắt đầu tại thư mục gốc repository.
 
-# Windows (PowerShell):
-.\venv\Scripts\activate
-# Linux / macOS:
-source venv/bin/activate
+### 2. Môi trường Python
 
-# Cài đặt các thư viện Python
-pip install -r requirements.txt
+```powershell
+python -m venv .venv
+.\.venv\Scripts\Activate.ps1
+python -m pip install -r requirements.txt
+python -m pip install asyncpg bcrypt joblib pytest-asyncio
 ```
 
----
+`requirements.txt` hiện chưa khai báo trực tiếp đầy đủ các gói ở lệnh bổ sung. scikit-learn được pin `1.6.0`; metadata artifact cũng ghi phiên bản này.
 
-### Bước 2: Khởi chạy Backend API Server (FastAPI)
+### 3. Cấu hình môi trường
 
-```bash
+Sao chép `.env.example` thành `.env` nếu chưa có, rồi sửa giá trị cho môi trường local. Không ghi đè `.env` đang sử dụng.
+
+```powershell
+if (-not (Test-Path .env)) { Copy-Item .env.example .env }
+python -c "import secrets; print(secrets.token_urlsafe(48))"
+```
+
+Dùng chuỗi được sinh làm `SECRET_KEY` trong `.env`.
+
+| Biến | Ý nghĩa |
+| --- | --- |
+| `DATABASE_URL` | URL PostgreSQL từ host; mặc định Compose mở cổng 5433 |
+| `SECRET_KEY` | Khóa ký JWT bắt buộc; thay khóa mẫu |
+| `MODEL_PATH` | Đường dẫn artifact, được resolve từ gốc repository |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Khởi tạo database trong Compose |
+| `POSTGRES_HOST_PORT` | Cổng database trên host, mặc định 5433 |
+| `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD` | Tài khoản quản trị pgAdmin |
+
+Cấu hình URL theo dạng `postgresql://<user>:<password>@127.0.0.1:5433/<database>`. Backend chuyển sang driver `postgresql+asyncpg`.
+
+`.env.example` đang chứa các giá trị phát triển mẫu. Frontend hiện lấy API base từ `AppContext`/localStorage; biến `VITE_API_BASE_URL` trong file mẫu chưa được sử dụng bởi luồng cấu hình này. API base phải là origin, ví dụ `http://127.0.0.1:8000`, không thêm `/api/v1` vì service tự ghép tiền tố.
+
+### 4. PostgreSQL và pgAdmin
+
+```powershell
+docker compose up -d postgres pgadmin
+docker compose ps
+```
+
+- PostgreSQL trên host: `127.0.0.1:5433`.
+- pgAdmin: [http://localhost:5050](http://localhost:5050).
+- SQL trong `docker/postgres/init-scripts` được chạy khi khởi tạo volume database mới; thay SQL không tự cập nhật volume đã có.
+
+Compose có khai báo backend/frontend nhưng Dockerfile tương ứng hiện không có trong checkout. Hướng dẫn này chỉ dùng Compose cho database; không coi `docker compose up --build` toàn hệ thống là luồng đã hoàn thiện.
+
+### 5. Backend
+
+Trong terminal đã kích hoạt môi trường Python:
+
+```powershell
 cd apps/backend
-uvicorn main:app --host 127.0.0.1 --port 8000 --reload
+python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-* **Swagger UI API Documentation:** 👉 **[http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs)**
-* **Kiểm tra Health Endpoint:** 👉 **[http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health)**
-* **Giao diện Web Frontend tích hợp (FastAPI Static Mount):** 👉 **[http://127.0.0.1:8000/app/](http://127.0.0.1:8000/app/)**
+- Swagger: [http://127.0.0.1:8000/docs](http://127.0.0.1:8000/docs).
+- Health: [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health).
+- OpenAPI: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json).
 
----
+Backend nạp mô hình ngay trong lifespan; artifact thiếu hoặc không tương thích sẽ ngăn khởi động. `main.py` đang truyền `allow_private_network=True` vào CORSMiddleware; nếu phiên bản Starlette không hỗ trợ, cần xử lý tham số này trước khi chạy. Chưa coi lệnh khởi động là đã được xác minh trên môi trường cài mới.
 
-### Bước 3: Phát triển & Đóng gói Giao diện Frontend (React + Vite)
+### 6. Frontend
 
-Nếu bạn muốn tùy biến giao diện với chế độ Hot Module Replacement (HMR):
+Mở terminal khác tại gốc repository:
 
-```bash
+```powershell
 cd apps/frontend
-
-# Cài đặt dependencies (React, Vite, Tailwind CSS, Lucide)
-npm install
-
-# Khởi động máy chủ dev (Port 5173, proxy tự động sang API 8000)
+npm ci
 npm run dev
 ```
-👉 Mở trình duyệt tại: **`http://localhost:5173/`**
 
-Khi cần đóng gói sản xuất để mount trực tiếp vào FastAPI:
-```bash
+Truy cập [http://localhost:5173](http://localhost:5173). API base mặc định khi chạy cổng 5173 là `http://127.0.0.1:8000`. Vite có cấu hình proxy `/api`, nhưng client hiện mặc định gọi trực tiếp origin backend.
+
+Đóng gói frontend:
+
+```powershell
 npm run build
-# Bản build sẽ được xuất tự động vào thư mục apps/frontend/dist/
 ```
 
----
+Build được tạo trong `apps/frontend/dist`, không commit vào Git. Khi có dist, backend mount tại [http://127.0.0.1:8000/app/](http://127.0.0.1:8000/app/). Nếu chưa có dist, fallback mount thư mục nguồn không thay thế quá trình build React/Vite.
 
-### Bước 4: Chạy chuỗi Notebook thực nghiệm khoa học (Tùy chọn)
+## Tài khoản và phân quyền
 
-```bash
-jupyter lab
+| Vai trò | Đăng nhập trên AuthPage | Trang chính | Thông tin hồ sơ riêng |
+| --- | --- | --- | --- |
+| ADMIN | Email | `#admin-users` | Vai trò và thông tin quản trị |
+| ADVISOR | Email | `#advisor` | Khoa/đơn vị, phòng làm việc |
+| LECTURER | Email | `#lecturer` | Mã giảng viên, học hàm/học vị, đơn vị |
+| STUDENT | MSSV | `#student` | Mã sinh viên |
+
+Script `02_seed_data.sql` khởi tạo tài khoản admin `admin@huit.edu.vn`; lấy thông tin mật khẩu phát triển từ script và đổi trước khi sử dụng ngoài môi trường thử nghiệm. Các nút demo giảng viên/cố vấn trên frontend không bảo đảm có tài khoản tương ứng trong database vừa khởi tạo.
+
+Quy trình cấp sinh viên: đăng nhập admin → Quản lý tài khoản → Cấp tài khoản → chọn Sinh viên → nhập họ tên, email liên hệ, MSSV, mật khẩu → cung cấp MSSV/mật khẩu cho sinh viên. Sinh viên cần có cả vai trò STUDENT và hồ sơ với `student_code` để đăng nhập bằng MSSV; email vẫn được lưu để liên hệ và quản lý.
+
+Mật khẩu được lưu bằng bcrypt, không lưu mật khẩu gốc và không trả mã băm qua API chi tiết. Admin không thể xem lại mật khẩu ban đầu. API và hộp thoại admin đặt lại mật khẩu đã được bổ sung ngày 13/10/2026. Access/refresh token hiện lưu trong localStorage; cần đánh giá lại cách lưu token khi triển khai thực tế.
+
+## API chính
+
+Tiền tố chung: `/api/v1`. Các phân hệ nghiệp vụ dùng bearer access token và dependency kiểm tra vai trò; xem Swagger để biết schema đầy đủ.
+
+### Xác thực
+
+| Phương thức | Đường dẫn | Chức năng |
+| --- | --- | --- |
+| POST | `/auth/login` | Đăng nhập MSSV hoặc email |
+| POST | `/auth/refresh` | Cấp cặp token mới |
+| GET | `/auth/me` | Tài khoản hiện tại |
+| PUT | `/auth/profile` | Sửa hồ sơ cá nhân |
+| PUT | `/auth/change-password` | Đổi mật khẩu cá nhân |
+
+Ví dụ đăng nhập sinh viên:
+
+```json
+{"username": "2001234567", "password": "<mat-khau-duoc-cap>"}
 ```
-Mở tuần tự các notebook trong thư mục `notebooks/`:
-1. `01_data_understanding.ipynb`: Trích xuất và tiền xử lý dữ liệu OULAD.
-2. `02_hco_vnls_model_and_recommendation.ipynb`: Tối ưu chọn đặc trưng và đối chứng GA/PSO/HCO/HCO-VNLS.
-3. `03_save_and_load_best_model.ipynb`: Sanity check nạp model và mô phỏng suy luận.
 
----
+Giảng viên/cố vấn/admin dùng email trong `username`. Payload `email` cũ vẫn được chấp nhận; API chưa cấm sinh viên đăng nhập bằng email. Chỉ gửi một trong hai trường `username` hoặc `email`.
 
-## 🛡️ 7. Tiêu Chuẩn Bảo Mật & Pháp Lý (Security & Compliance)
+### Quản trị tài khoản và hệ thống
 
-* **Bảo vệ quyền riêng tư học viên:** Tuân thủ các nguyên tắc **FERPA**, **GDPR** và Nghị định 13/2023/NĐ-CP; mọi suy luận AI đều thực hiện trên vector đặc trưng hành vi ẩn danh.
-* **Mã hóa:** Toàn bộ dữ liệu truyền tải qua giao thức TLS 1.3 và lưu trữ mã hóa chuẩn AES-256.
-* **Tương thích EdTech:** Hỗ trợ chuẩn **IMS LTI 1.3 Advantage** tích hợp hai chiều với Moodle và Canvas LMS.
-* **Giấy phép:** Mã nguồn được phát hành theo giấy phép [MIT License](LICENSE).
-* **Bản quyền:** &copy; 2026 EduRisk AI Systems. All rights reserved.
+| Phương thức | Đường dẫn | Chức năng |
+| --- | --- | --- |
+| GET / POST | `/admin/users` | Danh sách / cấp tài khoản |
+| GET / PUT / DELETE | `/admin/users/{user_id}` | Xem / sửa / xóa |
+| PUT | `/admin/users/{user_id}/status` | Khóa hoặc mở khóa |
+| PUT | `/admin/users/{user_id}/reset-password` | Admin cấp mật khẩu mới, không cần mật khẩu cũ |
+| POST | `/admin/users/{user_id}/roles` | Cập nhật vai trò; chưa nối vào form sửa frontend |
+| GET / POST | `/admin/academic/courses` | Danh sách / tạo học phần |
+| POST | `/admin/academic/presentations` | Mở lớp học phần |
+| POST | `/admin/academic/assign-advisor` | Phân công cố vấn |
+| POST | `/admin/academic/assign-lecturer` | Phân công giảng viên |
+| GET | `/admin/ml/models` | Danh sách phiên bản mô hình |
+| POST | `/admin/ml/models/activate` | Kích hoạt phiên bản |
+| POST | `/admin/ml/reload` | Nạp lại mô hình |
+| POST | `/admin/ml/batch-predict` | Dự báo hàng loạt |
+| GET | `/admin/system/audit-logs` | Nhật ký thao tác |
+
+API PUT tài khoản nhận các trường cần thay đổi, không yêu cầu gửi lại toàn bộ hồ sơ. Lỗi thường gặp: 400 dữ liệu/phạm vi hồ sơ không phù hợp, 401 chưa xác thực, 403 thiếu quyền, 404 không tồn tại, 409 trùng dữ liệu hoặc xung đột ràng buộc, 422 không đúng schema.
+
+Đặt lại mật khẩu qua Swagger: đăng nhập admin, dùng access token ở mục Authorize, lấy ID tài khoản từ danh sách `/admin/users`, rồi gọi `PUT /admin/users/{user_id}/reset-password` với body:
+
+```json
+{"new_password": "<mat-khau-moi-toi-thieu-6-ky-tu>"}
+```
+
+Mật khẩu tối thiểu 6 ký tự, tối đa 72 byte UTF-8; không được chỉ chứa khoảng trắng. Response chỉ gồm `message` và `user_id`. Audit action là `RESET_USER_PASSWORD`, không chứa mật khẩu hoặc mã băm. Đặt lại không kích hoạt tài khoản đã khóa và chưa thu hồi các JWT được cấp trước đó.
+
+### Phân hệ học tập
+
+| Phân hệ | API tiêu biểu |
+| --- | --- |
+| Cố vấn | `/advisor/classes`, `/advisor/students`, `/advisor/classes/{class_name}/statistics`, `/advisor/students/{student_id}/overview`, `/advisor/students/{student_id}/radar`, `/advisor/interventions`, `/advisor/advising-notes`, `/advisor/export/risk-report` |
+| Giảng viên | `/lecturer/courses`, `/lecturer/courses/{presentation_id}/risk-board`, `/lecturer/courses/{presentation_id}/students`, `/lecturer/courses/{presentation_id}/students/{student_id}/assessment`, `/lecturer/courses/{presentation_id}/tasks`, `/lecturer/students/{student_id}/alert-advisor` |
+| Sinh viên | `/student/profile`, `/student/courses`, `/student/courses/{enrollment_id}/risk-prediction`, `/student/courses/{enrollment_id}/radar`, `/student/tasks`, `/student/tasks/{task_id}/complete`, `/student/intervention-plans`, `/student/help-requests` |
+
+### Dự báo độc lập
+
+`POST /predictions/` nhận `{ "features": { ...17 đặc trưng... } }` và trả ví dụ:
+
+```json
+{"prediction": 1, "confidence": 0.82}
+```
+
+Endpoint này hiện chưa có dependency xác thực. Chưa nên công khai bên ngoài trước khi rà soát quyền và giới hạn truy cập.
+
+## Kiểm thử
+
+Frontend:
+
+```powershell
+cd apps/frontend
+npm run build
+```
+
+Backend, từ thư mục gốc với môi trường Python đã kích hoạt:
+
+```powershell
+cd apps/backend
+python -m pytest tests/test_login_identifier.py tests/test_admin_accounts.py -q
+```
+
+Kết quả ghi nhận trước lần cập nhật tài liệu này: frontend build thành công; **14 test** trong hai file trên đạt. Test dùng mock, không xác nhận hành vi SQL trên PostgreSQL thật. Có cảnh báo deprecation Pydantic cần xử lý về sau.
+
+Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py` kiểm tra các luồng khác. Khi chuẩn bị đủ backend/database và dữ liệu theo fixture, có thể chạy `python -m pytest tests -q`; chưa ghi nhận toàn bộ suite tích hợp đều đạt. Đợt kiểm tra trước gặp lỗi database/Docker chưa sẵn sàng.
+
+Đã kiểm tra render trang hồ sơ cho bốn vai trò và khách; đã thử luồng cấp tài khoản/lọc/khóa trên trình duyệt bằng fixture. Đây là kiểm tra dữ liệu giả lập, không phải xác nhận vận hành với dữ liệu thật.
+
+## Giới hạn và công việc tiếp theo
+
+- Kiểm thử đầy đủ trên PostgreSQL, đặc biệt lỗi trùng mã, thay MSSV, phân quyền từng bản ghi và dữ liệu cascade khi xóa.
+- Rà soát quyền trên các thao tác can thiệp, ghi chú, giao nhiệm vụ và endpoint dự báo. Phân vai trò trên giao diện không thay thế kiểm tra backend.
+- Đồng bộ pipeline dự báo hàng loạt với schema 17 cột; hiện code batch có dữ liệu khác schema và fallback theo tỷ lệ nộp bài khi dự báo lỗi.
+- Hoàn thiện Dockerfile backend/frontend, biến môi trường container, dependency và tương thích middleware.
+- Chuẩn hóa số liệu mô hình trong seed, nội dung Home/Footer và metadata; không sử dụng các nhãn quảng bá làm bằng chứng hiệu năng.
+- Mở rộng tìm kiếm/phân trang/lọc toàn hệ thống ở backend; hiện trang admin lọc trong trang.
+- Bổ sung thu hồi phiên đăng nhập sau khi đặt lại mật khẩu và đánh giá chiến lược lưu token.
+- Tách lịch sử trình duyệt theo tài khoản hoặc lưu ở backend.
+- Chưa có bằng chứng triển khai LTI 1.3, TLS/AES toàn hệ thống, SLA 99,9% hoặc chứng nhận ISO/GDPR/FERPA. Các nội dung này là định hướng cần hiện thực và đánh giá, không phải trạng thái đã hoàn thành.
+
+## Tài liệu và quy trình Git
+
+- [Báo cáo tổng hợp ngày 12/10/2026](reports/dailys/12-10-2026.md).
+- [Kế hoạch backend](reports/planning/11-10-2026.md).
+- [Phân tích và kiến trúc](docs/architecture/system_analysis_and_architecture.md).
+- [Thiết kế database](database/database_design_plan.md).
+- [Hướng dẫn database local](docs/database_setup_guide.md) — đối chiếu thông số với `.env` đang dùng.
+- [Quy định commit](.agents/commit_github.md).
+
+Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrongnguyen/personalized-learning). Nhánh cá nhân đang sử dụng: `phantrongnguyen`.
+
+Commit theo Conventional Commits, ví dụ `feat(admin): add account management APIs`, `test(auth): cover student code login`, `docs(readme): document current project implementation`. Mỗi commit có một mục đích chính; không commit `.env`, thông tin bí mật, file build, môi trường ảo hoặc dữ liệu lớn. Rà soát diff và chạy kiểm tra phù hợp trước khi push; review qua PR trước khi merge nhánh chính.
+
+Mã nguồn sử dụng [giấy phép MIT](LICENSE). Bản quyền trong LICENSE ghi năm 2026, HUIT — đề tài KLTN 13.
