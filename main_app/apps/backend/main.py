@@ -6,17 +6,22 @@ from fastapi.middleware.cors import CORSMiddleware
 from api.router import api_router
 from core.config import settings
 from ml.model_loader import load_model
+from services.historical_case_service import HistoricalCaseLibrary
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     # Load model một lần khi ứng dụng khởi động
     app.state.model = load_model(settings.model_path)
+    app.state.historical_cases = HistoricalCaseLibrary(
+        settings.historical_cases_path, settings.model_path, app.state.model,
+    )
 
     yield
 
     # Giải phóng tham chiếu khi ứng dụng tắt
     app.state.model = None
+    app.state.historical_cases = None
 
 
 app = FastAPI(
@@ -69,4 +74,4 @@ def root():
 if __name__ == "__main__":
     import uvicorn
 
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)

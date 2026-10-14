@@ -1,4 +1,10 @@
-import { PredictionRequest, PredictionResponse, StudentFeatures } from '@shared/types';
+import {
+  ActionableRecourseResponse,
+  HistoricalCasesResponse,
+  PredictionRequest,
+  PredictionResponse,
+  StudentFeatures,
+} from '@shared/types';
 
 export interface HealthResponse {
   status: string;
@@ -58,4 +64,61 @@ export async function predictStudentRisk(
   }
 
   return (await res.json()) as PredictionResponse;
+}
+
+export async function compareHistoricalCases(
+  baseUrl: string,
+  features: StudentFeatures,
+  signal: AbortSignal,
+): Promise<HistoricalCasesResponse> {
+  const controller = new AbortController();
+  const cancel = () => controller.abort();
+  signal.addEventListener('abort', cancel, { once: true });
+  if (signal.aborted) controller.abort();
+  const timeout = setTimeout(cancel, 20000);
+  try {
+    const response = await fetch(`${baseUrl.trim().replace(/\/+$/, '')}/api/v1/historical-cases/`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ features, cutoff_fraction: 0.75 }),
+      signal: controller.signal,
+    });
+    if (!response.ok) {
+      const error = await response.json().catch(() => null);
+      throw new Error(typeof error?.detail === 'string' ? error.detail : `Không thể đối chiếu lịch sử (HTTP ${response.status}).`);
+    }
+    return await response.json() as HistoricalCasesResponse;
+  } finally {
+    clearTimeout(timeout);
+    signal.removeEventListener('abort', cancel);
+  }
+}
+
+export async function fetchActionableRecourse(
+  baseUrl: string,
+  features: StudentFeatures,
+  signal?: AbortSignal,
+): Promise<ActionableRecourseResponse> {
+  const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
+  const res = await fetch(`${cleanUrl}/api/v1/actionable-recourse/`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ features }),
+    signal: signal ?? AbortSignal.timeout(20000),
+  });
+
+  if (!res.ok) {
+    let errorDetail = `Lỗi HTTP ${res.status}`;
+    try {
+      const errorJson = await res.json();
+      if (typeof errorJson.detail === 'string') {
+        errorDetail = errorJson.detail;
+      }
+    } catch {
+      // Ignore
+    }
+    throw new Error(errorDetail);
+  }
+
+  return (await res.json()) as ActionableRecourseResponse;
 }

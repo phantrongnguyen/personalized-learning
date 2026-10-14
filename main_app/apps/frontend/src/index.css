@@ -315,3 +315,43 @@
     gap: 1rem;
   }
 }
+.historical-cases-panel {
+  container: historical-cases / inline-size;
+  overflow-wrap: anywhere;
+  padding: clamp(12px, 2vw, 24px);
+}
+
+@container historical-cases (max-width: 24rem) {
+  .historical-cases-panel .history-heading,
+  .historical-cases-panel .history-confirmation {
+    flex-direction: column;
+  }
+
+  .historical-cases-panel .history-inset {
+    padding: 12px;
+  }
+
+  .historical-cases-panel .history-search {
+    flex-wrap: wrap;
+    padding-inline: 10px;
+  }
+
+  .historical-cases-panel .history-case-status {
+    flex-wrap: wrap;
+  }
+}
+@container historical-cases (min-width: 28rem) {
+  .historical-cases-panel .history-counts {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@container historical-cases (min-width: 32rem) {
+  .historical-cases-panel .history-snapshots {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .historical-cases-panel .history-matching-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}

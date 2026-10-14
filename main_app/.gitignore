@@ -103,3 +103,7 @@ docs/data/*.zip
 
 # Local UI validation screenshots
 qa-artifacts/
+
+# Historical enrollment records are prepared locally, not published with source code
+apps/backend/artifacts/historical_cases.json.gz
+apps/backend/artifacts/historical_cases.json.tmp

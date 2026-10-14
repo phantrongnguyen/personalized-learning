@@ -3,7 +3,7 @@ import pandas as pd
 from scipy.special import expit
 
 
-def explain_prediction(model: dict, data: pd.DataFrame, confidence: float) -> dict:
+def feature_contributions(model: dict, data: pd.DataFrame) -> tuple[np.ndarray, np.ndarray]:
     pipeline = model["pipeline"]
     preprocessor = pipeline[:-1]
     classifier = pipeline.steps[-1][1]
@@ -11,18 +11,18 @@ def explain_prediction(model: dict, data: pd.DataFrame, confidence: float) -> di
     contributions = classifier.booster_.predict(transformed, pred_contrib=True)
     if hasattr(contributions, "toarray"):
         contributions = contributions.toarray()
-    contributions = np.asarray(contributions)[0]
+    contributions = np.asarray(contributions)
     if list(classifier.classes_) != [0, 1]:
         raise ValueError("Giải thích hiện chỉ hỗ trợ mô hình nhị phân với nhãn nguy cơ là 1.")
 
     contributions = contributions * float(classifier.booster_.params.get("sigmoid", 1.0))
     columns = model["feature_columns"]
-    feature_totals = dict.fromkeys(columns, 0.0)
+    feature_totals = np.zeros((len(data), len(columns)))
     transformed_names = preprocessor.get_feature_names_out()
-    if len(transformed_names) != len(contributions) - 1:
+    if len(transformed_names) != contributions.shape[1] - 1:
         raise ValueError("Số biến đóng góp không khớp với bộ tiền xử lý.")
 
-    for name, contribution in zip(transformed_names, contributions[:-1]):
+    for encoded_index, name in enumerate(transformed_names):
         original_name = name.split("__", 1)[-1]
         owner = next(
             (column for column in sorted(columns, key=len, reverse=True)
@@ -31,9 +31,16 @@ def explain_prediction(model: dict, data: pd.DataFrame, confidence: float) -> di
         )
         if owner is None:
             raise ValueError(f"Không thể ánh xạ biến đã mã hoá: {name}")
-        feature_totals[owner] += float(contribution)
+        feature_totals[:, columns.index(owner)] += contributions[:, encoded_index]
 
-    baseline_raw_score = float(contributions[-1])
+    return contributions[:, -1], feature_totals
+
+
+def explain_prediction(model: dict, data: pd.DataFrame, confidence: float) -> dict:
+    baselines, totals = feature_contributions(model, data)
+    feature_totals = dict(zip(model["feature_columns"], totals[0]))
+
+    baseline_raw_score = float(baselines[0])
     raw_score = baseline_raw_score + sum(feature_totals.values())
     reconstructed_probability = float(expit(raw_score))
     if not np.isclose(reconstructed_probability, confidence, atol=1e-8, rtol=0):

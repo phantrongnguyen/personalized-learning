@@ -6,6 +6,10 @@ Không chứa notebooks, tập dữ liệu nghiên cứu hay báo cáo luận v�
 Xem [CAI_TIEN.md](CAI_TIEN.md) để biết các cải tiến đã thực hiện,
 kết quả kiểm tra và những phần còn cần hoàn thiện.
 
+Đối chiếu với các hồ sơ lịch sử đã vượt qua nguy cơ: xem
+[DOI_CHIEU_LICH_SU.md](docs/DOI_CHIEU_LICH_SU.md) để biết cách dùng,
+tạo thư viện cục bộ từ dữ liệu thật và các giới hạn.
+
 ## Chạy app trên Windows
 
 Tại thư mục `main_app`, cài thư viện backend vào môi trường riêng:
