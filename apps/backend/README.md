@@ -1484,3 +1484,32 @@ CREATE INDEX IF NOT EXISTS idx_intervention_tasks_plan_status ON intervention_ta
 ```
 
 UNIQUE/PRIMARY KEY còn tạo index tự động; danh sách trên chỉ gồm CREATE INDEX tường minh.
+
+## Bổ sung ngày 16/10/2026: tải ảnh đại diện
+
+`POST /api/v1/auth/profile/avatar` nhận `multipart/form-data` với field `file` và Bearer access token. Endpoint chỉ cập nhật tài khoản đang đăng nhập; response là UserOut với avatar_url mới. GET /auth/me trả lại URL này ở những phiên sau.
+
+- Chấp nhận JPG/PNG/WebP tối đa 5 MiB và 20 megapixel; kiểm tra nội dung bằng Pillow, sửa hướng EXIF, cắt vuông 512×512, chuyển JPEG và loại metadata gốc.
+- Ảnh lưu trong apps/backend/uploads/avatars; có thể đổi bằng biến môi trường AVATAR_UPLOAD_DIR (đường dẫn tương đối tính từ gốc repository).
+- Ảnh được phục vụ qua /media/avatars/<uuid-file>.jpg. Khi đổi thư mục lưu, phải giữ dữ liệu ảnh tương ứng hoặc chuyển ảnh sang thư mục mới. Khi triển khai container cần volume bền vững cho thư mục ảnh.
+- users.avatar_url lưu đường dẫn tương đối; frontend ghép với apiBase nên hoạt động khi Vite và backend khác origin.
+- Lưu DB thất bại: rollback và xóa tệp mới. Sau khi commit thành công: dọn ảnh cũ do hệ thống sinh cho chính user đó; không xóa URL ngoài hoặc ảnh người khác.
+- Thêm dependency python-multipart và Pillow trong requirements.txt; ảnh tải lên được bỏ qua bởi Git.
+
+Đã chạy 13 kiểm thử avatar, bao gồm PostgreSQL/JWT thật với tài khoản fixture trong outer transaction được rollback và thư mục ảnh tạm. Frontend build thành công. Không thay đổi avatar của tài khoản người dùng thực trong quá trình kiểm thử.
+
+## Bổ sung ngày 16/10/2026: nhắc nhở môn học
+
+GET /api/v1/student/reminders dùng Bearer token, vai trò STUDENT hoặc ADMIN và hồ sơ sinh viên của chính người gọi. Endpoint không nhận student_id từ client, không tạo dữ liệu mẫu và không cần migration.
+
+Thông báo được tính từ task chưa hoàn thành thuộc plan ACTIVE, join plan → prediction → snapshot → enrollment → presentation/course. Cả student_id trên plan và enrollment đều phải khớp sinh viên. Kết quả gộp theo enrollment, đếm task duy nhất và chọn hạn kế hoạch gần nhất trong các task còn lại. Ngày hiện tại dùng múi giờ Việt Nam (UTC+7).
+
+- overdue/danger: hạn đã qua.
+- due_soon/warning: đến hạn hôm nay hoặc trong 3 ngày tới.
+- pending/info: còn nhiệm vụ nhưng chưa gần hạn, hoặc chưa có hạn.
+- Task đã hoàn thành và plan không ACTIVE không sinh nhắc nhở.
+- ID xác định từ enrollment, hạn, mức nhắc nhở và tập task; thay đổi nhiệm vụ/hạn/mức khẩn cấp tạo ID mới để có thể hiện lại là chưa đọc.
+
+Response gồm id, enrollment_id, code_module, course_name, code_presentation, title, message, pending_tasks, due_date, days_remaining, state và level. Danh sách ưu tiên quá hạn trước, rồi sắp đến hạn, rồi pending. Trạng thái đã đọc nằm trong localStorage riêng từng tài khoản/trình duyệt, không đồng bộ nhiều thiết bị.
+
+Đã chạy 10 kiểm thử quy tắc/API giả lập và 1 kiểm thử PostgreSQL về quyền sở hữu/task hoàn thành với fixture rollback. Backend đang chạy trả HTTP 200 cho tài khoản 2045230069: AAA có 12 task chưa hoàn thành, hạn kế hoạch gần nhất 14/10/2026, quá hạn 2 ngày tại thời điểm kiểm tra 16/10; request không token trả 401. Frontend build thành công. Chưa có push khi đóng trang, email, SMS hoặc scheduler gửi thông báo ngoài ứng dụng.

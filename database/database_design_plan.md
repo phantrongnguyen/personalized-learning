@@ -698,3 +698,11 @@ Bảng dưới đây ghi nhận khác biệt từ mã nguồn; không khẳng đ
 | Index | 8 index tường minh trong mục 6 | Các index=True khác danh sách SQL |
 
 Đặc biệt, tạo DB bằng ORM thuần sẽ không có UNIQUE phiên bản mô hình để hỗ trợ `ON CONFLICT (version)` trong seed và có hành vi xóa mô hình khác SQL init. Cần thống nhất DDL/ORM và xây dựng migration trước khi thay đổi phương thức tạo database. Lần cập nhật này chỉ sửa tài liệu, không thay đổi schema, model hoặc dữ liệu đang chạy.
+
+## 9. Phạm vi học phần của nhiệm vụ và yêu cầu trợ giúp
+
+Trang sinh viên truyền enrollment_id của môn đang chọn khi đọc task/help. Task liên kết học phần qua intervention_tasks → intervention_plans → prediction_runs → student_feature_snapshots → student_enrollments. Yêu cầu trợ giúp dùng student_help_requests.presentation_id khớp presentation của enrollment. Backend kiểm tra quyền sở hữu enrollment; yêu cầu chung có presentation_id NULL không được coi là yêu cầu của mọi môn.
+
+Tạo yêu cầu trợ giúp có enrollment_id sẽ tự gán presentation_id từ DB; backend từ chối enrollment của sinh viên khác hoặc presentation_id không khớp. Cố vấn chọn enrollment khi lập kế hoạch, prediction được chọn trong phạm vi enrollment đó. Giảng viên giao task chỉ vào plan ACTIVE của đúng sinh viên và presentation được phân công. Cảnh báo học phần mới lưu presentation_id và chọn cố vấn nhận từ bảng phân công.
+
+Không bổ sung cột/bảng hoặc sửa schema trong thay đổi này. Dữ liệu cũ chưa gắn học phần được giữ nguyên; task/help hiển thị dựa trên liên kết dữ liệu, không suy đoán theo tiêu đề.

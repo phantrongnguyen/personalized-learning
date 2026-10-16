@@ -8,6 +8,10 @@ Giao diện Single Page Application (SPA) chuẩn công nghiệp dành cho hệ 
 
 ## 🚀 Điểm Nổi Bật & Tính Năng
 
+- **Nhắc nhở môn học**: Biểu tượng chuông trên thanh điều hướng sinh viên hiển thị số nhắc nhở chưa đọc. Dữ liệu lấy từ nhiệm vụ chưa hoàn thành trong kế hoạch ACTIVE, gộp theo đăng ký học phần; phân loại quá hạn, đến hạn trong 3 ngày và cần thực hiện. Bấm thông báo mở đúng môn/học kỳ; có nút đánh dấu tất cả đã đọc. Trạng thái đọc lưu theo tài khoản trong trình duyệt. Tự làm mới mỗi phút khi trang hiển thị và sau khi hoàn thành nhiệm vụ; đây là thông báo trong ứng dụng.
+
+- **Ảnh đại diện cá nhân**: Trong Hồ sơ cá nhân, chọn ảnh JPG/PNG/WebP tối đa 5 MB, xem trước rồi bấm “Lưu ảnh đại diện”. Backend kiểm tra nội dung ảnh, cắt vuông 512×512 và lưu URL vào tài khoản; avatar cập nhật trên hồ sơ và menu tài khoản, được giữ sau khi tải lại trang.
+
 - **Giao diện sáng/tối**: Nút biểu tượng mặt trăng/mặt trời ở trang đăng nhập và thanh điều hướng chuyển giữa Light/Dark. Mặc định là sáng; lựa chọn lưu tại `localStorage.edurisk_theme`, được áp dụng trước khi trang hiển thị và đồng bộ giữa các tab cùng origin. Không cần đăng nhập để đổi giao diện. Các trang, bảng quản trị, hồ sơ, hộp thoại và biểu đồ dùng bảng màu theo chế độ.
 
 - **Công nghệ Hiện Đại**: React 18, TypeScript nghiêm ngặt, Tailwind CSS v3, Vite 6 và icon Lucide.

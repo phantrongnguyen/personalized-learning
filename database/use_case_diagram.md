@@ -270,7 +270,7 @@ flowchart LR
 
 ## 5. Đối chiếu use case với API và database
 
-Mọi đường dẫn bên dưới có tiền tố `/api/v1`. Cột dữ liệu mô tả dữ liệu chính được dùng, không phải danh sách SQL đầy đủ. Sơ đồ có tổng cộng **52 use case cụ thể**, đối chiếu 52 endpoint của bảy module (không tính endpoint `/` và trang tài liệu API).
+Mọi đường dẫn bên dưới có tiền tố `/api/v1`. GET /student/tasks và /student/help-requests nhận query enrollment_id để lọc môn; form trợ giúp, hoàn thành task và lập kế hoạch cũng có enrollment_id tùy chọn trong payload. Cột dữ liệu mô tả dữ liệu chính được dùng, không phải danh sách SQL đầy đủ. Sơ đồ có tổng cộng **52 use case cụ thể**, đối chiếu 52 endpoint của bảy module (không tính endpoint `/` và trang tài liệu API).
 
 ### Chức năng chung
 
@@ -365,8 +365,8 @@ Mọi đường dẫn bên dưới có tiền tố `/api/v1`. Cột dữ liệu 
 | :--- | :--- |
 | Đăng nhập | Tài khoản hoạt động; dùng email hoặc mã sinh viên và mật khẩu; mã sinh viên phải gắn vai trò STUDENT |
 | Xem nguy cơ cá nhân | Đọc kết quả đã lưu theo enrollment thuộc sinh viên; không tự suy luận hoặc ghi dự báo mới |
-| Lập kế hoạch can thiệp | Sinh viên đã có prediction_run; backend chọn bản dự báo gần nhất và tạo kế hoạch cùng danh sách nhiệm vụ được cung cấp |
-| Giao nhiệm vụ bổ trợ | Sinh viên đã có kế hoạch ACTIVE; API thêm task vào kế hoạch này, không tự tạo kế hoạch mới |
+| Lập kế hoạch can thiệp | Chọn enrollment thuộc sinh viên được phân công; backend chọn dự báo gần nhất của enrollment đó và tạo kế hoạch cùng nhiệm vụ |
+| Giao nhiệm vụ bổ trợ | Giảng viên được phân công presentation; sinh viên có plan ACTIVE liên kết đúng presentation; API thêm task vào plan này |
 | Hoàn thành nhiệm vụ | Task thuộc kế hoạch của sinh viên; ghi is_completed, completed_at và student_feedback tùy chọn; chưa tự hoàn tất kế hoạch |
 | Cập nhật đánh giá | Kiểm tra giảng viên được phân công lớp; cập nhật số bài đã nộp, số bài trễ, tỷ lệ nộp vào snapshot mới nhất nếu có và final_result vào enrollment; chưa có bảng điểm từng bài |
 | Dự báo batch | Có đúng một mô hình active; xử lý snapshot mới nhất hoặc enrollment_id chỉ định, lưu prediction_runs cùng audit; không tự lập kế hoạch |
@@ -377,8 +377,8 @@ Mọi đường dẫn bên dưới có tiền tố `/api/v1`. Cột dữ liệu 
 Những điểm cần phân biệt khi dùng sơ đồ trong báo cáo:
 
 - Bảng `student_help_requests` có status/response_note nhưng backend hiện chưa có API cho cố vấn/giảng viên nhận danh sách, trả lời hoặc giải quyết yêu cầu. Không vẽ use case “Xử lý yêu cầu hỗ trợ” như chức năng đã triển khai.
-- “Tạo cảnh báo học vụ” hiện chỉ tạo bản ghi yêu cầu hỗ trợ với target_role=ADVISOR; target_user_id lại được gán ID giảng viên đang gọi. Chưa có cơ chế gửi email/thông báo hoặc xác định đúng cố vấn nhận cảnh báo.
-- Kiểm tra phạm vi chưa đồng nhất: tạo kế hoạch và ghi tư vấn của cố vấn chưa kiểm tra ownership như các API đọc/cập nhật chi tiết; giao task và tạo cảnh báo của giảng viên chưa gọi kiểm tra phân công lớp/sinh viên. Sơ đồ mô tả chức năng có API, không khẳng định mọi đường ghi đã thực thi đầy đủ giới hạn quyền.
+- “Tạo cảnh báo học vụ” tạo yêu cầu hỗ trợ ADVISOR gắn presentation_id được chọn và user cố vấn theo phân công; chưa có cơ chế gửi email/thông báo bên ngoài.
+- Tạo kế hoạch, giao task và cảnh báo có chọn học phần đã kiểm tra phạm vi. Ghi tư vấn và cảnh báo chung không chọn học phần vẫn cần tiếp tục chuẩn hóa kiểm tra quyền.
 - Batch lấy đủ đặc trưng từ DB, dùng artifact của mô hình active và đo thời gian. Lỗi suy luận không lưu fallback; kết quả trên snapshot synthetic_demo được ghi rõ là dữ liệu minh họa.
 - Chưa có API tự đăng ký tài khoản, đăng ký học phần, import LMS, huấn luyện mô hình, tải lên artifact, quản lý điểm từng bài hoặc thu hồi phiên đăng nhập. Không suy ra các use case này chỉ từ việc database có bảng liên quan.
 - Đăng xuất phía giao diện không có endpoint backend riêng; refresh token là JWT, chưa có bảng quản lý phiên trong schema hiện tại.
