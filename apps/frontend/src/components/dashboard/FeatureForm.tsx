@@ -182,7 +182,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
             ) : (
               <>
                 <Search className="w-4 h-4" />
-                <span>🔍 Phân tích nguy cơ học tập</span>
+                <span>Phân tích nguy cơ học tập</span>
               </>
             )}
           </button>

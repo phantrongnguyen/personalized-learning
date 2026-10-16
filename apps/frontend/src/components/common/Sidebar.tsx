@@ -84,7 +84,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     if (user?.roleCode === 'STUDENT') {
       roleItems.push({
         id: 'student',
-        label: 'Dự báo & nhiệm vụ học tập',
+        label: 'Không gian học tập',
         icon: <GraduationCap className="w-5 h-5 shrink-0" />,
         badge: 'SV',
       });
@@ -93,7 +93,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       ...roleItems,
       {
         id: 'dashboard',
-        label: 'Dashboard Phân tích',
+        label: 'Dashboard',
         icon: <LayoutDashboard className="w-5 h-5 shrink-0" />,
         badge: 'Live AI',
       },

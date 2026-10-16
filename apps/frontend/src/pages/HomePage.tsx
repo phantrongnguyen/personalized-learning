@@ -22,34 +22,12 @@ import {
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { setCurrentView, user } = useApp();
+  const { setCurrentView } = useApp();
 
   return (
     <div className="space-y-16 py-6">
       {/* 1. Hero Section */}
       <section className="text-center max-w-4xl mx-auto px-4 pt-6 pb-2">
-        {user && (
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-xs text-slate-300 mb-5 shadow-lg shadow-brand-500/5">
-            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
-            <span>
-              Xin chào, <strong className="text-white">{user.name}</strong>
-            </span>
-            <span className="text-slate-600">&bull;</span>
-            <span className="text-brand-400 font-semibold">{user.role}</span>
-            {user.department && (
-              <>
-                <span className="text-slate-600 hidden sm:inline">&bull;</span>
-                <span className="text-slate-400 hidden sm:inline">{user.department}</span>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold mb-6">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>EduRisk AI Enterprise Platform &bull; Quản trị Rủi ro Đào tạo &amp; Cá nhân hóa Học tập</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight sm:leading-tight mb-6">
           Dự Đoán Nguy Cơ &amp; Can Thiệp Học Tập <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-cyan-400 bg-clip-text text-transparent">

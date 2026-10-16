@@ -14,10 +14,9 @@ export const ThemeToggle: React.FC = () => {
       aria-label={label}
       aria-pressed={dark}
       title={label}
-      className="inline-flex shrink-0 items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-900 px-3 py-2 text-sm font-medium text-slate-200 hover:bg-slate-800 transition-colors"
+      className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-slate-700 bg-slate-900 text-sm font-medium text-slate-200 hover:bg-slate-800 transition-colors"
     >
       {dark ? <Sun className="h-4 w-4" aria-hidden="true" /> : <Moon className="h-4 w-4" aria-hidden="true" />}
-      <span className="hidden sm:inline">{dark ? 'Sáng' : 'Tối'}</span>
     </button>
   );
 };
