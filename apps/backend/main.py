@@ -26,6 +26,10 @@ app = FastAPI(
 )
 
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+settings.avatar_upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/media/avatars", StaticFiles(directory=str(settings.avatar_upload_dir)), name="avatars")
 
 # Thêm header cho phép trình duyệt truy cập private network (PNA)
 @app.middleware("http")
@@ -53,7 +57,6 @@ frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
 dist_dir = frontend_dir / "dist"
 serve_dir = dist_dir if dist_dir.exists() else frontend_dir
 if serve_dir.exists():
-    from fastapi.staticfiles import StaticFiles
     app.mount("/app", StaticFiles(directory=str(serve_dir), html=True), name="frontend")
 
 

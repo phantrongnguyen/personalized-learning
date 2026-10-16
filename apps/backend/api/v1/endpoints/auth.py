@@ -1,7 +1,10 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+import uuid
+from anyio import to_thread
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import get_db
+from core.config import settings
 from core.permissions import get_current_user
 from core.security import verify_password, get_password_hash
 from models.user import User
@@ -14,6 +17,10 @@ from schemas.auth import (
     ChangePasswordRequest,
 )
 from services.auth_service import authenticate_user, refresh_access_token
+from services.avatar_service import (
+    AVATAR_CONTENT_TYPES, AVATAR_URL_PREFIX, MAX_AVATAR_BYTES,
+    normalize_avatar, remove_owned_avatar,
+)
 
 router = APIRouter()
 
@@ -62,6 +69,40 @@ async def update_profile(
 
     db.add(current_user)
     await db.commit()
+    await db.refresh(current_user)
+    return current_user
+
+
+@router.post("/profile/avatar", response_model=UserOut, summary="Tải ảnh đại diện cá nhân")
+async def upload_avatar(
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        if file.content_type not in AVATAR_CONTENT_TYPES:
+            raise HTTPException(415, "Chỉ hỗ trợ ảnh JPG, PNG hoặc WebP")
+        data = await file.read(MAX_AVATAR_BYTES + 1)
+    finally:
+        await file.close()
+    normalized = await to_thread.run_sync(normalize_avatar, data)
+    user_id = current_user.id
+    previous_url = current_user.avatar_url
+    filename = f"{user_id}-{uuid.uuid4().hex}.jpg"
+    path = settings.avatar_upload_dir / filename
+    try:
+        await to_thread.run_sync(lambda: path.parent.mkdir(parents=True, exist_ok=True))
+        await to_thread.run_sync(path.write_bytes, normalized)
+        current_user.avatar_url = AVATAR_URL_PREFIX + filename
+        db.add(current_user)
+        await db.commit()
+    except Exception as exc:
+        await db.rollback()
+        await to_thread.run_sync(remove_owned_avatar, path.parent, AVATAR_URL_PREFIX + filename, user_id)
+        if isinstance(exc, HTTPException):
+            raise
+        raise HTTPException(500, "Không thể lưu ảnh đại diện, vui lòng thử lại") from exc
+    await to_thread.run_sync(remove_owned_avatar, path.parent, previous_url, user_id)
     await db.refresh(current_user)
     return current_user
 

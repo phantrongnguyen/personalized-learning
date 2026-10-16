@@ -19,6 +19,8 @@ sqlalchemy>=2.0.0
 psycopg2-binary>=2.9.6
 python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
+python-multipart>=0.0.18
+Pillow>=10.4.0
 
 # Testing & Utilities
 pytest>=7.3.0

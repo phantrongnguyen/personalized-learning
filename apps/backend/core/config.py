@@ -12,6 +12,12 @@ class Settings(BaseSettings):
     app_name: str = "Personalized Learning Recommendation API"
     app_version: str = "0.1.0"
     model_path: Path = BASE_DIR / "artifacts" / "model_hco_vnls_lightgbm_cutoff75.joblib"
+    avatar_upload_dir: Path = BASE_DIR / "uploads" / "avatars"
+
+    @field_validator("avatar_upload_dir", mode="after")
+    @classmethod
+    def _resolve_avatar_dir(cls, value: Path) -> Path:
+        return value if value.is_absolute() else ROOT_DIR / value
 
     @field_validator("model_path", mode="after")
     @classmethod

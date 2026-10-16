@@ -218,6 +218,19 @@ export async function updateProfileApi(
   return (await res.json()) as BackendUser;
 }
 
+export async function uploadAvatarApi(baseUrl: string, file: File): Promise<BackendUser> {
+  const data = new FormData();
+  data.append('file', file);
+  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/auth/profile/avatar`, {
+    method: 'POST', headers: authHeaders(), body: data,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Không thể tải ảnh đại diện');
+  }
+  return (await res.json()) as BackendUser;
+}
+
 // -------------------------------------------------------------
 // 3. ADVISOR APIS (GIÁO VIÊN CHỦ NHIỆM)
 // -------------------------------------------------------------

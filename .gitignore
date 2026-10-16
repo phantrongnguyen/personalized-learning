@@ -72,7 +72,9 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 dist/
+*.tsbuildinfo
 .next/
+apps/backend/uploads/
 
 # IDE & Editors
 .vscode/
