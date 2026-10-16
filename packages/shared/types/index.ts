@@ -80,6 +80,7 @@ export interface CreateInterventionTaskPayload {
 }
 
 export interface CreateInterventionPlanPayload {
+  enrollment_id?: string;
   student_id: string;
   target_completion_date?: string;
   advisor_note_summary?: string;
@@ -114,6 +115,21 @@ export interface CourseStudentRiskItem {
 // -------------------------------------------------------------
 // STUDENT INTERFACES
 // -------------------------------------------------------------
+export interface CourseReminder {
+  id: string;
+  enrollment_id: string;
+  code_module: string;
+  course_name: string;
+  code_presentation: string;
+  title: string;
+  message: string;
+  pending_tasks: number;
+  due_date: string | null;
+  days_remaining: number | null;
+  state: 'pending' | 'due_soon' | 'overdue';
+  level: 'info' | 'warning' | 'danger';
+}
+
 export interface StudentCourseItem {
   enrollment_id: string;
   code_module: string;
@@ -121,6 +137,20 @@ export interface StudentCourseItem {
   code_presentation: string;
   studied_credits: number;
   final_result?: string | null;
+}
+
+export interface StudentProfileDetail {
+  id: string;
+  student_code: string;
+  full_name: string;
+  email: string;
+  gender: string;
+  highest_education: string;
+  age_band: string;
+  imd_band?: string | null;
+  region?: string | null;
+  disability: string;
+  studied_credits_total: number;
 }
 
 export interface StudentRiskPrediction {

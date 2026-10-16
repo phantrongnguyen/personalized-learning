@@ -11,6 +11,8 @@ import {
   LecturerCourseItem,
   CourseStudentRiskItem,
   StudentCourseItem,
+  CourseReminder,
+  StudentProfileDetail,
   StudentRiskPrediction,
   StudentRadarData,
   StudentTaskItem,
@@ -301,6 +303,20 @@ export async function getCourseRiskBoardApi(
 // -------------------------------------------------------------
 // 5. STUDENT APIS (SINH VIÊN)
 // -------------------------------------------------------------
+export async function getCourseRemindersApi(baseUrl: string, signal?: AbortSignal): Promise<CourseReminder[]> {
+  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/student/reminders`, { headers: authHeaders(), signal });
+  if (!res.ok) throw new Error('Không thể tải thông báo nhắc nhở môn học.');
+  return res.json();
+}
+
+export async function getStudentProfileApi(baseUrl: string): Promise<StudentProfileDetail> {
+  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/student/profile`, { headers: authHeaders() });
+  if (!res.ok) {
+    throw new Error(res.status === 404 ? 'Tài khoản chưa có hồ sơ sinh viên.' : 'Không thể tải thông tin sinh viên.');
+  }
+  return res.json();
+}
+
 export async function getStudentCoursesApi(baseUrl: string): Promise<StudentCourseItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const res = await fetch(`${cleanUrl}/api/v1/student/courses`, {
@@ -336,9 +352,9 @@ export async function getStudentRadarApi(
   return res.json();
 }
 
-export async function getStudentTasksApi(baseUrl: string): Promise<StudentTaskItem[]> {
+export async function getStudentTasksApi(baseUrl: string, enrollmentId?: string): Promise<StudentTaskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/tasks`, {
+  const res = await fetch(`${cleanUrl}/api/v1/student/tasks${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách nhiệm vụ cần làm');
@@ -348,21 +364,22 @@ export async function getStudentTasksApi(baseUrl: string): Promise<StudentTaskIt
 export async function completeStudentTaskApi(
   baseUrl: string,
   taskId: string,
-  feedback?: string
+  feedback?: string,
+  enrollmentId?: string
 ): Promise<StudentTaskItem> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const res = await fetch(`${cleanUrl}/api/v1/student/tasks/${taskId}/complete`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ student_feedback: feedback || '' }),
+    body: JSON.stringify({ student_feedback: feedback || '', enrollment_id: enrollmentId }),
   });
   if (!res.ok) throw new Error('Không thể cập nhật trạng thái nhiệm vụ');
   return res.json();
 }
 
-export async function getStudentHelpRequestsApi(baseUrl: string): Promise<StudentHelpRequestItem[]> {
+export async function getStudentHelpRequestsApi(baseUrl: string, enrollmentId?: string): Promise<StudentHelpRequestItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests`, {
+  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách yêu cầu trợ giúp');
@@ -370,6 +387,7 @@ export async function getStudentHelpRequestsApi(baseUrl: string): Promise<Studen
 }
 
 export interface CreateHelpRequestPayload {
+  enrollment_id?: string;
   target_role: 'ADVISOR' | 'LECTURER';
   presentation_id?: string;
   target_user_id?: string;
@@ -427,6 +445,7 @@ export async function assignCourseTaskApi(
 }
 
 export interface AlertAdvisorPayload {
+  presentation_id?: string;
   subject?: string;
   content: string;
 }
@@ -478,4 +497,14 @@ export async function createAdvisingNoteApi(
     throw new Error(err.detail || 'Không thể lưu ghi chép tư vấn');
   }
   return res.json();
+}
+
+
+export async function getAdvisorStudentCoursesApi(baseUrl: string, studentId: string): Promise<StudentCourseItem[]> {
+  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/advisor/students/${encodeURIComponent(studentId)}/overview`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Không thể tải học phần của sinh viên');
+  const overview = await res.json();
+  return overview.courses;
 }

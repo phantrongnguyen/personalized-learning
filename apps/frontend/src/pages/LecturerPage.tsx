@@ -111,6 +111,7 @@ export const LecturerPage: React.FC = () => {
     setSendingAlert(true);
     try {
       await alertAdvisorApi(apiBase, alertTarget.student_id, {
+        presentation_id: selectedPresentation,
         subject: `Cảnh báo học tập bất thường môn ${selectedCourse?.code_module || ''}`,
         content: alertContent,
       });

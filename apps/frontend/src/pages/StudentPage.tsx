@@ -1,7 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import {
   StudentCourseItem,
+  StudentProfileDetail,
   StudentRiskPrediction,
   StudentRadarData,
   StudentTaskItem,
@@ -9,6 +10,7 @@ import {
 } from '@shared/types';
 import {
   getStudentCoursesApi,
+  getStudentProfileApi,
   getStudentRiskPredictionApi,
   getStudentRadarApi,
   getStudentTasksApi,
@@ -16,6 +18,7 @@ import {
   getStudentHelpRequestsApi,
   createHelpRequestApi,
 } from '../services/api';
+import { Avatar } from '../components/common/Avatar';
 import {
   GraduationCap,
   Loader2,
@@ -26,13 +29,37 @@ import {
   Send,
   ClipboardList,
   HelpCircle,
+  ArrowUpRight,
+  Mail,
+  Phone,
+  User,
+  CalendarDays,
 } from 'lucide-react';
 
 export const StudentPage: React.FC = () => {
-  const { apiBase, addToast, user } = useApp();
+  const { apiBase, addToast, user, setCurrentView, studentEnrollmentToOpen, clearStudentEnrollmentToOpen } = useApp();
+  const [profile, setProfile] = useState<StudentProfileDetail | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setProfile(null);
+    setProfileError('');
+    setProfileLoading(true);
+    getStudentProfileApi(apiBase).then((data) => {
+      if (!cancelled) setProfile(data);
+    }).catch((error: Error) => {
+      if (!cancelled) setProfileError(error.message);
+    }).finally(() => { if (!cancelled) setProfileLoading(false); });
+    return () => { cancelled = true; };
+  }, [apiBase, user?.email]);
 
   const [courses, setCourses] = useState<StudentCourseItem[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState('');
   const [selectedEnrollment, setSelectedEnrollment] = useState<string>('');
+  const selectionRef = useRef(selectedEnrollment);
+  selectionRef.current = selectedEnrollment;
   const [prediction, setPrediction] = useState<StudentRiskPrediction | null>(null);
   const [radar, setRadar] = useState<StudentRadarData | null>(null);
   const [tasks, setTasks] = useState<StudentTaskItem[]>([]);
@@ -53,9 +80,8 @@ export const StudentPage: React.FC = () => {
     try {
       const data = await getStudentCoursesApi(apiBase);
       setCourses(data);
-      if (data.length > 0) {
-        setSelectedEnrollment(data[0].enrollment_id);
-      }
+      setSelectedSemester('');
+      setSelectedEnrollment(data[0]?.enrollment_id || '');
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     } finally {
@@ -65,54 +91,100 @@ export const StudentPage: React.FC = () => {
 
   const loadTasks = useCallback(async () => {
     try {
-      setTasks(await getStudentTasksApi(apiBase));
+      const scope = selectedEnrollment;
+      if (!scope) return;
+      const data = await getStudentTasksApi(apiBase, scope);
+      if (selectionRef.current === scope) setTasks(data);
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     }
-  }, [apiBase, addToast]);
+  }, [apiBase, addToast, selectedEnrollment]);
 
   const loadHelpRequests = useCallback(async () => {
     try {
-      setHelpRequests(await getStudentHelpRequestsApi(apiBase));
+      const scope = selectedEnrollment;
+      if (!scope) return;
+      const data = await getStudentHelpRequestsApi(apiBase, scope);
+      if (selectionRef.current === scope) setHelpRequests(data);
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     }
-  }, [apiBase, addToast]);
+  }, [apiBase, addToast, selectedEnrollment]);
 
   useEffect(() => {
     loadCourses();
-    loadTasks();
-    loadHelpRequests();
-  }, [loadCourses, loadTasks, loadHelpRequests]);
+  }, [loadCourses]);
 
   useEffect(() => {
     let cancelled = false;
     setPrediction(null);
     setRadar(null);
-    if (!selectedEnrollment) return;
+    setTasks([]);
+    setHelpRequests([]);
+    setShowHelpForm(false);
+    setHelpSubject('');
+    setHelpContent('');
+    if (!selectedEnrollment) { setLoadingDetail(false); return; }
     setLoadingDetail(true);
     Promise.allSettled([
       getStudentRiskPredictionApi(apiBase, selectedEnrollment),
       getStudentRadarApi(apiBase, selectedEnrollment),
-    ]).then(([pred, radarData]) => {
+      getStudentTasksApi(apiBase, selectedEnrollment),
+      getStudentHelpRequestsApi(apiBase, selectedEnrollment),
+    ]).then(([pred, radarData, courseTasks, courseHelp]) => {
       if (cancelled) return;
       if (pred.status === 'fulfilled') setPrediction(pred.value);
       else addToast((pred.reason as Error).message, 'error', 5000);
       if (radarData.status === 'fulfilled') setRadar(radarData.value);
       else addToast((radarData.reason as Error).message, 'error', 5000);
+      if (courseTasks.status === 'fulfilled') setTasks(courseTasks.value);
+      else addToast((courseTasks.reason as Error).message, 'error', 5000);
+      if (courseHelp.status === 'fulfilled') setHelpRequests(courseHelp.value);
+      else addToast((courseHelp.reason as Error).message, 'error', 5000);
       setLoadingDetail(false);
     });
     return () => { cancelled = true; };
   }, [selectedEnrollment, apiBase, addToast]);
 
-  const selectedCourse = courses.find((c) => c.enrollment_id === selectedEnrollment);
+  const semesters = useMemo(() => [...new Set(courses.map(course => course.code_presentation))]
+    .sort((a, b) => b.localeCompare(a, 'vi', { numeric: true })), [courses]);
+  const filteredCourses = useMemo(() => selectedSemester
+    ? courses.filter(course => course.code_presentation === selectedSemester)
+    : courses, [courses, selectedSemester]);
+  const selectedCourse = filteredCourses.find((c) => c.enrollment_id === selectedEnrollment);
+  useEffect(() => {
+    if (!studentEnrollmentToOpen || loading) return;
+    const course = courses.find(item => item.enrollment_id === studentEnrollmentToOpen);
+    if (course) {
+      setSelectedSemester(course.code_presentation);
+      setSelectedEnrollment(course.enrollment_id);
+    } else {
+      addToast('Không tìm thấy học phần của thông báo.', 'warning');
+    }
+    clearStudentEnrollmentToOpen();
+  }, [studentEnrollmentToOpen, loading, courses, addToast, clearStudentEnrollmentToOpen]);
+  const changeSemester = (semester: string) => {
+    const matching = semester ? courses.filter(course => course.code_presentation === semester) : courses;
+    setSelectedSemester(semester);
+    if (!matching.some(course => course.enrollment_id === selectedEnrollment)) {
+      const next = matching[0]?.enrollment_id || '';
+      setPrediction(null);
+      setRadar(null);
+      setTasks([]);
+      setHelpRequests([]);
+      setShowHelpForm(false);
+      setLoadingDetail(Boolean(next));
+      setSelectedEnrollment(next);
+    }
+  };
   const upcomingTasks = tasks.filter((t) => !t.is_completed);
   const doneTasks = tasks.filter((t) => t.is_completed);
 
   const handleCompleteTask = async (task: StudentTaskItem) => {
     setCompletingTaskId(task.id);
     try {
-      await completeStudentTaskApi(apiBase, task.id, 'Hoàn thành từ phía sinh viên.');
+      await completeStudentTaskApi(apiBase, task.id, 'Hoàn thành từ phía sinh viên.', selectedEnrollment);
+      window.dispatchEvent(new Event('course-reminders-updated'));
       addToast(`Đã hoàn thành nhiệm vụ: ${task.title}`, 'success');
       await loadTasks();
     } catch (err) {
@@ -124,10 +196,12 @@ export const StudentPage: React.FC = () => {
 
   const handleSendHelpRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedEnrollment) return;
     setSendingHelp(true);
     try {
       await createHelpRequestApi(apiBase, {
         target_role: helpTarget,
+        enrollment_id: selectedEnrollment,
         subject: helpSubject,
         content: helpContent,
       });
@@ -158,23 +232,92 @@ export const StudentPage: React.FC = () => {
         </div>
       </div>
 
+      {user && (
+        <section aria-labelledby="student-info-heading" aria-busy={profileLoading}
+          className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 shadow-sm">
+          <div className="flex flex-col gap-5 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar src={user.avatarUrl} initials={user.initials} alt="Ảnh đại diện sinh viên"
+                className="h-16 w-16 rounded-full border border-brand-500/30 text-xl sm:h-20 sm:w-20" />
+              <div className="min-w-0">
+                <h2 id="student-info-heading" className="text-[11px] font-bold uppercase tracking-wider text-brand-400">Thông tin sinh viên</h2>
+                <p className="mt-1 break-words text-xl font-bold text-slate-100">{profile?.full_name || user.name}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 font-mono text-slate-300">
+                    MSSV: {profile?.student_code || user.studentCode || 'Chưa cập nhật'}
+                  </span>
+                  <span className="rounded-full bg-brand-500/10 px-2.5 py-1 font-medium text-brand-400">{user.role}</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" onClick={() => setCurrentView('profile')}
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-800 sm:self-center">
+              Xem hồ sơ <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_auto]">
+            <dl className="grid min-w-0 gap-4 sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><Mail aria-hidden="true" className="h-3.5 w-3.5" /> Email</dt>
+                <dd className="mt-1.5 break-all text-sm font-medium text-slate-200">{profile?.email || user.email}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><Phone aria-hidden="true" className="h-3.5 w-3.5" /> Số điện thoại</dt>
+                <dd className="mt-1.5 text-sm font-medium text-slate-200">{user.phone || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><User aria-hidden="true" className="h-3.5 w-3.5" /> Giới tính</dt>
+                <dd className="mt-1.5 text-sm font-medium text-slate-200">
+                  {profileLoading ? 'Đang tải…' : profile?.gender === 'M' ? 'Nam' : profile?.gender === 'F' ? 'Nữ' : 'Chưa cập nhật'}
+                </dd>
+              </div>
+            </dl>
+            <dl className="grid grid-cols-2 gap-3 lg:min-w-56">
+              <div className="rounded-xl bg-slate-950 px-4 py-3">
+                <dt className="text-[11px] text-slate-400">Học phần đăng ký</dt>
+                <dd className="mt-1 text-2xl font-bold text-brand-400">{loading ? '—' : courses.length}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-950 px-4 py-3">
+                <dt className="text-[11px] text-slate-400">Tín chỉ đăng ký</dt>
+                <dd className="mt-1 text-2xl font-bold text-cyan-400">{profileLoading || !profile ? '—' : profile.studied_credits_total}</dd>
+              </div>
+            </dl>
+          </div>
+          {profileError && <p role="alert" className="px-5 pb-4 text-xs text-rose-400 sm:px-6">{profileError}</p>}
+        </section>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Course list */}
         <div className="lg:col-span-4 space-y-4">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Môn học của tôi</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Môn học của tôi</h2>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+            <label htmlFor="student-semester" className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <CalendarDays aria-hidden="true" className="h-4 w-4 text-cyan-400" /> Học kỳ
+            </label>
+            <select id="student-semester" value={selectedSemester} onChange={event => changeSemester(event.target.value)}
+              disabled={loading || courses.length === 0 || sendingHelp || completingTaskId !== null}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+              <option value="">{loading ? 'Đang tải học kỳ…' : 'Tất cả học kỳ'}</option>
+              {semesters.map(semester => <option key={semester} value={semester}>{semester}</option>)}
+            </select>
+          </div>
           {loading ? (
             <div className="flex items-center gap-2 text-slate-400 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
               Đang tải…
             </div>
-          ) : courses.length === 0 ? (
-            <div className="text-xs text-slate-400">Chưa có môn học được đăng ký.</div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="text-xs text-slate-400">{courses.length === 0 ? 'Chưa có môn học được đăng ký.' : 'Không có môn học trong học kỳ này.'}</div>
           ) : (
             <div className="space-y-2.5">
-              {courses.map((c) => (
+              {filteredCourses.map((c) => (
                 <button
                   key={c.enrollment_id}
                   type="button"
+                  disabled={sendingHelp || completingTaskId !== null}
                   onClick={() => setSelectedEnrollment(c.enrollment_id)}
                   className={`w-full p-4 rounded-2xl border text-left transition-all ${
                     selectedEnrollment === c.enrollment_id
@@ -298,11 +441,12 @@ export const StudentPage: React.FC = () => {
       <div>
         <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-brand-400" />
-          Nhiệm vụ can thiệp cần thực hiện
+          Nhiệm vụ can thiệp — {selectedCourse?.code_module || 'chưa chọn môn'}
         </h2>
-        {upcomingTasks.length === 0 && (
+        {loadingDetail && <p className="text-xs text-slate-400">Đang tải nhiệm vụ của môn học…</p>}
+        {!loadingDetail && upcomingTasks.length === 0 && (
           <div className="text-xs text-slate-400">
-            Không có nhiệm vụ nào đang chờ. Chúc bạn học tốt!
+            {selectedEnrollment ? 'Môn học này chưa có nhiệm vụ đang chờ.' : 'Chọn môn học để xem nhiệm vụ.'}
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -371,10 +515,11 @@ export const StudentPage: React.FC = () => {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-cyan-400" />
-            Yêu cầu trợ giúp
+            Yêu cầu trợ giúp — {selectedCourse?.code_module || 'chưa chọn môn'}
           </h2>
           <button
             type="button"
+            disabled={!selectedEnrollment || loadingDetail || sendingHelp}
             onClick={() => setShowHelpForm((v) => !v)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold"
           >
@@ -435,8 +580,10 @@ export const StudentPage: React.FC = () => {
           </form>
         )}
 
-        {helpRequests.length === 0 ? (
-          <div className="text-xs text-slate-400">Bạn chưa gửi yêu cầu trợ giúp nào.</div>
+        {loadingDetail ? (
+          <p className="text-xs text-slate-400">Đang tải yêu cầu trợ giúp của môn học…</p>
+        ) : helpRequests.length === 0 ? (
+          <div className="text-xs text-slate-400">Môn học này chưa có yêu cầu trợ giúp.</div>
         ) : (
           <div className="space-y-2.5">
             {helpRequests.map((r) => (

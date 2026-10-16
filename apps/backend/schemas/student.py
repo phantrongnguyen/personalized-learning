@@ -1,7 +1,22 @@
 import uuid
 from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
+
+
+class CourseReminderOut(BaseModel):
+    id: str
+    enrollment_id: uuid.UUID
+    code_module: str
+    course_name: str
+    code_presentation: str
+    title: str
+    message: str
+    pending_tasks: int
+    due_date: Optional[date] = None
+    days_remaining: Optional[int] = None
+    state: Literal["pending", "due_soon", "overdue"]
+    level: Literal["info", "warning", "danger"]
 
 
 class StudentProfileDetailOut(BaseModel):
@@ -77,10 +92,12 @@ class StudentTaskItemOut(BaseModel):
 
 
 class TaskCompleteIn(BaseModel):
+    enrollment_id: Optional[uuid.UUID] = None
     student_feedback: Optional[str] = Field(None, description="Ghi chú phản hồi khi hoàn thành")
 
 
 class HelpRequestCreateIn(BaseModel):
+    enrollment_id: Optional[uuid.UUID] = None
     target_role: str = Field(..., description="ADVISOR hoặc LECTURER")
     presentation_id: Optional[uuid.UUID] = None
     target_user_id: Optional[uuid.UUID] = None

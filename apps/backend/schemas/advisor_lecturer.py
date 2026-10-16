@@ -55,6 +55,7 @@ class TaskOut(BaseModel):
 
 
 class PlanCreateIn(BaseModel):
+    enrollment_id: Optional[uuid.UUID] = None
     student_id: uuid.UUID
     target_completion_date: Optional[date] = None
     advisor_note_summary: Optional[str] = None
@@ -191,5 +192,6 @@ class AssessmentUpdateIn(BaseModel):
 
 
 class AlertAdvisorIn(BaseModel):
+    presentation_id: Optional[uuid.UUID] = None
     subject: str = "Cảnh báo học tập bất thường môn học"
     content: str

@@ -7,8 +7,12 @@ from sqlalchemy import select
 from core.database import get_db
 from core.permissions import RequireRoles
 from models.user import User
-from models.assignment import CourseLecturer
+from models.assignment import CourseLecturer, AdvisorStudent
+from models.profile import AdvisorProfile
 from models.intervention import InterventionPlan, InterventionTask
+from models.ml import PredictionRun
+from models.feature import StudentFeatureSnapshot
+from models.academic import StudentEnrollment
 from models.help_request import StudentHelpRequest
 from schemas.advisor_lecturer import (
     LecturerCourseOut,
@@ -125,10 +129,19 @@ async def assign_course_task(
     current_user: User = Depends(require_lecturer),
     db: AsyncSession = Depends(get_db),
 ):
-    # Tìm hoặc tạo kế hoạch can thiệp cho sinh viên
+    await _ensure_course_ownership(db, current_user, presentation_id)
+    # Select a plan linked to this student's enrollment in this presentation.
     plan_query = (
         select(InterventionPlan)
-        .where(InterventionPlan.student_id == payload.student_id, InterventionPlan.status == "ACTIVE")
+        .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+        .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+        .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+        .where(InterventionPlan.student_id == payload.student_id,
+               InterventionPlan.status == "ACTIVE",
+               StudentEnrollment.student_id == payload.student_id,
+               StudentEnrollment.presentation_id == presentation_id)
+        .order_by(InterventionPlan.created_at.desc(), InterventionPlan.id.desc())
+        .limit(1)
     )
     plan_res = await db.execute(plan_query)
     plan = plan_res.scalars().first()
@@ -136,7 +149,7 @@ async def assign_course_task(
     if not plan:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sinh viên chưa có kế hoạch can thiệp nào đang hoạt động",
+            detail="Sinh viên chưa có kế hoạch can thiệp đang hoạt động cho học phần này",
         )
 
     task = InterventionTask(
@@ -160,10 +173,23 @@ async def alert_advisor(
     current_user: User = Depends(require_lecturer),
     db: AsyncSession = Depends(get_db),
 ):
+    if payload.presentation_id is not None:
+        await _ensure_course_ownership(db, current_user, payload.presentation_id)
+        enrolled = await db.execute(select(StudentEnrollment).where(
+            StudentEnrollment.student_id == student_id,
+            StudentEnrollment.presentation_id == payload.presentation_id,
+        ))
+        if enrolled.scalars().first() is None:
+            raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
+    advisor_user = (await db.execute(select(AdvisorProfile.user_id)
+        .join(AdvisorStudent, AdvisorStudent.advisor_id == AdvisorProfile.id)
+        .where(AdvisorStudent.student_id == student_id)
+        .order_by(AdvisorStudent.assigned_at.desc()).limit(1))).scalar_one_or_none()
     alert = StudentHelpRequest(
         student_id=student_id,
         target_role="ADVISOR",
-        target_user_id=current_user.id,
+        target_user_id=advisor_user,
+        presentation_id=payload.presentation_id,
         subject=payload.subject,
         content=payload.content,
         status="PENDING",

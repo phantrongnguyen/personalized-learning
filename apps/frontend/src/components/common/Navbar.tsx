@@ -1,6 +1,7 @@
 import React from 'react';
 import { useApp } from '../../state/AppContext';
 import { ThemeToggle } from './ThemeToggle';
+import { CourseReminderBell } from './CourseReminderBell';
 import {
   Menu,
   ChevronRight,
@@ -147,6 +148,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           {/* Right: Actions (User Profile & Logout) */}
           <div className="flex shrink-0 items-center gap-2 sm:gap-3">
             <ThemeToggle />
+            {user?.roleCode === 'STUDENT' && <CourseReminderBell key={user.email} />}
             {/* Auth Profile / Login */}
             {user ? (
               <div className="flex items-center gap-2 pl-2 border-l border-slate-800">

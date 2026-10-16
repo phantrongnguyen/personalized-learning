@@ -136,7 +136,16 @@ async def get_student_intervention_plans(
     return list(result.scalars().all())
 
 
-async def get_student_tasks_list(db: AsyncSession, student_id: uuid.UUID) -> List[InterventionTask]:
+async def get_owned_enrollment(db: AsyncSession, student_id: uuid.UUID, enrollment_id: uuid.UUID):
+    result = await db.execute(select(StudentEnrollment).where(
+        StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id,
+    ))
+    return result.scalars().first()
+
+
+async def get_student_tasks_list(
+    db: AsyncSession, student_id: uuid.UUID, enrollment_id: Optional[uuid.UUID] = None
+) -> List[InterventionTask]:
     """Lấy danh sách nhiệm vụ can thiệp của sinh viên"""
     query = (
         select(InterventionTask)
@@ -144,12 +153,19 @@ async def get_student_tasks_list(db: AsyncSession, student_id: uuid.UUID) -> Lis
         .where(and_(InterventionPlan.student_id == student_id, InterventionPlan.status == "ACTIVE"))
         .order_by(InterventionTask.is_completed.asc(), InterventionTask.id.desc())
     )
+    if enrollment_id is not None:
+        query = (query
+            .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+            .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+            .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+            .where(StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id))
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
 async def complete_student_task(
-    db: AsyncSession, task_id: uuid.UUID, student_id: uuid.UUID, feedback: Optional[str]
+    db: AsyncSession, task_id: uuid.UUID, student_id: uuid.UUID, feedback: Optional[str],
+    enrollment_id: Optional[uuid.UUID] = None,
 ) -> Optional[InterventionTask]:
     """Sinh viên đánh dấu hoàn thành task của mình"""
     query = (
@@ -157,6 +173,12 @@ async def complete_student_task(
         .join(InterventionPlan, InterventionTask.plan_id == InterventionPlan.id)
         .where(and_(InterventionTask.id == task_id, InterventionPlan.student_id == student_id))
     )
+    if enrollment_id is not None:
+        query = (query
+            .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+            .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+            .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+            .where(StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id))
     result = await db.execute(query)
     task = result.scalars().first()
     if not task:

@@ -29,6 +29,7 @@ from schemas.advisor_lecturer import (
     NoteOut,
 )
 from schemas.student import RadarDataOut
+from repositories.student_repo import get_owned_enrollment
 from repositories.academic_repo import (
     get_advisor_profile_by_user_id,
     get_advisor_classes,
@@ -79,12 +80,26 @@ async def create_intervention_plan(
     current_user: User = Depends(require_advisor),
     db: AsyncSession = Depends(get_db),
 ):
-    # Tìm prediction run gần nhất của sinh viên
+    if not any(role.code == "ADMIN" for role in current_user.roles):
+        profile = _require_advisor_profile(await get_advisor_profile_by_user_id(db, current_user.id))
+        await _require_owned_student(db, profile.id, payload.student_id)
+    enrollment_id = payload.enrollment_id
+    if enrollment_id is None:
+        enrollments = (await db.execute(select(StudentEnrollment.id).where(
+            StudentEnrollment.student_id == payload.student_id,
+        ))).scalars().all()
+        if len(enrollments) != 1:
+            raise HTTPException(422, "Vui lòng chọn học phần khi lập kế hoạch can thiệp")
+        enrollment_id = enrollments[0]
+    if await get_owned_enrollment(db, payload.student_id, enrollment_id) is None:
+        raise HTTPException(404, "Đăng ký học phần không thuộc sinh viên")
+    # Select the latest prediction for the explicitly selected enrollment.
     pred_query = (
         select(PredictionRun)
         .join(StudentFeatureSnapshot, PredictionRun.snapshot_id == StudentFeatureSnapshot.id)
         .join(StudentEnrollment, StudentFeatureSnapshot.enrollment_id == StudentEnrollment.id)
-        .where(StudentEnrollment.student_id == payload.student_id)
+        .where(StudentEnrollment.student_id == payload.student_id,
+               StudentEnrollment.id == enrollment_id)
         .order_by(desc(PredictionRun.created_at))
         .limit(1)
     )
@@ -95,7 +110,7 @@ async def create_intervention_plan(
         # Nếu chưa có prediction_run, kiểm tra xem có model active để sinh snapshot hoặc từ chối
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Sinh viên chưa có bản ghi dự báo nguy cơ học máy (PredictionRun)",
+            detail="Học phần đã chọn chưa có bản ghi dự báo nguy cơ học máy (PredictionRun)",
         )
 
     tasks_dicts = [t.model_dump() for t in payload.tasks]

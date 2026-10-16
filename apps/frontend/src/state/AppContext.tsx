@@ -59,6 +59,9 @@ interface AppContextValue {
   setTheme: (theme: Theme) => void;
   currentView: NavigationPage;
   setCurrentView: (view: NavigationPage) => void;
+  studentEnrollmentToOpen: string | null;
+  openStudentEnrollment: (enrollmentId: string) => void;
+  clearStudentEnrollmentToOpen: () => void;
   apiBase: string;
   setApiBase: (url: string) => void;
   backendStatus: BackendStatus;
@@ -129,6 +132,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return () => window.removeEventListener('storage', syncTheme);
   }, []);
   const [currentView, setCurrentViewState] = useState<NavigationPage>('home');
+  const [studentEnrollmentToOpen, setStudentEnrollmentToOpen] = useState<string | null>(null);
+  const clearStudentEnrollmentToOpen = useCallback(() => setStudentEnrollmentToOpen(null), []);
   const [apiBase, setApiBaseState] = useState<string>(() => {
     return localStorage.getItem(API_BASE_KEY) || getDefaultApiBase();
   });
@@ -178,6 +183,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.location.hash = view;
     setCurrentViewState(view);
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const openStudentEnrollment = (enrollmentId: string) => {
+    setStudentEnrollmentToOpen(enrollmentId);
+    setCurrentView('student');
   };
 
   const addToast = useCallback((message: string, type: ToastType = 'info', duration = 3500) => {
@@ -236,6 +246,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    setStudentEnrollmentToOpen(null);
     setUser(null);
     localStorage.removeItem(USER_KEY);
     clearStoredTokens();
@@ -297,6 +308,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setTheme,
         currentView,
         setCurrentView,
+        studentEnrollmentToOpen,
+        openStudentEnrollment,
+        clearStudentEnrollmentToOpen,
         apiBase,
         setApiBase,
         backendStatus,

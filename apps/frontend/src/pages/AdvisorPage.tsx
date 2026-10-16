@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import {
   AdvisorClassSummary,
+  StudentCourseItem,
   AdvisorStudentItem,
   CreateInterventionTaskPayload,
 } from '@shared/types';
@@ -9,6 +10,7 @@ import {
   getAdvisorClassesApi,
   getAdvisorStudentsApi,
   createInterventionPlanApi,
+  getAdvisorStudentCoursesApi,
 } from '../services/api';
 import {
   UserCheck,
@@ -41,6 +43,9 @@ export const AdvisorPage: React.FC = () => {
   // Tạo kế hoạch can thiệp
   const [planTarget, setPlanTarget] = useState<AdvisorStudentItem | null>(null);
   const [planNote, setPlanNote] = useState('');
+  const [planCourses, setPlanCourses] = useState<StudentCourseItem[]>([]);
+  const [planEnrollment, setPlanEnrollment] = useState('');
+  const [loadingPlanCourses, setLoadingPlanCourses] = useState(false);
   const [planDate, setPlanDate] = useState('');
   const [planTasks, setPlanTasks] = useState<CreateInterventionTaskPayload[]>([{ ...EMPTY_TASK }]);
   const [saving, setSaving] = useState(false);
@@ -86,9 +91,23 @@ export const AdvisorPage: React.FC = () => {
     setPlanTasks((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    setPlanCourses([]);
+    setPlanEnrollment('');
+    if (!planTarget) return;
+    setLoadingPlanCourses(true);
+    getAdvisorStudentCoursesApi(apiBase, planTarget.student_id).then((courses) => {
+      if (!cancelled) setPlanCourses(courses);
+    }).catch((err) => {
+      if (!cancelled) addToast((err as Error).message, 'error');
+    }).finally(() => { if (!cancelled) setLoadingPlanCourses(false); });
+    return () => { cancelled = true; };
+  }, [planTarget, apiBase, addToast]);
+
   const handleCreatePlan = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!planTarget) return;
+    if (!planTarget || !planEnrollment) return;
     const validTasks = planTasks.filter((t) => t.title.trim());
     if (validTasks.length === 0) {
       addToast('Vui lòng nhập ít nhất một nhiệm vụ can thiệp.', 'warning');
@@ -99,6 +118,7 @@ export const AdvisorPage: React.FC = () => {
     try {
       await createInterventionPlanApi(apiBase, {
         student_id: planTarget.student_id,
+        enrollment_id: planEnrollment,
         target_completion_date: planDate || undefined,
         advisor_note_summary: planNote || undefined,
         tasks: validTasks,
@@ -346,6 +366,17 @@ export const AdvisorPage: React.FC = () => {
             </div>
 
             <form onSubmit={handleCreatePlan} className="space-y-4 text-xs">
+              <label className="block font-semibold text-slate-300">
+                Học phần can thiệp
+                <select required disabled={loadingPlanCourses || saving} value={planEnrollment}
+                  onChange={(e) => setPlanEnrollment(e.target.value)}
+                  className="mt-1 w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100">
+                  <option value="">{loadingPlanCourses ? 'Đang tải học phần…' : 'Chọn học phần'}</option>
+                  {planCourses.map((course) => <option key={course.enrollment_id} value={course.enrollment_id}>
+                    {course.code_module} — {course.course_name} ({course.code_presentation})
+                  </option>)}
+                </select>
+              </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
                   <label className="block font-semibold text-slate-300 mb-1">
