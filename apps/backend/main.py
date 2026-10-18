@@ -5,18 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.router import api_router
 from core.config import settings
-from ml.model_loader import load_model
+from core.database import AsyncSessionLocal
+from services.model_registry import model_registry
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load model một lần khi ứng dụng khởi động
-    app.state.model = load_model(settings.model_path)
-
+    async with AsyncSessionLocal() as db:
+        await model_registry.initialize(db)
+        await db.commit()
+    # No process-local active pointer: every request resolves the DB selection.
     yield
-
-    # Giải phóng tham chiếu khi ứng dụng tắt
-    app.state.model = None
 
 
 app = FastAPI(

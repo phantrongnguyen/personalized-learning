@@ -1,4 +1,5 @@
 from typing import Annotated, Literal
+import uuid
 
 from pydantic import BaseModel, ConfigDict, Field
 
@@ -41,6 +42,9 @@ class PredictionProvenance(BaseModel):
     model_version: str
     threshold: Ratio
     model_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    model_id: uuid.UUID | None = None
+    cutoff_fraction: Ratio | None = None
+    positive_label: Literal[1] | None = None
 
 
 class PredictionRequest(BaseModel):

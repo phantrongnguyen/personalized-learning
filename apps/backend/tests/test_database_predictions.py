@@ -65,15 +65,12 @@ class TransactionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(response.status_code, 403)
         generate.assert_not_awaited()
 
-    async def test_threshold_mismatch_rejected(self):
-        model = SimpleNamespace(id=uuid.uuid4(), threshold=.6, cutoff_fraction=.75)
-        result = SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: [model]))
-        db = SimpleNamespace(execute=AsyncMock(return_value=result), add_all=Mock())
-        with patch.object(service, "artifact_path", return_value=Path("dummy")), \
-             patch.object(service, "load_model", return_value={"threshold": .5}):
+    async def test_invalid_registry_contract_rejected(self):
+        db = SimpleNamespace(add_all=Mock())
+        with patch.object(service.model_registry, "active", AsyncMock(side_effect=HTTPException(503, "Invalid contract"))):
             with self.assertRaises(HTTPException) as error:
                 await service.generate_database_predictions(db, uuid.uuid4())
-        self.assertEqual(error.exception.status_code, 400)
+        self.assertEqual(error.exception.status_code, 503)
         db.add_all.assert_not_called()
 
     async def test_failure_rolls_back(self):
@@ -89,7 +86,7 @@ class TransactionTests(unittest.IsolatedAsyncioTestCase):
     async def test_success_commits_audit_and_predictions(self):
         db = SimpleNamespace(commit=AsyncMock(), rollback=AsyncMock())
         actor = SimpleNamespace(id=uuid.uuid4())
-        model = SimpleNamespace(id=uuid.uuid4())
+        model = SimpleNamespace(id=uuid.uuid4(), version="fixture", threshold=.5, metadata_json={})
         runs = [SimpleNamespace(prediction_label=1)]
         enrollment_id = uuid.uuid4()
         with patch.object(admin, "generate_database_predictions", AsyncMock(return_value=(model, runs))) as generate, \
@@ -102,11 +99,9 @@ class TransactionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_partial_inference_never_added(self):
         model = SimpleNamespace(id=uuid.uuid4(), threshold=.5, cutoff_fraction=.75, version="fixture")
-        first = SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: [model]))
         second = SimpleNamespace(all=lambda: [records(), records()])
-        db = SimpleNamespace(execute=AsyncMock(side_effect=[first, second]), add_all=Mock())
-        with patch.object(service, "artifact_path", return_value=Path("dummy")), \
-             patch.object(service, "load_model", return_value={"threshold": .5}), \
+        db = SimpleNamespace(execute=AsyncMock(return_value=second), add_all=Mock())
+        with patch.object(service.model_registry, "active", AsyncMock(return_value=(model, {"threshold": .5}))), \
              patch.object(service, "infer_record", side_effect=[object(), ValueError("failure")]):
             with self.assertRaises(ValueError):
                 await service.generate_database_predictions(db, uuid.uuid4())
@@ -114,11 +109,9 @@ class TransactionTests(unittest.IsolatedAsyncioTestCase):
 
     async def test_missing_snapshot(self):
         model = SimpleNamespace(id=uuid.uuid4(), threshold=.5, cutoff_fraction=.75)
-        first = SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: [model]))
         second = SimpleNamespace(all=lambda: [])
-        db = SimpleNamespace(execute=AsyncMock(side_effect=[first, second]), add_all=Mock())
-        with patch.object(service, "artifact_path", return_value=Path("dummy")), \
-             patch.object(service, "load_model", return_value={"threshold": .5}):
+        db = SimpleNamespace(execute=AsyncMock(return_value=second), add_all=Mock())
+        with patch.object(service.model_registry, "active", AsyncMock(return_value=(model, {"threshold": .5}))):
             with self.assertRaises(HTTPException) as error:
                 await service.generate_database_predictions(db, uuid.uuid4(), uuid.uuid4())
         self.assertEqual(error.exception.status_code, 404)

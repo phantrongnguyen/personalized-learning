@@ -2,6 +2,10 @@ from fastapi import APIRouter, Depends, HTTPException, Request
 
 from core.permissions import get_current_user
 from models.user import User
+from sqlalchemy.ext.asyncio import AsyncSession
+from anyio import to_thread
+from core.database import get_db
+from services.model_registry import model_registry
 
 from schemas.prediction import (
     PredictionRequest,
@@ -17,21 +21,16 @@ router = APIRouter()
     response_model=PredictionResponse,
     summary="Dự đoán bằng Machine Learning",
 )
-def create_prediction(
+async def create_prediction(
     data: PredictionRequest,
     request: Request,
     current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
 ):
-    model = getattr(request.app.state, "model", None)
-
-    if model is None:
-        raise HTTPException(
-            status_code=503,
-            detail="Model chưa sẵn sàng",
-        )
+    _, model = await model_registry.active(db)
 
     try:
-        return PredictionService.execute(model, data)
+        return await to_thread.run_sync(PredictionService.execute, model, data)
 
     except (ValueError, TypeError) as exc:
         raise HTTPException(

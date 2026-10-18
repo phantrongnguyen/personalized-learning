@@ -126,6 +126,10 @@ class BatchPredictResultOut(BaseModel):
     high_risk_count: int
     safe_count: int
     execution_time_ms: int
+    model_id: uuid.UUID | None = None
+    model_version: str | None = None
+    threshold: float | None = None
+    model_sha256: str | None = None
 
 
 # -------------------------------------------------------------

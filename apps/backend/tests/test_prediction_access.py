@@ -5,7 +5,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock, patch
 
 import httpx
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 
 from api.v1.endpoints import predictions
 from core.database import get_db
@@ -17,6 +17,9 @@ class PredictionAccessTests(unittest.IsolatedAsyncioTestCase):
         self.user = SimpleNamespace(id=uuid.uuid4(), is_active=True)
         self.app = FastAPI()
         self.app.state.model = object()
+        registry = patch.object(predictions.model_registry, "active", AsyncMock(return_value=(None, self.app.state.model)))
+        self.resolve_model = registry.start()
+        self.addCleanup(registry.stop)
         self.app.include_router(predictions.router, prefix="/api/v1/predictions")
         self.app.dependency_overrides[get_db] = lambda: None
         self.features = dict(code_module="CCC", gender="M", highest_education="HE Qualification",
@@ -59,7 +62,7 @@ class PredictionAccessTests(unittest.IsolatedAsyncioTestCase):
             infer.assert_not_called()
 
     async def test_authenticated_request_keeps_model_unavailable_response(self):
-        self.app.state.model = None
+        self.resolve_model.side_effect = HTTPException(503, "Model unavailable")
         with patch("core.permissions.get_user_by_id", AsyncMock(return_value=self.user)):
             response = await self.request(create_access_token({"sub": str(self.user.id)}))
         self.assertEqual(response.status_code, 503)

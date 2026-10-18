@@ -1,7 +1,6 @@
 import math
 import time
 from copy import deepcopy
-from pathlib import Path
 
 from fastapi import HTTPException
 from sqlalchemy import select, func
@@ -9,8 +8,9 @@ from ml.model_loader import load_model
 from models.academic import Course, CoursePresentation, StudentEnrollment
 from models.feature import StudentFeatureSnapshot
 from models.profile import StudentProfile
-from models.ml import MLModel, PredictionRun
+from models.ml import PredictionRun
 from schemas.prediction import StudentFeatures, PredictionProvenance
+from services.model_registry import model_registry
 
 
 from ml.predictor import predict
@@ -60,18 +60,6 @@ def database_features(snapshot, enrollment, profile, course):
     return StudentFeatures(**values).model_dump()
 
 
-def artifact_path(model_record):
-    candidate = Path(model_record.model_file_path)
-    if candidate.is_absolute():
-        return candidate
-    backend = Path(__file__).resolve().parents[1]
-    for base in (backend, backend.parents[1]):
-        resolved = base / candidate
-        if resolved.is_file():
-            return resolved
-    raise FileNotFoundError("Không tìm thấy artifact của mô hình active")
-
-
 def infer_record(artifact, features, snapshot_id, model_id, user_id, model_version=None):
     features = StudentFeatures(**features).model_dump()
     started = time.perf_counter()
@@ -83,7 +71,7 @@ def infer_record(artifact, features, snapshot_id, model_id, user_id, model_versi
     identity = dict(artifact["_provenance"])
     if model_version is not None:
         identity["model_version"] = model_version
-    context = PredictionProvenance(features=features, **identity).model_dump()
+    context = PredictionProvenance(features=features, **identity).model_dump(mode="json")
     return PredictionRun(
         snapshot_id=snapshot_id, model_id=model_id,
         prediction_label=label, risk_probability=probability,
@@ -94,15 +82,7 @@ def infer_record(artifact, features, snapshot_id, model_id, user_id, model_versi
 
 
 async def generate_database_predictions(db, user_id, enrollment_id=None):
-    model_rows = (await db.execute(select(MLModel).where(MLModel.is_active == True))).scalars().all()
-    if len(model_rows) != 1:
-        raise HTTPException(400, "Cần đúng một mô hình ML đang active")
-    record = model_rows[0]
-    artifact = load_model(artifact_path(record))
-    if not math.isclose(float(artifact["threshold"]), record.threshold):
-        raise HTTPException(400, "Ngưỡng mô hình trong database khác artifact")
-    if not math.isclose(record.cutoff_fraction, 0.75):
-        raise HTTPException(400, "Luồng hiện chỉ hỗ trợ mô hình Cutoff 75%")
+    record, artifact = await model_registry.active(db)
     ranked = select(
         StudentFeatureSnapshot.id.label("id"),
         func.row_number().over(

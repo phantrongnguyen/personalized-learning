@@ -33,6 +33,9 @@ export interface PredictionProvenance {
   model_version: string;
   threshold: number;
   model_sha256: string;
+  model_id?: string | null;
+  cutoff_fraction?: number | null;
+  positive_label?: 1 | null;
 }
 
 export interface InterventionStrategy {

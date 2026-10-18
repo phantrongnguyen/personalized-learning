@@ -3,16 +3,13 @@ import time
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_, update, delete
+from sqlalchemy import select, desc, and_, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from core.database import get_db
 from core.permissions import RequireRoles
 from core.security import get_password_hash
-from core.config import settings
-from ml.model_loader import load_model
-from ml.predictor import predict
 from models.user import User, Role
 from models.profile import StudentProfile, AdvisorProfile, LecturerProfile
 from models.academic import Course, CoursePresentation
@@ -39,6 +36,7 @@ from schemas.admin import (
 )
 from services.audit_service import write_audit_log, get_client_ip
 from services.prediction_service import generate_database_predictions
+from services.model_registry import model_registry, RUNTIME_KEY
 
 router = APIRouter()
 
@@ -426,23 +424,25 @@ async def reload_ml_model(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        new_model = load_model(settings.model_path)
-        request.app.state.model = new_model
+        model, artifact = await model_registry.reload(db)
         await write_audit_log(
             db,
             user_id=current_user.id,
             action="RELOAD_ML_MODEL",
             target_type="ML_MODEL",
-            detail=f"Nạp lại mô hình từ {settings.model_path}",
+            target_id=model.id,
+            detail=f"Nạp lại model={model.id}; version={model.version}; sha256={artifact['_provenance']['model_sha256']}",
             ip_address=get_client_ip(request),
         )
+        result = {"message": "Đã kiểm tra và nạp lại mô hình active", "model": artifact["_provenance"]}
         await db.commit()
-        return {"message": "Nạp lại mô hình vào RAM thành công", "model_info": list(new_model.keys())}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Lỗi khi nạp lại mô hình: {str(e)}"
-        )
+        return result
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể nạp lại mô hình; trạng thái active được giữ nguyên") from exc
 
 
 @router.post("/ml/models/activate", response_model=MLModelOut, summary="Kích hoạt một phiên bản mô hình ML")
@@ -452,27 +452,23 @@ async def activate_ml_model(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    model = await db.get(MLModel, payload.model_id)
-    if not model:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Phiên bản mô hình không tồn tại")
-
-    # Chỉ duy nhất một phiên bản được active tại một thời điểm
-    await db.execute(update(MLModel).values(is_active=False))
-    model.is_active = True
-    db.add(model)
-
-    await write_audit_log(
-        db,
-        user_id=current_user.id,
-        action="ACTIVATE_ML_MODEL",
-        target_type="ML_MODEL",
-        target_id=model.id,
-        detail=f"Kích hoạt mô hình {model.model_name} v{model.version}",
-        ip_address=get_client_ip(request),
-    )
-    await db.commit()
-    await db.refresh(model)
-    return model
+    try:
+        model, artifact = await model_registry.activate(db, payload.model_id)
+        await write_audit_log(
+            db, user_id=current_user.id, action="ACTIVATE_ML_MODEL",
+            target_type="ML_MODEL", target_id=model.id,
+            detail=f"Kích hoạt model={model.id}; version={model.version}; sha256={artifact['_provenance']['model_sha256']}",
+            ip_address=get_client_ip(request),
+        )
+        result = MLModelOut.model_validate(model)
+        await db.commit()
+        return result
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể kích hoạt mô hình; trạng thái active được giữ nguyên") from exc
 
 
 @router.post("/ml/batch-predict", response_model=BatchPredictResultOut, summary="Dự báo bằng mô hình active từ snapshot mới nhất")
@@ -506,6 +502,8 @@ async def batch_predict_all_students(
         "total_snapshots_scanned": len(runs), "predictions_generated": len(runs),
         "high_risk_count": high_risk, "safe_count": len(runs) - high_risk,
         "execution_time_ms": round((time.perf_counter() - started) * 1000),
+        "model_id": model.id, "model_version": model.version, "threshold": model.threshold,
+        "model_sha256": (model.metadata_json or {}).get(RUNTIME_KEY, {}).get("model_sha256"),
     }
 
 
