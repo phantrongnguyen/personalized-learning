@@ -7,13 +7,13 @@ from sqlalchemy import select
 from core.database import get_db
 from core.permissions import RequireRoles
 from models.user import User
-from models.assignment import CourseLecturer, AdvisorStudent
-from models.profile import AdvisorProfile
+from models.assignment import CourseLecturer
 from models.intervention import InterventionPlan, InterventionTask
 from models.ml import PredictionRun
 from models.feature import StudentFeatureSnapshot
 from models.academic import StudentEnrollment
 from models.help_request import StudentHelpRequest
+from services.help_request_service import resolve_help_recipient
 from schemas.advisor_lecturer import (
     LecturerCourseOut,
     StudentRiskInCourseOut,
@@ -41,10 +41,6 @@ async def _ensure_course_ownership(
     db: AsyncSession, current_user: User, presentation_id: uuid.UUID
 ) -> None:
     """Data Ownership Check: đảm bảo GVBM được phân công phụ trách lớp học phần."""
-    user_roles = [r.code for r in current_user.roles]
-    if "ADMIN" in user_roles:
-        return
-
     profile = await get_lecturer_profile_by_user_id(db, current_user.id)
     if not profile:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Không tìm thấy hồ sơ giảng viên")
@@ -173,18 +169,16 @@ async def alert_advisor(
     current_user: User = Depends(require_lecturer),
     db: AsyncSession = Depends(get_db),
 ):
-    if payload.presentation_id is not None:
-        await _ensure_course_ownership(db, current_user, payload.presentation_id)
-        enrolled = await db.execute(select(StudentEnrollment).where(
-            StudentEnrollment.student_id == student_id,
-            StudentEnrollment.presentation_id == payload.presentation_id,
-        ))
-        if enrolled.scalars().first() is None:
-            raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
-    advisor_user = (await db.execute(select(AdvisorProfile.user_id)
-        .join(AdvisorStudent, AdvisorStudent.advisor_id == AdvisorProfile.id)
-        .where(AdvisorStudent.student_id == student_id)
-        .order_by(AdvisorStudent.assigned_at.desc()).limit(1))).scalar_one_or_none()
+    await _ensure_course_ownership(db, current_user, payload.presentation_id)
+    enrolled = await db.execute(select(StudentEnrollment).where(
+        StudentEnrollment.student_id == student_id,
+        StudentEnrollment.presentation_id == payload.presentation_id,
+    ))
+    if enrolled.scalars().first() is None:
+        raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
+    advisor_user = await resolve_help_recipient(
+        db, student_id, "ADVISOR", payload.presentation_id, None,
+    )
     alert = StudentHelpRequest(
         student_id=student_id,
         target_role="ADVISOR",

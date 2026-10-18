@@ -1,4 +1,7 @@
-from fastapi import APIRouter, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
+
+from core.permissions import get_current_user
+from models.user import User
 
 from schemas.prediction import (
     PredictionRequest,
@@ -17,6 +20,7 @@ router = APIRouter()
 def create_prediction(
     data: PredictionRequest,
     request: Request,
+    current_user: User = Depends(get_current_user),
 ):
     model = getattr(request.app.state, "model", None)
 

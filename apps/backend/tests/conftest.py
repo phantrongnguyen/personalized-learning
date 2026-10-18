@@ -9,7 +9,12 @@ if str(backend_dir) not in sys.path:
 from core.database import engine
 
 
+@pytest.fixture
+def anyio_backend():
+    return "asyncio"
+
+
 @pytest.fixture(autouse=True)
-async def cleanup_db_connections():
+async def cleanup_db_connections(anyio_backend):
     yield
     await engine.dispose()

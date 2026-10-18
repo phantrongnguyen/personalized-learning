@@ -98,7 +98,7 @@ class TaskCompleteIn(BaseModel):
 
 class HelpRequestCreateIn(BaseModel):
     enrollment_id: Optional[uuid.UUID] = None
-    target_role: str = Field(..., description="ADVISOR hoặc LECTURER")
+    target_role: Literal["ADVISOR", "LECTURER"] = Field(..., description="ADVISOR hoặc LECTURER")
     presentation_id: Optional[uuid.UUID] = None
     target_user_id: Optional[uuid.UUID] = None
     subject: str = Field(..., min_length=3)

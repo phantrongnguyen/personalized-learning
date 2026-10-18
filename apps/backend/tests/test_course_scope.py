@@ -4,23 +4,27 @@ import unittest
 import uuid
 from types import SimpleNamespace
 
-from fastapi import HTTPException
-from sqlalchemy import select
+import httpx
+from fastapi import FastAPI, HTTPException
+from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from core.database import engine
-from models.user import User
-from models.profile import StudentProfile, AdvisorProfile
-from models.assignment import AdvisorStudent
+from core.permissions import get_current_user
+from models.user import User, Role
+from models.profile import StudentProfile, AdvisorProfile, LecturerProfile
+from models.assignment import AdvisorStudent, CourseLecturer
 from models.academic import Course, CoursePresentation, StudentEnrollment
 from models.feature import StudentFeatureSnapshot
 from models.ml import MLModel, PredictionRun
-from models.intervention import InterventionPlan, InterventionTask
+from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
 from models.help_request import StudentHelpRequest
 from api.v1.endpoints import student, advisor, lecturer
 from repositories.student_repo import get_student_tasks_list
 from schemas.student import HelpRequestCreateIn, TaskCompleteIn
-from schemas.advisor_lecturer import PlanCreateIn, CourseTaskAssignIn, AlertAdvisorIn
+from schemas.advisor_lecturer import (
+    PlanCreateIn, CourseTaskAssignIn, AlertAdvisorIn,
+)
 
 
 @unittest.skipUnless(os.getenv("RUN_COURSE_SCOPE_DB") == "1", "Explicit opt-in required for rollback-only DB fixtures")
@@ -30,11 +34,18 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         self.outer = await self.connection.begin()
         self.db = AsyncSession(bind=self.connection, expire_on_commit=False,
                                join_transaction_mode="create_savepoint")
+        self.addAsyncCleanup(self.cleanup_fixture)
         unique = uuid.uuid4().hex[:10]
         self.user = User(email=f"scope-{unique}@example.invalid", full_name="Scope fixture",
                          hashed_password="test-fixture-not-a-password-hash")
         other = User(email=f"other-{unique}@example.invalid", full_name="Other fixture",
                      hashed_password="test-fixture-not-a-password-hash")
+        roles = list((await self.db.execute(select(Role).where(
+            Role.code.in_(["STUDENT", "ADVISOR", "LECTURER"]),
+        ))).scalars().all())
+        self.user.roles = list(roles)
+        other.roles = list(roles)
+        self.other_user = other
         self.db.add_all([self.user, other])
         await self.db.flush()
         self.profile = StudentProfile(user_id=self.user.id, student_code=f"scope-{unique}",
@@ -47,6 +58,21 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         self.presentations = [CoursePresentation(course_id=c.id, code_presentation="TEST", module_presentation_length=268) for c in courses]
         self.db.add_all(self.presentations)
         await self.db.flush()
+        self.advisor_profile = AdvisorProfile(user_id=self.user.id, department="Scope")
+        self.other_advisor = AdvisorProfile(user_id=other.id, department="Scope")
+        self.lecturer_profile = LecturerProfile(user_id=self.user.id, lecturer_code=f"L-{unique}", department="Scope")
+        self.other_lecturer = LecturerProfile(user_id=other.id, lecturer_code=f"O-{unique}", department="Scope")
+        self.db.add_all([self.advisor_profile, self.other_advisor, self.lecturer_profile, self.other_lecturer])
+        await self.db.flush()
+        self.db.add_all([
+            AdvisorStudent(advisor_id=self.advisor_profile.id, student_id=self.profile.id,
+                           academic_year="TEST", class_name=f"A-{unique}"),
+            AdvisorStudent(advisor_id=self.other_advisor.id, student_id=self.other_profile.id,
+                           academic_year="TEST", class_name=f"B-{unique}"),
+            *[CourseLecturer(lecturer_id=self.lecturer_profile.id, presentation_id=p.id)
+              for p in self.presentations],
+            CourseLecturer(lecturer_id=self.other_lecturer.id, presentation_id=self.presentations[0].id),
+        ])
         self.enrollments = [StudentEnrollment(student_id=self.profile.id, presentation_id=p.id) for p in self.presentations]
         self.foreign = StudentEnrollment(student_id=self.other_profile.id, presentation_id=self.presentations[0].id)
         self.db.add_all([*self.enrollments, self.foreign])
@@ -71,8 +97,23 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         self.db.add_all([*self.requests, self.generic])
         await self.db.flush()
         self.admin = SimpleNamespace(id=self.user.id, roles=[SimpleNamespace(code="ADMIN")])
+        self.actor = self.user
+        self.app = FastAPI()
+        for prefix, module in (("student", student), ("advisor", advisor), ("lecturer", lecturer)):
+            self.app.include_router(module.router, prefix=f"/api/v1/{prefix}")
+        async def current_actor():
+            return self.actor
+        async def test_db():
+            yield self.db
+        self.app.dependency_overrides[get_current_user] = current_actor
+        self.app.dependency_overrides[student.get_db] = test_db
 
-    async def asyncTearDown(self):
+    async def request(self, method, path, actor=None, **kwargs):
+        self.actor = actor or self.user
+        async with httpx.AsyncClient(transport=httpx.ASGITransport(app=self.app), base_url="http://test") as client:
+            return await client.request(method, f"/api/v1{path}", **kwargs)
+
+    async def cleanup_fixture(self):
         await self.db.close()
         await self.outer.rollback()
         await self.connection.close()
@@ -143,22 +184,16 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(task.plan_id, self.plans[1].id)
 
     async def test_alert_is_scoped_and_addresses_assigned_advisor(self):
-        profile = AdvisorProfile(user_id=self.other_profile.user_id, department="Test")
-        self.db.add(profile)
-        await self.db.flush()
-        self.db.add(AdvisorStudent(advisor_id=profile.id, student_id=self.profile.id,
-                                   academic_year="TEST", class_name="TEST"))
-        await self.db.flush()
         result = await lecturer.alert_advisor(self.profile.id, AlertAdvisorIn(
             presentation_id=self.presentations[1].id, content="Scoped alert"), self.admin, self.db)
         alert = await self.db.get(StudentHelpRequest, result["alert_id"])
         self.assertEqual(alert.presentation_id, self.presentations[1].id)
-        self.assertEqual(alert.target_user_id, self.other_profile.user_id)
+        self.assertEqual(alert.target_user_id, self.user.id)
 
     async def test_unassigned_lecturer_cannot_assign_task(self):
-        actor = SimpleNamespace(id=self.user.id, roles=[SimpleNamespace(code="LECTURER")])
+        actor = SimpleNamespace(id=self.other_user.id, roles=[SimpleNamespace(code="LECTURER")])
         with self.assertRaises(HTTPException) as error:
-            await lecturer.assign_course_task(self.presentations[0].id,
+            await lecturer.assign_course_task(self.presentations[1].id,
                 CourseTaskAssignIn(student_id=self.profile.id, title="Invalid task", description="Test"), actor, self.db)
         self.assertEqual(error.exception.status_code, 403)
 
@@ -171,3 +206,143 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         with self.assertRaises(HTTPException) as error:
             await advisor.create_intervention_plan(PlanCreateIn(student_id=self.profile.id), self.admin, self.db)
         self.assertEqual(error.exception.status_code, 422)
+
+    async def test_notes_reject_other_advisors_student_without_writing(self):
+        payload = dict(enrollment_id=str(self.enrollments[0].id), meeting_date="2026-10-18", content="Scope test")
+        before = (await self.db.execute(select(func.count()).select_from(AdvisingNote))).scalar_one()
+        denied = await self.request("POST", "/advisor/advising-notes", self.other_user, json=payload)
+        self.assertEqual(denied.status_code, 403, denied.text)
+        after = (await self.db.execute(select(func.count()).select_from(AdvisingNote))).scalar_one()
+        self.assertEqual(after, before)
+        allowed = await self.request("POST", "/advisor/advising-notes", json=payload)
+        self.assertEqual(allowed.status_code, 200, allowed.text)
+        self.assertEqual(allowed.json()["advisor_id"], str(self.advisor_profile.id))
+        missing = await self.request("POST", "/advisor/advising-notes", json={**payload, "enrollment_id": str(uuid.uuid4())})
+        self.assertEqual(missing.status_code, 404)
+
+    async def test_advisor_cannot_read_or_change_other_students_records(self):
+        for suffix in ("overview", "radar", "notes"):
+            response = await self.request("GET", f"/advisor/students/{self.profile.id}/{suffix}", self.other_user)
+            self.assertIn(response.status_code, (403, 404), response.text)
+        create = await self.request("POST", "/advisor/interventions", self.other_user,
+            json=dict(student_id=str(self.profile.id), enrollment_id=str(self.enrollments[0].id)))
+        self.assertEqual(create.status_code, 403)
+        update = await self.request("PUT", f"/advisor/interventions/{self.plans[0].id}", self.other_user,
+            json={"status": "COMPLETED"})
+        self.assertEqual(update.status_code, 404)
+        task = await self.request("POST", f"/advisor/interventions/{self.plans[0].id}/tasks", self.other_user,
+            json=dict(category="HOC_THUAT", title="Denied", description="Denied"))
+        self.assertEqual(task.status_code, 404)
+        self.assertEqual(self.plans[0].status, "ACTIVE")
+        listed = await self.request("GET", "/advisor/interventions", self.other_user)
+        self.assertEqual(listed.status_code, 200)
+        self.assertEqual(listed.json(), [])
+
+    async def test_assigned_advisor_can_read_update_and_add_task(self):
+        for suffix in ("overview", "radar", "notes"):
+            response = await self.request("GET", f"/advisor/students/{self.profile.id}/{suffix}")
+            self.assertEqual(response.status_code, 200, response.text)
+        response = await self.request("PUT", f"/advisor/interventions/{self.plans[0].id}",
+            json={"advisor_note_summary": "Updated by assigned advisor"})
+        self.assertEqual(response.status_code, 200, response.text)
+        response = await self.request("POST", f"/advisor/interventions/{self.plans[0].id}/tasks",
+            json=dict(category="HOC_THUAT", title="Allowed", description="Allowed"))
+        self.assertEqual(response.status_code, 200, response.text)
+
+    async def test_lecturer_cannot_access_other_course_or_alert_its_students(self):
+        course_id = self.presentations[1].id
+        for suffix in ("risk-board", "students"):
+            allowed = await self.request("GET", f"/lecturer/courses/{course_id}/{suffix}")
+            self.assertEqual(allowed.status_code, 200, allowed.text)
+            response = await self.request("GET", f"/lecturer/courses/{course_id}/{suffix}", self.other_user)
+            self.assertEqual(response.status_code, 403, response.text)
+        response = await self.request("PUT", f"/lecturer/courses/{course_id}/students/{self.profile.id}/assessment",
+            self.other_user, json={"submission_rate": .5})
+        self.assertEqual(response.status_code, 403)
+        for body, code in (({"content": "No course"}, 422),
+                           ({"presentation_id": None, "content": "Null course"}, 422),
+                           ({"presentation_id": str(course_id), "content": "Other course"}, 403)):
+            response = await self.request("POST", f"/lecturer/students/{self.profile.id}/alert-advisor",
+                self.other_user, json=body)
+            self.assertEqual(response.status_code, code, response.text)
+        # Assigned teacher, but the selected student is not enrolled in this course.
+        response = await self.request("POST", f"/lecturer/students/{self.other_profile.id}/alert-advisor",
+            json={"presentation_id": str(course_id), "content": "Wrong student"})
+        self.assertEqual(response.status_code, 404)
+
+    async def test_student_cannot_read_or_complete_another_students_task(self):
+        for suffix in ("risk-prediction", "radar"):
+            response = await self.request("GET", f"/student/courses/{self.enrollments[0].id}/{suffix}", self.other_user)
+            self.assertEqual(response.status_code, 404, response.text)
+        response = await self.request("PATCH", f"/student/tasks/{self.tasks[0].id}/complete", self.other_user, json={})
+        self.assertEqual(response.status_code, 404)
+        self.assertFalse(self.tasks[0].is_completed)
+        for route in ("tasks", "intervention-plans", "help-requests"):
+            response = await self.request("GET", f"/student/{route}", self.other_user)
+            self.assertEqual(response.status_code, 200)
+            self.assertEqual(response.json(), [])
+
+    async def test_help_rejects_unassigned_recipients_and_invalid_roles(self):
+        payload = dict(enrollment_id=str(self.enrollments[1].id), target_role="ADVISOR",
+                       subject="Scope help", content="Scope test body")
+        before = (await self.db.execute(select(func.count()).select_from(StudentHelpRequest))).scalar_one()
+        for role in ("ADVISOR", "LECTURER"):
+            response = await self.request("POST", "/student/help-requests",
+                json={**payload, "target_role": role, "target_user_id": str(self.other_user.id)})
+            self.assertEqual(response.status_code, 403, response.text)
+        response = await self.request("POST", "/student/help-requests", json={**payload, "target_role": "ADMIN"})
+        self.assertEqual(response.status_code, 422)
+        response = await self.request("POST", "/student/help-requests",
+            json=dict(target_role="LECTURER", subject="Missing course", content="Scope test body"))
+        self.assertEqual(response.status_code, 422)
+        after = (await self.db.execute(select(func.count()).select_from(StudentHelpRequest))).scalar_one()
+        self.assertEqual(after, before)
+        for role in ("ADVISOR", "LECTURER"):
+            response = await self.request("POST", "/student/help-requests", json={**payload, "target_role": role})
+            self.assertEqual(response.status_code, 200, response.text)
+            self.assertEqual(response.json()["target_user_id"], str(self.user.id))
+            response = await self.request("POST", "/student/help-requests",
+                json={**payload, "target_role": role, "target_user_id": str(self.user.id)})
+            self.assertEqual(response.status_code, 200, response.text)
+
+    async def test_help_rejects_inactive_or_role_removed_assigned_recipient(self):
+        payload = dict(enrollment_id=str(self.enrollments[0].id), target_role="LECTURER",
+                       target_user_id=str(self.other_user.id), subject="Recipient state", content="Scope test body")
+        self.other_user.is_active = False
+        await self.db.flush()
+        response = await self.request("POST", "/student/help-requests", json=payload)
+        self.assertEqual(response.status_code, 403, response.text)
+        self.other_user.is_active = True
+        self.other_user.roles = [r for r in self.other_user.roles if r.code != "LECTURER"]
+        await self.db.flush()
+        response = await self.request("POST", "/student/help-requests", json=payload)
+        self.assertEqual(response.status_code, 403, response.text)
+
+    async def test_missing_profiles_and_admin_do_not_bypass_assignments(self):
+        actor = SimpleNamespace(id=uuid.uuid4(), roles=[SimpleNamespace(code="ADMIN")])
+        response = await self.request("POST", "/advisor/interventions", actor,
+            json=dict(student_id=str(self.profile.id), enrollment_id=str(self.enrollments[0].id)))
+        self.assertEqual(response.status_code, 400)
+        response = await self.request("GET", f"/lecturer/courses/{self.presentations[0].id}/risk-board", actor)
+        self.assertEqual(response.status_code, 403)
+        response = await self.request("PATCH", f"/student/tasks/{self.tasks[0].id}/complete", actor, json={})
+        self.assertEqual(response.status_code, 404)
+        # ADMIN with a real profile still cannot cross that profile's assignments.
+        actor.id = self.other_user.id
+        response = await self.request("POST", "/advisor/interventions", actor,
+            json=dict(student_id=str(self.profile.id), enrollment_id=str(self.enrollments[0].id)))
+        self.assertEqual(response.status_code, 403)
+        response = await self.request("GET", f"/lecturer/courses/{self.presentations[1].id}/risk-board", actor)
+        self.assertEqual(response.status_code, 403)
+
+    async def test_role_gate_blocks_student_from_staff_portals(self):
+        actor = SimpleNamespace(id=self.user.id, roles=[SimpleNamespace(code="STUDENT")])
+        for route in ("/advisor/students", "/lecturer/courses"):
+            response = await self.request("GET", route, actor)
+            self.assertEqual(response.status_code, 403)
+
+    async def test_anonymous_requests_cannot_read_portal_data(self):
+        self.app.dependency_overrides.pop(get_current_user)
+        for route in ("/advisor/students", "/lecturer/courses", "/student/tasks"):
+            response = await self.request("GET", route)
+            self.assertEqual(response.status_code, 401, response.text)

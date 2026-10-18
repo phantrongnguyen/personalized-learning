@@ -80,9 +80,8 @@ async def create_intervention_plan(
     current_user: User = Depends(require_advisor),
     db: AsyncSession = Depends(get_db),
 ):
-    if not any(role.code == "ADMIN" for role in current_user.roles):
-        profile = _require_advisor_profile(await get_advisor_profile_by_user_id(db, current_user.id))
-        await _require_owned_student(db, profile.id, payload.student_id)
+    profile = _require_advisor_profile(await get_advisor_profile_by_user_id(db, current_user.id))
+    await _require_owned_student(db, profile.id, payload.student_id)
     enrollment_id = payload.enrollment_id
     if enrollment_id is None:
         enrollments = (await db.execute(select(StudentEnrollment.id).where(
@@ -131,12 +130,11 @@ async def create_advising_note(
     current_user: User = Depends(require_advisor),
     db: AsyncSession = Depends(get_db),
 ):
-    profile = await get_advisor_profile_by_user_id(db, current_user.id)
-    if not profile:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Tài khoản chưa có hồ sơ Cố vấn học tập (AdvisorProfile)",
-        )
+    profile = _require_advisor_profile(await get_advisor_profile_by_user_id(db, current_user.id))
+    enrollment = await db.get(StudentEnrollment, payload.enrollment_id)
+    if enrollment is None:
+        raise HTTPException(404, "Không tìm thấy đăng ký học phần")
+    await _require_owned_student(db, profile.id, enrollment.student_id)
 
     note = AdvisingNote(
         enrollment_id=payload.enrollment_id,

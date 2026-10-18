@@ -192,6 +192,6 @@ class AssessmentUpdateIn(BaseModel):
 
 
 class AlertAdvisorIn(BaseModel):
-    presentation_id: Optional[uuid.UUID] = None
+    presentation_id: uuid.UUID
     subject: str = "Cảnh báo học tập bất thường môn học"
     content: str

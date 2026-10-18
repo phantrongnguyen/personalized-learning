@@ -116,6 +116,7 @@ export async function predictStudentRisk(
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
     },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(20000),
@@ -445,7 +446,7 @@ export async function assignCourseTaskApi(
 }
 
 export interface AlertAdvisorPayload {
-  presentation_id?: string;
+  presentation_id: string;
   subject?: string;
   content: string;
 }

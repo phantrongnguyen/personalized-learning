@@ -33,6 +33,7 @@ from repositories.student_repo import (
 )
 from services.radar_service import calculate_radar_6d
 from services.reminder_service import get_student_course_reminders
+from services.help_request_service import resolve_help_recipient
 
 router = APIRouter()
 
@@ -252,11 +253,14 @@ async def create_help_request(
         if owned.scalars().first() is None:
             raise HTTPException(404, "Học phần không thuộc sinh viên")
 
+    recipient_id = await resolve_help_recipient(
+        db, profile.id, payload.target_role, presentation_id, payload.target_user_id,
+    )
     req = StudentHelpRequest(
         student_id=profile.id,
         target_role=payload.target_role,
         presentation_id=presentation_id,
-        target_user_id=payload.target_user_id,
+        target_user_id=recipient_id,
         subject=payload.subject,
         content=payload.content,
         status="PENDING",
