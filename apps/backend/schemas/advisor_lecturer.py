@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
 from pydantic import BaseModel, ConfigDict, Field
+from schemas.prediction import RiskLevel, Ratio
 
 
 # -------------------------------------------------------------
@@ -13,6 +14,7 @@ class ClassOverviewOut(BaseModel):
     total_students: int
     high_risk_count: int
     safe_count: int
+    not_predicted_count: int = 0
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -23,8 +25,13 @@ class AdvisorStudentSummaryOut(BaseModel):
     full_name: str
     gender: str
     class_name: str
-    risk_probability: Optional[float] = 0.0
-    risk_level: str = "SAFE"  # 'SAFE' hoặc 'HIGH_RISK'
+    risk_probability: Ratio | None = None
+    risk_level: RiskLevel = "NOT_PREDICTED"
+    total_courses: int = 0
+    predicted_courses: int = 0
+    high_risk_courses: int = 0
+    unpredicted_courses: int = 0
+    risk_aggregation: str = "ANY_HIGH_ELSE_ALL_SAFE"
     has_active_plan: bool = False
     uncompleted_tasks_count: int = 0
 
@@ -102,7 +109,8 @@ class ClassStatisticsOut(BaseModel):
     total_students: int
     high_risk_count: int
     safe_count: int
-    avg_risk_probability: float = 0.0
+    not_predicted_count: int = 0
+    avg_risk_probability: Ratio | None = None
     students_with_active_plan: int = 0
     outstanding_tasks: int = 0
 
@@ -123,8 +131,13 @@ class StudentOverviewOut(BaseModel):
     highest_education: Optional[str] = None
     age_band: Optional[str] = None
     courses: List[Dict[str, Any]] = []
-    latest_risk_probability: float = 0.0
-    latest_risk_level: str = "SAFE"
+    latest_risk_probability: Ratio | None = None
+    latest_risk_level: RiskLevel = "NOT_PREDICTED"
+    total_courses: int = 0
+    predicted_courses: int = 0
+    high_risk_courses: int = 0
+    unpredicted_courses: int = 0
+    risk_aggregation: str = "ANY_HIGH_ELSE_ALL_SAFE"
     latest_model_version: Optional[str] = None
     active_plan: Optional[PlanOut] = None
     notes_count: int = 0
@@ -154,8 +167,8 @@ class StudentRiskInCourseOut(BaseModel):
     total_clicks: int = 0
     late_submissions: int = 0
     submission_rate: float = 0.0
-    risk_probability: float = 0.0
-    risk_status: str = "SAFE"
+    risk_probability: Ratio | None = None
+    risk_status: RiskLevel = "NOT_PREDICTED"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -178,8 +191,8 @@ class CourseStudentOut(BaseModel):
     total_clicks: int = 0
     late_submissions: int = 0
     submission_rate: float = 0.0
-    risk_probability: float = 0.0
-    risk_status: str = "SAFE"
+    risk_probability: Ratio | None = None
+    risk_status: RiskLevel = "NOT_PREDICTED"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -187,7 +200,7 @@ class CourseStudentOut(BaseModel):
 class AssessmentUpdateIn(BaseModel):
     assessments_submitted: Optional[int] = Field(None, ge=0)
     late_submissions: Optional[int] = Field(None, ge=0)
-    submission_rate: Optional[float] = Field(None, ge=0.0, le=1.0)
+    submission_rate: Ratio | None = None
     final_result: Optional[str] = Field(None, description="PASS, FAIL, WITHDRAWN, DISTINCTION")
 
 

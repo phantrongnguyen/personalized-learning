@@ -349,7 +349,7 @@ export const StudentPage: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin" />
               Đang tải dự báo tại mốc Cutoff 75%…
             </div>
-          ) : prediction ? (
+          ) : prediction && prediction.risk_level !== 'NOT_PREDICTED' && prediction.risk_probability !== null ? (
             <>
               {/* Risk card */}
               <div
@@ -401,8 +401,11 @@ export const StudentPage: React.FC = () => {
                       <p className="text-xs text-amber-300 mt-2">Dự báo từ dữ liệu minh họa</p>
                     )}
                     <div className="text-[10px] text-slate-500 mt-2 font-mono">
-                      {prediction.cutoff_stage} &bull; {prediction.model_version}
+                      {prediction.cutoff_stage} &bull; {prediction.model_version || 'Phiên bản chưa xác minh'}
                     </div>
+                    {prediction.provenance_status === 'LEGACY_UNVERIFIED' && (
+                      <p className="text-xs text-amber-400 mt-2">Kết quả cũ chưa đủ thông tin truy vết.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -427,7 +430,7 @@ export const StudentPage: React.FC = () => {
             </>
           ) : (
             <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 border-dashed text-center text-slate-400 text-sm">
-              {selectedEnrollment ? "Môn học chưa có kết quả dự báo." : "Chọn một môn học để xem dự báo và radar."}
+              {selectedEnrollment ? "Chưa có dự báo cho dữ liệu hiện tại của môn học. Cần chạy dự báo sau khi cập nhật tiến độ." : "Chọn một môn học để xem dự báo và radar."}
             </div>
           )}
           {!loadingDetail && radar && <Radar6DCard radar={radar} />}

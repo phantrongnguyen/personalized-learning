@@ -84,6 +84,7 @@ export const LecturerPage: React.FC = () => {
 
   const selectedCourse = courses.find((c) => c.presentation_id === selectedPresentation);
   const highRiskCount = riskBoard.filter((r) => r.risk_status === 'HIGH_RISK').length;
+  const notPredictedCount = riskBoard.filter((r) => r.risk_status === 'NOT_PREDICTED').length;
 
   const handleAssignTask = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -195,7 +196,7 @@ export const LecturerPage: React.FC = () => {
                   : 'bg-brand-500/15 text-brand-300'
               }`}
             >
-              {highRiskCount} nguy cơ cao
+              {highRiskCount} nguy cơ cao · {notPredictedCount} chưa dự báo
             </span>
           </div>
 
@@ -245,11 +246,12 @@ export const LecturerPage: React.FC = () => {
                             className={`px-2 py-0.5 rounded-md font-mono font-semibold ${
                               highRisk
                                 ? 'bg-rose-500/15 text-rose-300'
-                                : 'bg-brand-500/15 text-brand-300'
+                                : s.risk_status === 'NOT_PREDICTED'
+                                  ? 'bg-slate-500/15 text-slate-400'
+                                  : 'bg-brand-500/15 text-brand-300'
                             }`}
                           >
-                            {(s.risk_probability * 100).toFixed(1)}% —{' '}
-                            {highRisk ? 'HIGH' : 'SAFE'}
+                            {s.risk_probability === null ? 'Chưa dự báo' : `${(s.risk_probability * 100).toFixed(1)}% — ${highRisk ? 'HIGH' : 'SAFE'}`}
                           </span>
                         </td>
                         <td className="px-4 py-3">

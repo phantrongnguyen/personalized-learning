@@ -2,6 +2,7 @@ import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
+from schemas.prediction import RiskLevel, Ratio, PredictionProvenance
 
 
 class CourseReminderOut(BaseModel):
@@ -49,11 +50,15 @@ class StudentCourseItemOut(BaseModel):
 class RiskPredictionOut(BaseModel):
     enrollment_id: uuid.UUID
     code_module: str
-    cutoff_stage: str
-    risk_probability: float
-    risk_level: str
-    model_version: str
-    predicted_at: datetime
+    cutoff_stage: Optional[str] = None
+    risk_probability: Ratio | None = None
+    risk_level: RiskLevel = "NOT_PREDICTED"
+    model_version: Optional[str] = None
+    predicted_at: Optional[datetime] = None
+    snapshot_id: Optional[uuid.UUID] = None
+    prediction_run_id: Optional[uuid.UUID] = None
+    provenance: PredictionProvenance | None = None
+    provenance_status: Literal["VERIFIED", "LEGACY_UNVERIFIED", "NOT_PREDICTED"]
     pedagogical_recommendations: List[str] = []
     data_source: Optional[str] = None
 

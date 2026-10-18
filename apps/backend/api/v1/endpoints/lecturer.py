@@ -109,6 +109,7 @@ async def update_student_assessment(
         late_submissions=payload.late_submissions,
         submission_rate=payload.submission_rate,
         final_result=payload.final_result,
+        updated_by_user_id=current_user.id,
     )
     if not updated:
         raise HTTPException(

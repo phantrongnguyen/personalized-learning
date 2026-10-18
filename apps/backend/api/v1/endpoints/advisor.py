@@ -5,16 +5,15 @@ from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, and_, desc
+from sqlalchemy import select
 from openpyxl import Workbook
 
 from core.database import get_db
 from core.permissions import RequireRoles
 from models.user import User
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
-from models.ml import PredictionRun
 from models.academic import StudentEnrollment
-from models.feature import StudentFeatureSnapshot
+from services.risk_service import current_prediction
 from schemas.advisor_lecturer import (
     ClassOverviewOut,
     AdvisorStudentSummaryOut,
@@ -92,24 +91,13 @@ async def create_intervention_plan(
         enrollment_id = enrollments[0]
     if await get_owned_enrollment(db, payload.student_id, enrollment_id) is None:
         raise HTTPException(404, "Đăng ký học phần không thuộc sinh viên")
-    # Select the latest prediction for the explicitly selected enrollment.
-    pred_query = (
-        select(PredictionRun)
-        .join(StudentFeatureSnapshot, PredictionRun.snapshot_id == StudentFeatureSnapshot.id)
-        .join(StudentEnrollment, StudentFeatureSnapshot.enrollment_id == StudentEnrollment.id)
-        .where(StudentEnrollment.student_id == payload.student_id,
-               StudentEnrollment.id == enrollment_id)
-        .order_by(desc(PredictionRun.created_at))
-        .limit(1)
-    )
-    pred_res = await db.execute(pred_query)
-    latest_pred = pred_res.scalars().first()
+    _, latest_pred = await current_prediction(db, enrollment_id)
 
     if not latest_pred:
         # Nếu chưa có prediction_run, kiểm tra xem có model active để sinh snapshot hoặc từ chối
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Học phần đã chọn chưa có bản ghi dự báo nguy cơ học máy (PredictionRun)",
+            detail="Snapshot hiện tại của học phần chưa có dự báo; vui lòng chạy lại dự báo",
         )
 
     tasks_dicts = [t.model_dump() for t in payload.tasks]
@@ -347,6 +335,7 @@ async def export_risk_report(
         "Mức độ",
         "Có kế hoạch can thiệp",
         "Nhiệm vụ chưa hoàn thành",
+        "Số học phần chưa dự báo",
     ])
     for s in rows:
         sheet.append([
@@ -358,10 +347,11 @@ async def export_risk_report(
             s["risk_level"],
             "Có" if s["has_active_plan"] else "Không",
             s["uncompleted_tasks_count"],
+            s["unpredicted_courses"],
         ])
 
     # Giãn cột cho dễ đọc
-    for idx, width in zip("ABCDEFGH", [16, 14, 28, 10, 16, 12, 22, 24]):
+    for idx, width in zip("ABCDEFGHI", [16, 14, 28, 10, 16, 20, 22, 24, 24]):
         sheet.column_dimensions[idx].width = width
 
     stream = io.BytesIO()

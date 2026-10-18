@@ -1,6 +1,9 @@
 import uuid
-from datetime import date
-from typing import List, Optional, Tuple, Dict, Any
+from datetime import date, datetime, timezone
+from copy import deepcopy
+from fastapi import HTTPException
+from pydantic import ValidationError
+from typing import List, Optional, Dict, Any
 from sqlalchemy import select, func, and_, desc
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -10,10 +13,12 @@ from models.profile import StudentProfile, AdvisorProfile, LecturerProfile
 from models.academic import Course, CoursePresentation, StudentEnrollment
 from models.assignment import AdvisorStudent, CourseLecturer
 from models.feature import StudentFeatureSnapshot
-from models.ml import PredictionRun, MLModel
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
 from models.help_request import StudentHelpRequest
 from services.radar_service import calculate_radar_6d
+from services.risk_service import current_prediction, latest_snapshot, risk_fields, student_risk_summary
+from services.prediction_service import BEHAVIOR_FIELDS
+from schemas.prediction import BehaviorFeatures
 
 
 # -------------------------------------------------------------
@@ -41,18 +46,21 @@ async def get_advisor_classes(db: AsyncSession, advisor_id: uuid.UUID) -> List[D
 
     classes_summary = []
     for row in rows:
+        students = await get_advisor_students(db, advisor_id, row.class_name, row.academic_year)
         classes_summary.append({
             "class_name": row.class_name,
             "academic_year": row.academic_year,
             "total_students": row.total_students,
-            "high_risk_count": 0,
-            "safe_count": row.total_students,
+            "high_risk_count": sum(s["risk_level"] == "HIGH_RISK" for s in students),
+            "safe_count": sum(s["risk_level"] == "SAFE" for s in students),
+            "not_predicted_count": sum(s["risk_level"] == "NOT_PREDICTED" for s in students),
         })
     return classes_summary
 
 
 async def get_advisor_students(
-    db: AsyncSession, advisor_id: uuid.UUID, class_name: Optional[str] = None
+    db: AsyncSession, advisor_id: uuid.UUID, class_name: Optional[str] = None,
+    academic_year: Optional[str] = None,
 ) -> List[Dict[str, Any]]:
     """Lấy danh sách sinh viên do GVCN quản lý kèm điểm rủi ro AI gần nhất"""
     query = (
@@ -63,26 +71,16 @@ async def get_advisor_students(
     )
     if class_name:
         query = query.where(AdvisorStudent.class_name == class_name)
+    if academic_year:
+        query = query.where(AdvisorStudent.academic_year == academic_year)
 
     result = await db.execute(query)
     records = result.all()
 
     students_data = []
     for sp, u, c_name in records:
-        # Lấy dự báo gần nhất nếu có
-        pred_query = (
-            select(PredictionRun)
-            .join(StudentFeatureSnapshot, PredictionRun.snapshot_id == StudentFeatureSnapshot.id)
-            .join(StudentEnrollment, StudentFeatureSnapshot.enrollment_id == StudentEnrollment.id)
-            .where(StudentEnrollment.student_id == sp.id)
-            .order_by(desc(PredictionRun.created_at))
-            .limit(1)
-        )
-        pred_res = await db.execute(pred_query)
-        pred = pred_res.scalars().first()
-
-        risk_prob = pred.risk_probability if pred else 0.0
-        risk_lvl = "HIGH_RISK" if risk_prob >= 0.5 else "SAFE"
+        summary = await student_risk_summary(db, sp.id)
+        summary.pop("representative_prediction")
 
         # Kiểm tra kế hoạch can thiệp đang active
         plan_query = (
@@ -91,11 +89,8 @@ async def get_advisor_students(
             .options(selectinload(InterventionPlan.tasks))
         )
         plan_res = await db.execute(plan_query)
-        active_plan = plan_res.scalars().first()
-
-        uncompleted = 0
-        if active_plan and active_plan.tasks:
-            uncompleted = sum(1 for t in active_plan.tasks if not t.is_completed)
+        active_plans = plan_res.scalars().all()
+        uncompleted = sum(not task.is_completed for plan in active_plans for task in plan.tasks)
 
         students_data.append({
             "student_id": sp.id,
@@ -103,9 +98,8 @@ async def get_advisor_students(
             "full_name": u.full_name,
             "gender": sp.gender,
             "class_name": c_name,
-            "risk_probability": round(risk_prob, 4),
-            "risk_level": risk_lvl,
-            "has_active_plan": active_plan is not None,
+            **summary,
+            "has_active_plan": bool(active_plans),
             "uncompleted_tasks_count": uncompleted,
         })
 
@@ -205,33 +199,13 @@ async def get_course_risk_board(
 
     risk_board = []
     for se, sp, u in enrollments:
-        # Lấy snapshot đặc trưng
-        snap_query = (
-            select(StudentFeatureSnapshot)
-            .where(StudentFeatureSnapshot.enrollment_id == se.id)
-            .order_by(desc(StudentFeatureSnapshot.created_at))
-            .limit(1)
-        )
-        snap_res = await db.execute(snap_query)
-        snap = snap_res.scalars().first()
+        snap, pred = await current_prediction(db, se.id)
 
         total_clicks = snap.total_clicks_to_t if snap else 0
         late_sub = snap.late_submissions_to_t if snap else 0
         sub_rate = snap.submission_rate if snap else 0.0
 
-        # Lấy điểm rủi ro
-        risk_prob = 0.0
-        if snap:
-            pred_query = (
-                select(PredictionRun)
-                .where(PredictionRun.snapshot_id == snap.id)
-                .order_by(desc(PredictionRun.created_at))
-                .limit(1)
-            )
-            pred_res = await db.execute(pred_query)
-            pred = pred_res.scalars().first()
-            if pred:
-                risk_prob = pred.risk_probability
+        risk = risk_fields(pred)
 
         risk_board.append({
             "student_id": sp.id,
@@ -241,8 +215,8 @@ async def get_course_risk_board(
             "total_clicks": total_clicks,
             "late_submissions": late_sub,
             "submission_rate": round(sub_rate, 2),
-            "risk_probability": round(risk_prob, 4),
-            "risk_status": "HIGH_RISK" if risk_prob >= 0.5 else "SAFE",
+            "risk_probability": risk["risk_probability"],
+            "risk_status": risk["risk_level"],
         })
 
     return risk_board
@@ -263,27 +237,8 @@ async def get_course_students(
 
     students = []
     for se, sp, u in enrollments:
-        snap_query = (
-            select(StudentFeatureSnapshot)
-            .where(StudentFeatureSnapshot.enrollment_id == se.id)
-            .order_by(desc(StudentFeatureSnapshot.created_at))
-            .limit(1)
-        )
-        snap_res = await db.execute(snap_query)
-        snap = snap_res.scalars().first()
-
-        risk_prob = 0.0
-        if snap:
-            pred_query = (
-                select(PredictionRun)
-                .where(PredictionRun.snapshot_id == snap.id)
-                .order_by(desc(PredictionRun.created_at))
-                .limit(1)
-            )
-            pred_res = await db.execute(pred_query)
-            pred = pred_res.scalars().first()
-            if pred:
-                risk_prob = pred.risk_probability
+        snap, pred = await current_prediction(db, se.id)
+        risk = risk_fields(pred)
 
         students.append({
             "student_id": sp.id,
@@ -295,8 +250,8 @@ async def get_course_students(
             "total_clicks": snap.total_clicks_to_t if snap else 0,
             "late_submissions": snap.late_submissions_to_t if snap else 0,
             "submission_rate": round(snap.submission_rate, 2) if snap else 0.0,
-            "risk_probability": round(risk_prob, 4),
-            "risk_status": "HIGH_RISK" if risk_prob >= 0.5 else "SAFE",
+            "risk_probability": risk["risk_probability"],
+            "risk_status": risk["risk_level"],
         })
 
     return students
@@ -310,11 +265,11 @@ async def update_course_student_assessment(
     late_submissions: Optional[int] = None,
     submission_rate: Optional[float] = None,
     final_result: Optional[str] = None,
+    updated_by_user_id: Optional[uuid.UUID] = None,
 ) -> Optional[Dict[str, Any]]:
     """GVBM cập nhật điểm/tiến độ đánh giá của sinh viên trong lớp học phần.
 
-    Các chỉ số đánh giá được ghi vào bản ghi feature snapshot mới nhất của enrollment,
-    kết quả cuối kỳ ghi vào enrollment.final_result.
+    Create a new snapshot for metric updates; old predictions retain their inputs.
     """
     enr_query = (
         select(StudentEnrollment, StudentProfile)
@@ -325,6 +280,7 @@ async def update_course_student_assessment(
                 StudentEnrollment.student_id == student_id,
             )
         )
+        .with_for_update(of=StudentEnrollment)
     )
     enr_res = await db.execute(enr_query)
     row = enr_res.first()
@@ -333,32 +289,44 @@ async def update_course_student_assessment(
 
     enr, sp = row
 
-    snap_query = (
-        select(StudentFeatureSnapshot)
-        .where(StudentFeatureSnapshot.enrollment_id == enr.id)
-        .order_by(desc(StudentFeatureSnapshot.created_at))
-        .limit(1)
-    )
-    snap_res = await db.execute(snap_query)
-    snap = snap_res.scalars().first()
-
-    if assessments_submitted is not None and snap:
-        snap.assessments_submitted_to_t = assessments_submitted
-    if late_submissions is not None and snap:
-        snap.late_submissions_to_t = late_submissions
-    if submission_rate is not None and snap:
-        snap.submission_rate = submission_rate
+    snap = await latest_snapshot(db, enr.id)
+    updates = {name: value for name, value in {
+        "assessments_submitted_to_t": assessments_submitted,
+        "late_submissions_to_t": late_submissions,
+        "submission_rate": submission_rate,
+    }.items() if value is not None}
+    if updates:
+        if snap is None:
+            raise HTTPException(409, "Chưa có snapshot nền để cập nhật tiến độ; cần nhập đủ dữ liệu ban đầu")
+        # Validate numeric metrics using the same fields as inference, without
+        # rejecting a real course simply because it is outside the OULAD model.
+        values = {name: getattr(snap, name) for name in BEHAVIOR_FIELDS}
+        values.update(updates)
+        try:
+            values = BehaviorFeatures(**values).model_dump()
+        except ValidationError as exc:
+            raise HTTPException(422, "Chỉ số snapshot không hợp lệ") from exc
+        metadata = deepcopy(snap.raw_features_json or {})
+        metadata["snapshot_metadata"] = {
+            "source": "lecturer_assessment", "previous_snapshot_id": str(snap.id),
+            "observed_at": datetime.now(timezone.utc).isoformat(),
+            "updated_by_user_id": str(updated_by_user_id) if updated_by_user_id else None,
+        }
+        snap = StudentFeatureSnapshot(
+            enrollment_id=enr.id, cutoff_stage=snap.cutoff_stage,
+            raw_features_json=metadata, **values,
+        )
+        db.add(snap)
     if final_result is not None:
         enr.final_result = final_result
 
     db.add(enr)
-    if snap:
-        db.add(snap)
     await db.commit()
 
     return {
         "enrollment_id": enr.id,
         "student_id": sp.id,
+        "snapshot_id": snap.id if snap else None,
         "final_result": enr.final_result,
         "assessments_submitted_to_t": snap.assessments_submitted_to_t if snap else None,
         "late_submissions_to_t": snap.late_submissions_to_t if snap else None,
@@ -395,7 +363,8 @@ async def get_class_statistics(
     high_risk = sum(1 for s in students if s["risk_level"] == "HIGH_RISK")
     with_plan = sum(1 for s in students if s["has_active_plan"])
     outstanding = sum(s["uncompleted_tasks_count"] for s in students)
-    avg_risk = round(sum(s["risk_probability"] for s in students) / total, 4) if total else 0.0
+    probabilities = [s["risk_probability"] for s in students if s["risk_probability"] is not None]
+    avg_risk = round(sum(probabilities) / len(probabilities), 4) if probabilities else None
 
     year_query = select(AdvisorStudent.academic_year).where(
         and_(
@@ -411,7 +380,8 @@ async def get_class_statistics(
         "academic_year": academic_year,
         "total_students": total,
         "high_risk_count": high_risk,
-        "safe_count": total - high_risk,
+        "safe_count": sum(s["risk_level"] == "SAFE" for s in students),
+        "not_predicted_count": sum(s["risk_level"] == "NOT_PREDICTED" for s in students),
         "avg_risk_probability": avg_risk,
         "students_with_active_plan": with_plan,
         "outstanding_tasks": outstanding,
@@ -460,20 +430,9 @@ async def get_advisor_student_overview(
         for enr, pres, course in courses_res.all()
     ]
 
-    # Dự báo rủi ro gần nhất
-    pred_query = (
-        select(PredictionRun, MLModel)
-        .join(MLModel, PredictionRun.model_id == MLModel.id)
-        .join(StudentFeatureSnapshot, PredictionRun.snapshot_id == StudentFeatureSnapshot.id)
-        .join(StudentEnrollment, StudentFeatureSnapshot.enrollment_id == StudentEnrollment.id)
-        .where(StudentEnrollment.student_id == sp.id)
-        .order_by(desc(PredictionRun.created_at))
-        .limit(1)
-    )
-    pred_res = await db.execute(pred_query)
-    pred_row = pred_res.first()
-    risk_prob = round(pred_row[0].risk_probability, 4) if pred_row else 0.0
-    model_version = pred_row[1].version if pred_row else None
+    summary = await student_risk_summary(db, sp.id)
+    representative = summary.pop("representative_prediction")
+    model_version = (representative.inference_context or {}).get("model_version") if representative else None
 
     # Kế hoạch can thiệp đang hoạt động
     plan_query = (
@@ -511,8 +470,9 @@ async def get_advisor_student_overview(
         "highest_education": sp.highest_education,
         "age_band": sp.age_band,
         "courses": courses,
-        "latest_risk_probability": risk_prob,
-        "latest_risk_level": "HIGH_RISK" if risk_prob >= 0.5 else "SAFE",
+        "latest_risk_probability": summary["risk_probability"],
+        "latest_risk_level": summary["risk_level"],
+        **{key: value for key, value in summary.items() if key not in ("risk_probability", "risk_level")},
         "latest_model_version": model_version,
         "active_plan": active_plan,
         "notes_count": notes_count,
@@ -550,7 +510,7 @@ async def get_student_radar_for_advisor(
     snap_query = (
         select(StudentFeatureSnapshot)
         .where(StudentFeatureSnapshot.enrollment_id == enr.id)
-        .order_by(desc(StudentFeatureSnapshot.created_at))
+        .order_by(desc(StudentFeatureSnapshot.created_at), desc(StudentFeatureSnapshot.id))
         .limit(1)
     )
     snap_res = await db.execute(snap_query)

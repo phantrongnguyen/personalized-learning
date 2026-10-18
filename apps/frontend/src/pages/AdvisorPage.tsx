@@ -86,6 +86,7 @@ export const AdvisorPage: React.FC = () => {
   const totalStudents = classes.reduce((acc, c) => acc + c.total_students, 0);
   const highRiskTotal = classes.reduce((acc, c) => acc + c.high_risk_count, 0);
   const safeTotal = classes.reduce((acc, c) => acc + c.safe_count, 0);
+  const notPredictedTotal = classes.reduce((acc, c) => acc + c.not_predicted_count, 0);
 
   const updateTask = (index: number, field: keyof CreateInterventionTaskPayload, value: string) => {
     setPlanTasks((prev) => prev.map((t, i) => (i === index ? { ...t, [field]: value } : t)));
@@ -155,7 +156,7 @@ export const AdvisorPage: React.FC = () => {
       </div>
 
       {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
           <div className="flex items-center justify-between text-slate-400 mb-2">
             <span className="text-xs font-semibold">Sinh viên phụ trách</span>
@@ -178,7 +179,12 @@ export const AdvisorPage: React.FC = () => {
             <ShieldCheck className="w-4 h-4 text-brand-400" />
           </div>
           <div className="text-2xl font-bold text-brand-400 font-mono">{safeTotal}</div>
-          <div className="text-[11px] text-slate-400">Tiến độ ổn định</div>
+          <div className="text-[11px] text-slate-400">Tất cả học phần đã dự báo và an toàn</div>
+        </div>
+        <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
+          <div className="text-xs text-slate-400 mb-2">Chưa đủ dự báo</div>
+          <div className="text-2xl font-bold text-slate-300 font-mono">{notPredictedTotal}</div>
+          <div className="text-[11px] text-slate-400">Còn học phần chưa dự báo hoặc chưa có đăng ký</div>
         </div>
       </div>
 
@@ -213,6 +219,7 @@ export const AdvisorPage: React.FC = () => {
                 >
                   {cls.high_risk_count} rủi ro
                 </span>
+                <span className="text-slate-400">{cls.not_predicted_count} chưa dự báo</span>
               </div>
             </button>
           ))}
@@ -270,23 +277,25 @@ export const AdvisorPage: React.FC = () => {
               )}
               {!loading &&
                 students.map((s) => {
-                  const riskPct = (s.risk_probability * 100).toFixed(1);
+                  const riskPct = s.risk_probability === null ? null : (s.risk_probability * 100).toFixed(1);
                   const highRisk = s.risk_level === 'HIGH_RISK';
                   return (
                     <tr key={s.student_id} className="border-b border-slate-800/60">
                       <td className="px-4 py-3 font-mono text-slate-300">{s.student_code}</td>
-                      <td className="px-4 py-3 text-white">{s.full_name}</td>
+                      <td className="px-4 py-3 text-white">{s.full_name}
+                        <span className="block text-[10px] text-slate-400">{s.predicted_courses}/{s.total_courses} học phần đã dự báo · {s.high_risk_courses} nguy cơ cao</span>
+                      </td>
                       <td className="px-4 py-3 text-slate-400">{s.class_name}</td>
                       <td className="px-4 py-3">
                         <div className="flex items-center gap-2">
-                          <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
+                          {riskPct !== null && <div className="h-1.5 w-16 bg-slate-800 rounded-full overflow-hidden">
                             <div
                               className={`h-full ${highRisk ? 'bg-rose-500' : 'bg-brand-500'}`}
                               style={{ width: `${Math.min(100, Number(riskPct))}%` }}
                             />
-                          </div>
-                          <span className={`font-mono ${highRisk ? 'text-rose-400' : 'text-brand-400'}`}>
-                            {riskPct}%
+                          </div>}
+                          <span className={`font-mono ${highRisk ? 'text-rose-400' : riskPct === null ? 'text-slate-400' : 'text-brand-400'}`}>
+                            {riskPct === null ? '—' : `${riskPct}%`}
                           </span>
                         </div>
                       </td>
@@ -295,10 +304,10 @@ export const AdvisorPage: React.FC = () => {
                           className={`px-2 py-0.5 rounded-md font-semibold ${
                             highRisk
                               ? 'bg-rose-500/15 text-rose-300'
-                              : 'bg-brand-500/15 text-brand-300'
+                              : s.risk_level === 'NOT_PREDICTED' ? 'bg-slate-500/15 text-slate-400' : 'bg-brand-500/15 text-brand-300'
                           }`}
                         >
-                          {highRisk ? 'HIGH RISK' : 'SAFE'}
+                          {highRisk ? 'HIGH RISK' : s.risk_level === 'NOT_PREDICTED' ? 'Chưa đủ dự báo' : 'SAFE'}
                         </span>
                       </td>
                       <td className="px-4 py-3 text-slate-400">
@@ -352,7 +361,7 @@ export const AdvisorPage: React.FC = () => {
                 <p className="text-xs text-slate-400 mt-0.5">
                   {planTarget.full_name} ({planTarget.student_code}) —{' '}
                   <span className="text-rose-400">
-                    nguy cơ {((planTarget.risk_probability || 0) * 100).toFixed(1)}%
+                    nguy cơ {planTarget.risk_probability === null ? 'chưa xác định' : `${(planTarget.risk_probability * 100).toFixed(1)}%`}
                   </span>
                 </p>
               </div>

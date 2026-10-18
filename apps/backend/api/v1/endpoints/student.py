@@ -139,7 +139,7 @@ async def get_my_course_radar(
     snap_query = (
         select(StudentFeatureSnapshot)
         .where(StudentFeatureSnapshot.enrollment_id == enr.id)
-        .order_by(desc(StudentFeatureSnapshot.created_at))
+        .order_by(desc(StudentFeatureSnapshot.created_at), desc(StudentFeatureSnapshot.id))
         .limit(1)
     )
     snap_res = await db.execute(snap_query)

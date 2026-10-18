@@ -38,7 +38,7 @@ class FeatureTests(unittest.TestCase):
     def test_model_failure_has_no_fallback(self):
         with patch.object(service, "predict", side_effect=KeyError("feature")):
             with self.assertRaises(KeyError):
-                service.infer_record({}, {}, uuid.uuid4(), uuid.uuid4(), uuid.uuid4())
+                service.infer_record({}, service.database_features(*records()), uuid.uuid4(), uuid.uuid4(), uuid.uuid4())
 
     def test_real_artifact_inference(self):
         model = service.load_model(Path(__file__).resolve().parents[1] /
@@ -101,7 +101,7 @@ class TransactionTests(unittest.IsolatedAsyncioTestCase):
         self.assertEqual(result["high_risk_count"], 1)
 
     async def test_partial_inference_never_added(self):
-        model = SimpleNamespace(id=uuid.uuid4(), threshold=.5, cutoff_fraction=.75)
+        model = SimpleNamespace(id=uuid.uuid4(), threshold=.5, cutoff_fraction=.75, version="fixture")
         first = SimpleNamespace(scalars=lambda: SimpleNamespace(all=lambda: [model]))
         second = SimpleNamespace(all=lambda: [records(), records()])
         db = SimpleNamespace(execute=AsyncMock(side_effect=[first, second]), add_all=Mock())

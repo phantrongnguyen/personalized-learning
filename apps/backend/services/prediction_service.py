@@ -1,5 +1,6 @@
 import math
 import time
+from copy import deepcopy
 from pathlib import Path
 
 from fastapi import HTTPException
@@ -9,7 +10,7 @@ from models.academic import Course, CoursePresentation, StudentEnrollment
 from models.feature import StudentFeatureSnapshot
 from models.profile import StudentProfile
 from models.ml import MLModel, PredictionRun
-from schemas.prediction import StudentFeatures
+from schemas.prediction import StudentFeatures, PredictionProvenance
 
 
 from ml.predictor import predict
@@ -23,12 +24,14 @@ class PredictionService:
 
     @staticmethod
     def execute(model, data: PredictionRequest) -> PredictionResponse:
+        features = data.features.model_dump()
         result = predict(
             model=model,
-            features=data.features.model_dump(),
+            features=features,
         )
 
-        return PredictionResponse(**result)
+        provenance = PredictionProvenance(features=features, **model["_provenance"])
+        return PredictionResponse(**result, provenance=provenance)
 
 BEHAVIOR_FIELDS = (
     "total_clicks_to_t", "clicks_resource_to_t", "clicks_url_to_t",
@@ -69,18 +72,24 @@ def artifact_path(model_record):
     raise FileNotFoundError("Không tìm thấy artifact của mô hình active")
 
 
-def infer_record(artifact, features, snapshot_id, model_id, user_id):
+def infer_record(artifact, features, snapshot_id, model_id, user_id, model_version=None):
+    features = StudentFeatures(**features).model_dump()
     started = time.perf_counter()
     result = predict(artifact, features)
     probability = float(result["confidence"])
     label = int(result["prediction"])
     if not math.isfinite(probability) or not 0 <= probability <= 1 or label not in (0, 1):
         raise ValueError("Kết quả mô hình không hợp lệ")
+    identity = dict(artifact["_provenance"])
+    if model_version is not None:
+        identity["model_version"] = model_version
+    context = PredictionProvenance(features=features, **identity).model_dump()
     return PredictionRun(
         snapshot_id=snapshot_id, model_id=model_id,
         prediction_label=label, risk_probability=probability,
         execution_time_ms=round((time.perf_counter() - started) * 1000),
         triggered_by_user_id=user_id,
+        inference_context=deepcopy(context),
     )
 
 
@@ -120,7 +129,7 @@ async def generate_database_predictions(db, user_id, enrollment_id=None):
         if snapshot.cutoff_stage != "CUTOFF_75":
             raise HTTPException(422, f"Snapshot {snapshot.id} không ở mốc CUTOFF_75")
         features = database_features(snapshot, enrollment, profile, course)
-        runs.append(infer_record(artifact, features, snapshot.id, record.id, user_id))
+        runs.append(infer_record(artifact, features, snapshot.id, record.id, user_id, record.version))
     # Add only after every inference succeeds; caller commits data and audit together.
     db.add_all(runs)
     return record, runs
