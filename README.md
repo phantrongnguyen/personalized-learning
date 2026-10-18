@@ -114,6 +114,8 @@ Ba chỉ số trên thuộc `validation_reference_train_only`, không phải k�
 
 Pipeline dự báo trả `prediction` bằng cách so xác suất lớp 1 với ngưỡng trong artifact. `confidence` là xác suất lớp nguy cơ, kể cả khi nhãn trả về là 0.
 
+Cập nhật 18/10/2026: dự báo mới lưu đủ đầu vào và danh tính artifact để tái lập; cập nhật tiến độ tạo snapshot mới. Chưa có dự báo cho snapshot hiện hành được biểu diễn bằng `null`/`NOT_PREDICTED`, không gán an toàn. Cố vấn tổng hợp theo tất cả học phần. Database có sẵn cần nâng cấp bằng `python apps/backend/scripts/apply_prediction_integrity.py`; xem [hướng dẫn bảo toàn và replay dự báo](apps/backend/README.md#cập-nhật-lịch-sử-dự-báo-ngày-18102026).
+
 17 đặc trưng gồm thông tin học phần/nhân khẩu học, tín chỉ, thời điểm đăng ký, tổng click, click tài nguyên/URL, ngày hoạt động, bài nộp/trễ hạn, tỷ lệ hoạt động/nộp bài, số ngày không hoạt động và click trong 7/30 ngày gần nhất. Xem [schema đầu vào](apps/backend/schemas/prediction.py) và [định nghĩa frontend](packages/shared/constants/fields.ts).
 
 Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Đường dẫn notebook/dữ liệu ghi trong metadata là nguồn gốc thực nghiệm, không bảo đảm còn có trong checkout. Dữ liệu OULAD đầy đủ cũng không được đóng gói vào repository.
@@ -330,7 +332,7 @@ Mật khẩu tối thiểu 6 ký tự, tối đa 72 byte UTF-8; không được 
 {"prediction": 1, "confidence": 0.82}
 ```
 
-Endpoint này hiện chưa có dependency xác thực. Chưa nên công khai bên ngoài trước khi rà soát quyền và giới hạn truy cập.
+Từ ngày 18/10/2026, endpoint yêu cầu bearer access token của tài khoản đang hoạt động. Frontend đã gửi token khi dự báo; yêu cầu ẩn danh hoặc refresh token bị từ chối. Quy tắc quyền trên từng bản ghi và phạm vi ADMIN được mô tả tại [cập nhật phân quyền backend](apps/backend/README.md#cập-nhật-phân-quyền-ngày-18102026).
 
 ## Kiểm thử
 

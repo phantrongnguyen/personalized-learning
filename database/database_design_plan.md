@@ -3,7 +3,7 @@
 ### Hệ thống gợi ý chiến lược học tập cá nhân hóa — KLTN 13, HUIT
 
 > **Sinh viên thực hiện:** Phan Trọng Nguyên<br>
-> **Cập nhật:** 14/10/2026<br>
+> **Cập nhật:** 18/10/2026<br>
 > **CSDL:** PostgreSQL 15 — `personalized_learning_db`, schema `public`<br>
 > **ORM:** SQLAlchemy 2.0 Async, driver `asyncpg`
 
@@ -15,6 +15,7 @@ Tài liệu mô tả **19 bảng** hiện có trong SQL khởi tạo và ORM. Đ
 | :--- | :--- |
 | [01_init_schema.sql](../docker/postgres/init-scripts/01_init_schema.sql) | DDL, khóa, CHECK, UNIQUE, mặc định và index |
 | [02_seed_data.sql](../docker/postgres/init-scripts/02_seed_data.sql) | Vai trò, tài khoản, mô hình và dữ liệu minh họa |
+| [03_prediction_integrity.sql](../docker/postgres/init-scripts/03_prediction_integrity.sql) | Bổ sung provenance và trigger bảo vệ lịch sử dự báo; dùng được với database đã tồn tại |
 | [models](../apps/backend/models/) | Ánh xạ ORM của 19 bảng |
 | [database.py](../apps/backend/core/database.py) | Async engine, session và rollback khi có lỗi |
 | [endpoints](../apps/backend/api/v1/endpoints/) | Hành vi đọc/ghi, kiểm tra phạm vi quyền |
@@ -145,6 +146,7 @@ erDiagram
         UUID model_id FK
         SMALLINT prediction_label
         FLOAT risk_probability
+        JSONB inference_context
         INT execution_time_ms
         UUID triggered_by_user_id FK
         TIMESTAMPTZ created_at
@@ -448,9 +450,12 @@ Lịch sử dự báo theo snapshot và mô hình. Nhãn 1: nguy cơ; 0: an toà
 | `model_id` | `UUID` | `NOT NULL REFERENCES ml_models(id) ON DELETE RESTRICT` |
 | `prediction_label` | `SMALLINT` | `NOT NULL CHECK (prediction_label IN (0, 1))` |
 | `risk_probability` | `FLOAT` | `NOT NULL` |
+| `inference_context` | `JSONB` | Cho phép NULL cho dự báo cũ; dự báo mới lưu 17 đặc trưng, model version, threshold, SHA-256 |
 | `execution_time_ms` | `INT` | Cho phép NULL; không có mặc định |
 | `triggered_by_user_id` | `UUID` | `REFERENCES users(id) ON DELETE SET NULL` |
 | `created_at` | `TIMESTAMPTZ` | `NOT NULL DEFAULT NOW()` |
+
+Từ 18/10/2026, script 03 chặn UPDATE snapshot đã có dự báo và chặn sửa danh tính/đầu vào/kết quả của prediction_run. Context được lưu độc lập với hồ sơ và model registry có thể chỉnh sửa; không backfill dự báo cũ bằng dữ liệu hiện tại. Artifact tương ứng nằm trong `apps/backend/artifacts/archive/<sha256>.joblib`, cần sao lưu cùng database. Chi tiết nâng cấp và replay xem [README backend](../apps/backend/README.md#cập-nhật-lịch-sử-dự-báo-ngày-18102026). Các quy tắc xóa khóa ngoại hiện tại vẫn giữ nguyên.
 
 ### 4.12. `intervention_plans`
 

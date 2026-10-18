@@ -6,6 +6,70 @@ Tài liệu đối chiếu mã nguồn trong working tree ngày **13/10/2026**, 
 
 > **Ghi chú ngày 14/10/2026:** Nội dung dưới đây giữ mốc khảo sát 13/10. Luồng dự báo từ database, xử lý lỗi batch và hiển thị radar đã được sửa sau đó; kết quả mới nằm trong [báo cáo 14/10](../../reports/dailys/14-10-2026.md).
 
+### Cập nhật phân quyền ngày 18/10/2026
+
+Phần cập nhật này thay thế các mô tả phân quyền cũ bên dưới nếu có khác biệt. Chi tiết triển khai và kết quả kiểm tra được ghi trong [báo cáo 18/10](../../reports/dailys/18-10-2026.md).
+
+| Phạm vi | Quy tắc hiện tại |
+| --- | --- |
+| `/admin/*` | Yêu cầu ADMIN; các thao tác quản trị toàn hệ thống nằm tại đây |
+| `/advisor/*` | ADVISOR hoặc ADMIN qua cổng vai trò; dữ liệu vẫn giới hạn theo hồ sơ cố vấn và phân công của chính tài khoản, gồm tạo kế hoạch, ghi chú, sửa kế hoạch và thêm nhiệm vụ |
+| `/lecturer/*` | LECTURER hoặc ADMIN qua cổng vai trò; thao tác trên học phần bắt buộc có hồ sơ giảng viên và phân công tương ứng |
+| `/student/*` | STUDENT hoặc ADMIN qua cổng vai trò; chỉ truy cập hồ sơ, đăng ký, nhiệm vụ và yêu cầu của chính tài khoản |
+| `POST /predictions/` | Mọi tài khoản đang hoạt động có access token hợp lệ; không cho truy cập ẩn danh hoặc dùng refresh token |
+
+ADMIN chỉ được miễn kiểm tra vai trò tại các portal, không được bỏ qua quyền sở hữu hoặc mạo danh hồ sơ khác. Đây là thay đổi so với việc ADMIN trước đây có thể bỏ qua phân công khi tạo kế hoạch hoặc thao tác học phần. Khi chưa có hồ sơ, các API danh sách cá nhân trả danh sách rỗng; các API cần hồ sơ trả 400 (cố vấn), 403 (giảng viên) hoặc 404 (sinh viên).
+
+- Ghi chú tư vấn kiểm tra sinh viên của enrollment thuộc cố vấn trước khi lưu; thiếu enrollment trả 404, ngoài phân công trả 403.
+- Cảnh báo giảng viên bắt buộc có `presentation_id`; thiếu/null trả 422, ngoài phân công trả 403, sinh viên không thuộc học phần trả 404.
+- Yêu cầu trợ giúp chỉ nhận `ADVISOR` hoặc `LECTURER`. Người nhận được chỉ định phải còn hoạt động, có đúng vai trò và được phân công. Yêu cầu gửi giảng viên bắt buộc chọn học phần mà sinh viên theo học. Khi không chỉ định người nhận, hệ thống chọn người phụ trách hợp lệ mới nhất; nếu chưa có thì lưu yêu cầu chưa gán người nhận (`target_user_id = null`).
+- Frontend React gửi bearer token khi gọi dự báo; client gọi API trực tiếp cũng phải bổ sung token.
+
+Kiểm thử quyền trên PostgreSQL sử dụng fixture riêng trong outer transaction và rollback sau từng test:
+
+```powershell
+$env:RUN_COURSE_SCOPE_DB = '1'
+python -m pytest apps/backend/tests/test_course_scope.py apps/backend/tests/test_prediction_access.py -q
+Remove-Item Env:RUN_COURSE_SCOPE_DB
+```
+
+Chạy từ gốc repository với môi trường Python có các dependency backend. Nếu không bật biến trên, các test PostgreSQL được bỏ qua; test xác thực dự báo vẫn chạy và không cần database.
+
+### Cập nhật lịch sử dự báo ngày 18/10/2026
+
+Cập nhật tiến độ có thay đổi chỉ số sẽ tạo snapshot mới, sao chép các chỉ số còn lại và ghi `snapshot_metadata` trong `raw_features_json`: nguồn `lecturer_assessment`, thời điểm quan sát, người cập nhật và ID snapshot trước. Chỉ cập nhật kết quả cuối kỳ không tạo snapshot. Nếu chưa có snapshot nền, cập nhật chỉ số trả 409 để tránh tạo dữ liệu hành vi giả từ giá trị 0.
+
+Database có cột nullable `prediction_runs.inference_context`, lưu đủ 17 đầu vào thực tế, phiên bản model, threshold và SHA-256 của artifact. Trigger chặn sửa snapshot đã được dự báo, cũng như sửa đầu vào, danh tính model và kết quả của một dự báo đã lưu. Cơ chế này bảo vệ cập nhật; chính sách xóa CASCADE vẫn cần rà soát ở công việc database tiếp theo.
+
+Artifact được lưu trong `artifacts/archive/<sha256>.joblib` từ đúng các byte đã nạp. Thư mục này bị bỏ qua bởi Git và phải được sao lưu cùng database khi vận hành. Không xóa artifact mà các bản ghi dự báo còn tham chiếu. Dữ liệu dự báo cũ có `inference_context = null` được ghi nhận là `LEGACY_UNVERIFIED`; không dựng lại thông tin từ hồ sơ hoặc registry hiện tại.
+
+Database mới chạy script 03 qua Compose. Với database đã tồn tại, chạy từ gốc repository trước khi dùng mã mới:
+
+```powershell
+python apps/backend/scripts/apply_prediction_integrity.py
+```
+
+Script bổ sung cột và trigger trong một transaction, có thể chạy lại; đã áp dụng trên database local trong phiên này. Đây là bước nâng cấp phục vụ bảo toàn dự báo, chưa thay thế hệ thống Alembic được lên kế hoạch.
+
+Kiểm tra lại một bản ghi có provenance, độc lập với hồ sơ hiện tại:
+
+```powershell
+python apps/backend/scripts/replay_prediction.py --prediction-id <UUID>
+```
+
+Lệnh kiểm tra checksum trước khi giải mã artifact, dùng đúng đầu vào/threshold đã lưu, rồi đối chiếu nhãn và xác suất. Bản ghi cũ thiếu context hoặc thiếu/hỏng artifact sẽ báo lỗi rõ ràng.
+
+Quy ước kết quả hiện hành:
+
+- Mỗi enrollment chỉ dùng dự báo mới nhất thuộc snapshot mới nhất, sắp xếp theo thời điểm rồi ID. Snapshot mới chưa dự báo không kế thừa kết quả cũ.
+- API sinh viên trả 200 với `risk_probability: null`, `risk_level: "NOT_PREDICTED"` và danh sách khuyến nghị rỗng nếu enrollment hợp lệ chưa có dự báo hiện hành. Enrollment ngoài quyền vẫn trả 404.
+- Cố vấn tổng hợp tất cả học phần: có bất kỳ môn nhãn 1 thì HIGH_RISK và lấy xác suất lớn nhất trong các môn nguy cơ cao; chỉ SAFE khi có học phần và tất cả đều được dự báo, đều nhãn 0. Các trường hợp còn lại là NOT_PREDICTED. Response kèm số môn đã/chưa dự báo và số môn nguy cơ cao.
+- Các nhãn dùng `prediction_label` đã lưu, không tính lại bằng ngưỡng cố định 0.5. Trường `latest_risk_*` ở overview được giữ tên để tương thích nhưng mang ý nghĩa tổng hợp nêu trên.
+- Thống kê lớp tách `safe_count`, `high_risk_count`, `not_predicted_count`; trung bình chỉ tính trên xác suất đã biết, trả null khi không có. Excel giữ ô xác suất trống và thêm số học phần chưa dự báo.
+- Tạo kế hoạch mới yêu cầu dự báo của snapshot hiện hành; kế hoạch/nhiệm vụ cũ vẫn được giữ để theo dõi.
+- `StudentFeatures` dùng chung cho dự báo thủ công và dữ liệu database: số đếm nguyên không âm, tỷ lệ trong [0,1], số hữu hạn, tín chỉ dương và danh mục OULAD hợp lệ. `date_registration` là số ngày nguyên có thể âm.
+- Dự báo thủ công trả thêm `provenance`; frontend lưu vào lịch sử trình duyệt cùng bộ đầu vào. Endpoint này không tự tạo enrollment, snapshot hay prediction_run trong database. Khuyến nghị/radar sau dự báo dùng dữ liệu của lần phân tích đó.
+
 ## 1. Tổng quan và mức độ hoàn thiện
 
 Backend phục vụ hệ thống cảnh báo nguy cơ học tập và hỗ trợ can thiệp cho bốn vai trò ADMIN, ADVISOR, LECTURER, STUDENT. Các chức năng đã có: xác thực JWT, quản trị tài khoản, học phần và phân công, đọc kết quả dự báo, radar, kế hoạch can thiệp, nhiệm vụ, ghi chú tư vấn, yêu cầu trợ giúp, xuất báo cáo Excel và audit log.
