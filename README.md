@@ -173,10 +173,10 @@ Các lệnh dưới đây dùng PowerShell, bắt đầu tại thư mục gốc 
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pip install asyncpg bcrypt joblib pytest-asyncio
+# Dependency backend/test đã được khai báo trong manifest được pin.
 ```
 
-`requirements.txt` hiện chưa khai báo trực tiếp đầy đủ các gói ở lệnh bổ sung. scikit-learn được pin `1.6.0`; metadata artifact cũng ghi phiên bản này.
+`requirements.txt` dùng manifest runtime/test trong `apps/backend`; scikit-learn 1.6.0 và LightGBM 4.7.0 khớp môi trường đã kiểm thử artifact. Cài backend gọn bằng `pip install -r apps/backend/requirements-dev.txt`.
 
 ### 3. Cấu hình môi trường
 
@@ -193,7 +193,7 @@ Dùng chuỗi được sinh làm `SECRET_KEY` trong `.env`.
 | --- | --- |
 | `DATABASE_URL` | URL PostgreSQL từ host; mặc định Compose mở cổng 5433 |
 | `SECRET_KEY` | Khóa ký JWT bắt buộc; thay khóa mẫu |
-| `MODEL_PATH` | Đường dẫn artifact, được resolve từ gốc repository |
+| `MODEL_PATH` | Cấu hình cũ; API hiện chọn artifact từ bản ghi model active trong database |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Khởi tạo database trong Compose |
 | `POSTGRES_HOST_PORT` | Cổng database trên host, mặc định 5433 |
 | `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD` | Tài khoản quản trị pgAdmin |
@@ -228,7 +228,7 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 - Health: [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health).
 - OpenAPI: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json).
 
-Backend nạp mô hình ngay trong lifespan; artifact thiếu hoặc không tương thích sẽ ngăn khởi động. `main.py` đang truyền `allow_private_network=True` vào CORSMiddleware; nếu phiên bản Starlette không hỗ trợ, cần xử lý tham số này trước khi chạy. Chưa coi lệnh khởi động là đã được xác minh trên môi trường cài mới.
+Backend xác nhận model active từ PostgreSQL ngay trong lifespan; thiếu database, sai số lượng active hoặc artifact không hợp lệ sẽ ngăn khởi động. Dashboard, batch và CLI dùng chung registry; activate/reload kiểm tra hợp đồng rồi commit cùng audit. Worker chọn lại danh tính model ở mỗi request và cache artifact theo SHA-256. Xem [cơ chế registry và vận hành nhiều worker](apps/backend/README.md#cập-nhật-registry-mô-hình-ngày-18102026). Đã smoke test startup, JWT, health và dự báo trên môi trường hiện có; chưa xác nhận cài mới toàn bộ hệ thống.
 
 ### 6. Frontend
 
@@ -352,7 +352,7 @@ python -m pytest tests/test_login_identifier.py tests/test_admin_accounts.py -q
 
 Kết quả ghi nhận trước lần cập nhật tài liệu này: frontend build thành công; **14 test** trong hai file trên đạt. Test dùng mock, không xác nhận hành vi SQL trên PostgreSQL thật. Có cảnh báo deprecation Pydantic cần xử lý về sau.
 
-Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py` kiểm tra các luồng khác. Khi chuẩn bị đủ backend/database và dữ liệu theo fixture, có thể chạy `python -m pytest tests -q`; chưa ghi nhận toàn bộ suite tích hợp đều đạt. Đợt kiểm tra trước gặp lỗi database/Docker chưa sẵn sàng.
+Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py` kiểm tra các luồng khác. Cập nhật 18/10/2026: toàn bộ suite đạt 119 test và 48 subtest; chạy từ gốc repository bằng `python scripts/run_backend_tests.py -q` để dùng database riêng và rollback fixture.
 
 Đã kiểm tra render trang hồ sơ cho bốn vai trò và khách; đã thử luồng cấp tài khoản/lọc/khóa trên trình duyệt bằng fixture. Đây là kiểm tra dữ liệu giả lập, không phải xác nhận vận hành với dữ liệu thật.
 
@@ -382,3 +382,10 @@ Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrong
 Commit theo Conventional Commits, ví dụ `feat(admin): add account management APIs`, `test(auth): cover student code login`, `docs(readme): document current project implementation`. Mỗi commit có một mục đích chính; không commit `.env`, thông tin bí mật, file build, môi trường ảo hoặc dữ liệu lớn. Rà soát diff và chạy kiểm tra phù hợp trước khi push; review qua PR trước khi merge nhánh chính.
 
 Mã nguồn sử dụng [giấy phép MIT](LICENSE). Bản quyền trong LICENSE ghi năm 2026, HUIT — đề tài KLTN 13.
+
+
+### Kiểm thử tích hợp ngày 18/10/2026
+
+Từ gốc repository chạy `.venv/Scripts/python.exe scripts/run_backend_tests.py -q`. Runner tạo database riêng có hậu tố `_test`, chạy toàn bộ suite và kiểm tra dữ liệu 19 bảng không đổi sau rollback. Không bật RUN_COURSE_SCOPE_DB trên database ứng dụng. Frontend: `npm --prefix apps/frontend test` và `npm --prefix apps/frontend run build`.
+
+Dockerfile backend/frontend, nginx proxy và healthcheck đã có. `docker compose up --build -d` dùng cấu hình .env; archive model/avatar được giữ trong volume. Để kiểm thử độc lập, dùng `docker-compose.verify.yml` với project `edurisk-verification`, hai biến VERIFY_DB_PASSWORD/VERIFY_SECRET_KEY và frontend port 13000; xem hướng dẫn đầy đủ trong apps/backend/README.md. Kết quả và giới hạn nằm trong reports/dailys/18-10-2026.md, mục 6.

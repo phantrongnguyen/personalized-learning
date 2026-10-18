@@ -28,12 +28,10 @@ ADMIN chỉ được miễn kiểm tra vai trò tại các portal, không đư�
 Kiểm thử quyền trên PostgreSQL sử dụng fixture riêng trong outer transaction và rollback sau từng test:
 
 ```powershell
-$env:RUN_COURSE_SCOPE_DB = '1'
-python -m pytest apps/backend/tests/test_course_scope.py apps/backend/tests/test_prediction_access.py -q
-Remove-Item Env:RUN_COURSE_SCOPE_DB
+python scripts/run_backend_tests.py -q -k 'CourseScopeTests or PredictionAccess'
 ```
 
-Chạy từ gốc repository với môi trường Python có các dependency backend. Nếu không bật biến trên, các test PostgreSQL được bỏ qua; test xác thực dự báo vẫn chạy và không cần database.
+Chạy từ gốc repository với môi trường Python có các dependency backend. Runner tự bật cờ opt-in sau khi chọn database riêng; test xác thực dự báo vẫn có thể chạy riêng không cần database.
 
 ### Cập nhật lịch sử dự báo ngày 18/10/2026
 
@@ -69,6 +67,24 @@ Quy ước kết quả hiện hành:
 - Tạo kế hoạch mới yêu cầu dự báo của snapshot hiện hành; kế hoạch/nhiệm vụ cũ vẫn được giữ để theo dõi.
 - `StudentFeatures` dùng chung cho dự báo thủ công và dữ liệu database: số đếm nguyên không âm, tỷ lệ trong [0,1], số hữu hạn, tín chỉ dương và danh mục OULAD hợp lệ. `date_registration` là số ngày nguyên có thể âm.
 - Dự báo thủ công trả thêm `provenance`; frontend lưu vào lịch sử trình duyệt cùng bộ đầu vào. Endpoint này không tự tạo enrollment, snapshot hay prediction_run trong database. Khuyến nghị/radar sau dự báo dùng dữ liệu của lần phân tích đó.
+
+### Cập nhật registry mô hình ngày 18/10/2026
+
+`services/model_registry.py` là nguồn chọn model chung cho startup, health, dự báo thủ công, batch và CLI. Mỗi request truy vấn đúng một `ml_models.is_active = true`; không dùng `app.state.model` hoặc `MODEL_PATH` để chọn model nữa. Thiếu hoặc có nhiều model active thì từ chối dự báo, không dùng lại một model mặc định trong RAM.
+
+- Khi khởi động, model active chưa có thông tin runtime được kiểm tra từ artifact nguồn rồi lưu hợp đồng vào `metadata_json.validated_runtime`. Các lần khởi động sau dùng artifact lưu theo SHA-256 đã xác nhận. Phải có database và artifact hợp lệ để startup thành công.
+- Hợp đồng gồm model ID/version, SHA-256, threshold, cutoff 0.75, positive label 1 và thứ tự 17 cột. Kiểm tra metadata nhúng, metadata registry và metadata JSON ngoài nếu có; kiểm tra schema/lớp của pipeline và chạy một dự báo thử.
+- Với model mới, `metadata_json.metadata_file_path` có thể chỉ rõ file JSON tuyệt đối hoặc tương đối với thư mục artifact. Nếu không chỉ định, registry tìm file cùng tên đuôi `.json`; artifact mặc định dùng `THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json`. Metadata nhúng phải đủ hợp đồng; mọi khai báo bổ sung đều phải khớp.
+- Activate kiểm tra artifact trước khi đổi cờ active. Đổi cờ, runtime metadata và audit log được commit trong cùng transaction; lỗi nạp, kiểm tra, audit hoặc commit sẽ rollback. Model đã có runtime không được thay byte/threshold/cutoff/version tại chỗ; cần đăng ký một phiên bản mới.
+- Reload kiểm tra lại đúng model đang active trong database. Reload không chuyển về file cấu hình hoặc tự kích hoạt model khác; nguồn hỏng không làm mất bản artifact đã xác nhận và model cũ vẫn sử dụng được.
+- PostgreSQL advisory transaction lock tuần tự hóa activate/reload/khởi tạo giữa các tiến trình. Cache mỗi worker có tối đa 4 mục, dùng danh tính đã xác nhận làm khóa; mỗi request đọc lại database trước khi chọn cache. Worker thấy model mới ở request tiếp theo sau commit, không cần broadcast hoặc restart.
+- Request đã bắt đầu tiếp tục dùng model đã chọn lúc bắt đầu; batch không đổi model giữa các sinh viên trong cùng lượt chạy. Cache có thể chứa candidate của transaction thất bại, nhưng candidate không thể được chọn nếu database chưa công bố active tương ứng.
+- Các worker/replica phải dùng cùng database và truy cập cùng nội dung `artifacts/archive` tại đường dẫn tương ứng, ví dụ qua volume chung. Worker lạnh thiếu/hỏng artifact trả lỗi, không dùng phiên bản khác để thay thế. Cache trong RAM đã giữ artifact hợp lệ có thể tiếp tục phục vụ đúng danh tính đó.
+- Provenance của dự báo mới bổ sung `model_id`, `cutoff_fraction`, `positive_label`. Kết quả batch có model ID/version, threshold và SHA-256; reload trả danh tính trong `model`. Health trả cùng danh tính khi sẵn sàng, HTTP 503 khi không thể xác nhận model active.
+
+Không cần migration SQL mới cho công việc này: runtime dùng cột JSONB đã có. Partial unique index cho cờ active vẫn thuộc công việc 4; guard runtime từ chối trạng thái sai và khóa advisory chỉ bảo đảm tuần tự cho những thao tác đi qua registry.
+
+Kiểm thử registry: `python scripts/run_backend_tests.py -q -k Registry`. Test dùng hai instance registry có cache riêng, API thực qua ASGI và PostgreSQL; có kiểm tra khóa bằng hai kết nối riêng. Chưa chạy thử tải nhiều tiến trình hệ điều hành hoặc nhiều máy.
 
 ## 1. Tổng quan và mức độ hoàn thiện
 
@@ -130,7 +146,7 @@ flowchart LR
     R --> D
     A --> S[Auth / Radar / Audit / Prediction services]
     S --> D
-    S --> M[Pipeline ML trong app.state.model]
+    S --> M[Registry active từ PostgreSQL và cache theo SHA-256]
     L[Lifespan / Reload] --> M
     J[Artifact joblib] --> L
 ```
@@ -146,7 +162,7 @@ Việc dùng async DB giúp request chờ I/O không giữ luồng theo cách đ
 
 ### 3.2. Vòng đời và trạng thái model
 
-`lifespan` gọi `load_model(settings.model_path)` trước khi phục vụ request. Artifact thiếu/hỏng hoặc không tương thích có thể làm startup thất bại. Model được lưu trong `app.state.model`, giải phóng tham chiếu khi shutdown. Loader có shim `_RemainderColsList` dùng API nội bộ sklearn để hỗ trợ unpickle; shim không bảo đảm tương thích mọi phiên bản.
+`lifespan` khởi tạo registry từ model active trong PostgreSQL và xác nhận artifact trước khi phục vụ request. Cache giữ artifact theo danh tính đã xác nhận; database được đọc lại khi chọn model cho mỗi request. Loader có shim `_RemainderColsList` dùng API nội bộ sklearn để hỗ trợ unpickle; shim không bảo đảm tương thích mọi phiên bản.
 
 Mỗi worker có bản model riêng. `/admin/ml/reload` chỉ thay model của process nhận request; chưa có cơ chế đồng bộ worker. `/admin/ml/models/activate` chỉ đổi `is_active` trong DB, không đổi `settings.model_path` và không nạp artifact của record được chọn.
 
@@ -354,7 +370,7 @@ Các phát hiện dưới đây dựa trên source; chưa phải xác nhận kha
 | P2 | Assessment sửa snapshot đã dùng để dự báo; không snapshot mới/re-predict | Mất khả năng tái lập vì input thay đổi sau khi lưu prediction | Snapshot bất biến/versioned, liên kết input hash, tạo dự báo mới |
 | P2 | Lệch DDL/ORM và thiếu migration | Môi trường khác nhau có constraint/cascade khác | Alembic làm nguồn migration, kiểm tra drift và migration trên DB thử |
 | P2 | Wildcard CORS và allow_private_network trong main.py | Cấu hình dev chưa giới hạn origin; tham số có thể không hợp phiên bản Starlette cài | Xác minh phiên bản runtime và allowlist origin theo môi trường |
-| P2 | requirements chưa khai báo trực tiếp asyncpg/joblib/pytest-asyncio và bcrypt dùng trực tiếp | Môi trường cài mới không tái lập ổn định | Khai báo dependency trực tiếp và lock/pin tương thích artifact |
+| Đã xử lý 18/10 | Manifest backend runtime/test khai báo asyncpg, joblib, bcrypt, pytest-asyncio và SQLAlchemy asyncio | Đã dựng image Python sạch | Xem requirements trong apps/backend |
 | P2 | Không thấy Dockerfile tương ứng cấu hình backend/frontend trong Compose | Không thể coi compose build toàn bộ là luồng hoàn chỉnh | Thêm Dockerfile, biến SECRET_KEY/MODEL_PATH, health và deployment checks |
 | P3 | get_client_ip tin X-Forwarded-For do client gửi | Audit IP có thể bị giả nếu không qua proxy đáng tin | Trust proxy allowlist; chuẩn hóa IP tại reverse proxy |
 | P3 | N+1, list không pagination và limit admin không giới hạn | Latency/bộ nhớ tăng theo dữ liệu | Batch query, bounded pagination, đo EXPLAIN/latency trước tối ưu |
@@ -371,14 +387,14 @@ Chạy từ gốc repository, dùng Python 3.12. Không ghi đè `.env` đang s�
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pip install asyncpg bcrypt joblib pytest-asyncio
+# Các dependency này đã nằm trong manifest backend được pin phiên bản.
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up -d postgres pgadmin
 cd apps/backend
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Lệnh pip bổ sung là workaround cho manifest hiện tại, không thay cho việc sửa requirements. Database Compose mở cổng host 5433, bên trong 5432. pgAdmin mặc định cổng 5050. Compose toàn hệ thống chưa hoàn thiện Dockerfile; phần hướng dẫn này dùng Compose cho DB và chạy Python trên host.
+Cập nhật 18/10/2026: manifest runtime/test đã đầy đủ; Dockerfile backend/frontend đã được bổ sung và kiểm thử trong stack riêng. Database Compose mở cổng host 5433, bên trong 5432. pgAdmin mặc định cổng 5050. Xem hướng dẫn công việc 5 ở cuối tài liệu.
 
 | Biến | Công dụng |
 | --- | --- |
@@ -387,7 +403,7 @@ Lệnh pip bổ sung là workaround cho manifest hiện tại, không thay cho v
 | ALGORITHM | Mặc định HS256 |
 | ACCESS_TOKEN_EXPIRE_MINUTES | Mặc định 1440 |
 | REFRESH_TOKEN_EXPIRE_DAYS | Field settings mặc định 7 |
-| MODEL_PATH | Artifact; đường dẫn tương đối resolve theo gốc repository |
+| MODEL_PATH | Cấu hình cũ; không còn chọn model phục vụ API. Artifact phục vụ lấy từ model active trong database |
 | APP_NAME / APP_VERSION | Metadata ứng dụng |
 | POSTGRES_USER/PASSWORD/DB/HOST_PORT | Cấu hình Compose; phải khớp DATABASE_URL |
 
@@ -1577,3 +1593,41 @@ Thông báo được tính từ task chưa hoàn thành thuộc plan ACTIVE, joi
 Response gồm id, enrollment_id, code_module, course_name, code_presentation, title, message, pending_tasks, due_date, days_remaining, state và level. Danh sách ưu tiên quá hạn trước, rồi sắp đến hạn, rồi pending. Trạng thái đã đọc nằm trong localStorage riêng từng tài khoản/trình duyệt, không đồng bộ nhiều thiết bị.
 
 Đã chạy 10 kiểm thử quy tắc/API giả lập và 1 kiểm thử PostgreSQL về quyền sở hữu/task hoàn thành với fixture rollback. Backend đang chạy trả HTTP 200 cho tài khoản 2045230069: AAA có 12 task chưa hoàn thành, hạn kế hoạch gần nhất 14/10/2026, quá hạn 2 ngày tại thời điểm kiểm tra 16/10; request không token trả 401. Frontend build thành công. Chưa có push khi đóng trang, email, SMS hoặc scheduler gửi thông báo ngoài ứng dụng.
+
+
+## Kiểm thử PostgreSQL và Docker — công việc 5, ngày 18/10/2026
+
+Dùng Python 3.12 và cài manifest nhỏ dành riêng backend:
+
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r apps/backend/requirements-dev.txt
+.venv/Scripts/python.exe scripts/run_backend_tests.py -q --junitxml=reports/test-results/task5-backend.xml
+npm --prefix apps/frontend ci
+npm --prefix apps/frontend test
+npm --prefix apps/frontend run build
+```
+
+Chạy lệnh từ gốc repository. Runner dùng DATABASE_URL trong .env để kết nối server, tạo database có tên gốc + `_test`, khởi tạo schema/seed/trigger, rồi truyền TEST_DATABASE_URL cho pytest. Có thể chọn database riêng bằng TEST_DATABASE_URL, nhưng tên phải kết thúc `_test` và khác database ứng dụng. User PostgreSQL cần CREATEDB khi database chưa tồn tại. Runner không drop database; so sánh số dòng và hash nội dung của cả 19 bảng trước/sau để phát hiện fixture chưa rollback. Sequence có thể tăng dù transaction rollback. Fixture dùng outer transaction và savepoint kể cả khi endpoint gọi commit. Chạy pytest trực tiếp không cấu hình TEST_DATABASE_URL sẽ chặn kết nối database; các test tích hợp bỏ qua nếu chưa opt-in.
+
+Runtime được pin cùng scikit-learn 1.6.0, LightGBM 4.7.0, numpy 1.26.4, pandas 2.2.3. SQLAlchemy phải cài extra `[asyncio]` để có greenlet; lỗi thiếu greenlet đã được phát hiện bằng image cài sạch và sửa.
+
+Chạy stack phát triển hiện tại: cấu hình .env từ .env.example, SECRET_KEY riêng và DOCKER_DATABASE_URL khớp POSTGRES_USER/PASSWORD/DB, rồi `docker compose up --build -d`. Frontend dùng nginx port 3000, proxy `/api/` và `/media/` tới backend. Archive model và avatar có volume riêng. Init SQL chỉ tự chạy khi volume PostgreSQL mới; database đang có vẫn cần script nâng cấp phù hợp. Không xóa volume đang dùng để áp dụng schema.
+
+Stack kiểm thử riêng (không dùng volume/container của hệ thống hiện tại):
+
+```powershell
+# Tạo file .cache/task5-docker.env, chỉ chứa hai giá trị ngẫu nhiên:
+# VERIFY_DB_PASSWORD=<chuỗi hex riêng>
+# VERIFY_SECRET_KEY=<chuỗi ngẫu nhiên riêng>
+docker compose --env-file .cache/task5-docker.env -p edurisk-verification -f docker-compose.verify.yml up --build -d
+.venv/Scripts/python.exe scripts/verify_stack.py
+# Khi xong, dừng stack riêng và giữ lại volume:
+docker compose --env-file .cache/task5-docker.env -p edurisk-verification -f docker-compose.verify.yml stop
+```
+
+Truy cập http://127.0.0.1:13000. Stack riêng đặt access token 1 phút để kiểm tra refresh; cấu hình ứng dụng chính không đổi. Seed admin của database tạo mới là admin@huit.edu.vn / admin (chỉ dùng thử local). HTTP smoke tạo thêm một tài khoản fixture cho kiểm tra đổi tài khoản. Không dùng script này trỏ vào server vận hành.
+
+Frontend dùng chung authenticatedFetch cho toàn bộ request có xác thực, refresh một lần khi 401 và gom request đồng thời; không refresh khi chỉ bị 403 trên bản ghi. Refresh bị 401/403 sẽ kết thúc phiên; lỗi mạng/5xx giữ token để thử lại. Request cũ bị hủy khi đổi tài khoản, refresh đến muộn không khôi phục phiên đã logout. Lịch sử lưu theo API base và UUID user, không nhập lịch sử dùng chung v2 vào tài khoản mới. Logout xóa dữ liệu đang hiển thị nhưng giữ lịch sử riêng của từng tài khoản trên trình duyệt.
+
+Bằng chứng và giới hạn chi tiết: reports/dailys/18-10-2026.md, mục 6. Không coi test workflow này là bằng chứng đánh giá hiệu quả cá nhân hóa hoặc migration đã hoàn thành.

@@ -1,0 +1,9 @@
+backend-1  | 2026-10-18T10:34:03.401769373Z INFO:     172.23.0.4:38832 - "POST /api/v1/auth/refresh HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:34:18.503451140Z INFO:     172.23.0.4:49992 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:35:18.937120262Z INFO:     172.23.0.4:54506 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:35:43.558000023Z INFO:     172.23.0.4:35642 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:36:07.556011676Z INFO:     172.23.0.4:47078 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:37:00.006058863Z INFO:     172.23.0.4:47230 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 401 Unauthorized
+backend-1  | 2026-10-18T10:37:00.035774853Z INFO:     172.23.0.4:47236 - "POST /api/v1/auth/refresh HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:37:00.070178782Z INFO:     172.23.0.4:47244 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
+backend-1  | 2026-10-18T10:37:23.441601728Z INFO:     172.23.0.4:59226 - "GET /api/v1/admin/users?skip=0&limit=26 HTTP/1.0" 200 OK
