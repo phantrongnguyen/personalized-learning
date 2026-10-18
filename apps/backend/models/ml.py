@@ -45,6 +45,8 @@ class PredictionRun(Base):
     )
     prediction_label: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     risk_probability: Mapped[float] = mapped_column(Float, nullable=False)
+    # NULL denotes a legacy run whose exact input/model identity is unknown.
+    inference_context: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     execution_time_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     triggered_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True

@@ -137,6 +137,7 @@ CREATE TABLE IF NOT EXISTS prediction_runs (
     model_id UUID NOT NULL REFERENCES ml_models(id) ON DELETE RESTRICT,
     prediction_label SMALLINT NOT NULL CHECK (prediction_label IN (0, 1)),
     risk_probability FLOAT NOT NULL,
+    inference_context JSONB,
     execution_time_ms INT,
     triggered_by_user_id UUID REFERENCES users(id) ON DELETE SET NULL,
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW()

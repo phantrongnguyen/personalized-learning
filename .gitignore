@@ -75,6 +75,7 @@ dist/
 *.tsbuildinfo
 .next/
 apps/backend/uploads/
+apps/backend/artifacts/archive/
 
 # IDE & Editors
 .vscode/
