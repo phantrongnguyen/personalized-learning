@@ -1,0 +1,43 @@
+# Separate project, ports and volumes: never reuses the application's database.
+services:
+  postgres:
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${VERIFY_DB_PASSWORD:?Set VERIFY_DB_PASSWORD}
+      POSTGRES_DB: edurisk_verify_test
+    volumes:
+      - verify_db:/var/lib/postgresql/data
+      - ./docker/postgres/init-scripts:/docker-entrypoint-initdb.d:ro
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d edurisk_verify_test"]
+      interval: 3s
+      timeout: 5s
+      retries: 20
+  backend:
+    build:
+      context: .
+      dockerfile: docker/backend/Dockerfile
+    environment:
+      DATABASE_URL: postgresql://postgres:${VERIFY_DB_PASSWORD}@postgres:5432/edurisk_verify_test
+      SECRET_KEY: ${VERIFY_SECRET_KEY:?Set VERIFY_SECRET_KEY}
+      ACCESS_TOKEN_EXPIRE_MINUTES: 1
+    volumes:
+      - verify_archive:/workspace/apps/backend/artifacts/archive
+      - verify_avatars:/workspace/apps/backend/uploads/avatars
+    depends_on:
+      postgres:
+        condition: service_healthy
+  frontend:
+    build:
+      context: .
+      dockerfile: apps/frontend/Dockerfile
+    ports:
+      - "127.0.0.1:13000:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+volumes:
+  verify_db:
+  verify_archive:
+  verify_avatars:
