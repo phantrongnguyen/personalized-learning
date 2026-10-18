@@ -64,6 +64,7 @@ export interface PredictionHistoryItem {
 export type RoleCode = 'ADMIN' | 'ADVISOR' | 'LECTURER' | 'STUDENT';
 
 export interface UserProfile {
+  userId?: string;
   name: string;
   email: string;
   role: string;
