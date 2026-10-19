@@ -8,7 +8,7 @@
 > **ORM:** SQLAlchemy Async, driver asyncpg<br>
 > **Revision schema:** 0002_normalize
 
-Bản biên soạn này kế thừa bố cục chín phần của tài liệu tham khảo ngày 18/10/2026 do người dùng cung cấp (`Y:\database_design_plan.md`), cập nhật nội dung theo schema và mã nguồn trong dự án. Tài liệu mô tả thiết kế đang triển khai, phân biệt ràng buộc DB với kiểm tra tại API/service và các giới hạn còn lại.
+Cập nhật nội dung theo schema và mã nguồn trong dự án. Tài liệu mô tả thiết kế đang triển khai, phân biệt ràng buộc DB với kiểm tra tại API/service và các giới hạn còn lại.
 
 ## 1. Phạm vi và nguồn đối chiếu
 
