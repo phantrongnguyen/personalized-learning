@@ -1,6 +1,6 @@
 import uuid
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -72,21 +72,25 @@ async def get_my_courses(
 @router.get("/courses/{presentation_id}/risk-board", response_model=List[StudentRiskInCourseOut], summary="Bảng cảnh báo nguy cơ học phần")
 async def get_course_risk(
     presentation_id: uuid.UUID,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_lecturer),
     db: AsyncSession = Depends(get_db),
 ):
     await _ensure_course_ownership(db, current_user, presentation_id)
-    return await get_course_risk_board(db, presentation_id)
+    return await get_course_risk_board(db, presentation_id, limit=limit, offset=offset)
 
 
 @router.get("/courses/{presentation_id}/students", response_model=List[CourseStudentOut], summary="Danh sách sinh viên lớp học phần")
 async def get_course_student_list(
     presentation_id: uuid.UUID,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_lecturer),
     db: AsyncSession = Depends(get_db),
 ):
     await _ensure_course_ownership(db, current_user, presentation_id)
-    return await get_course_students(db, presentation_id)
+    return await get_course_students(db, presentation_id, limit=limit, offset=offset)
 
 
 @router.put(

@@ -16,7 +16,7 @@ from models.feature import StudentFeatureSnapshot
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
 from models.help_request import StudentHelpRequest
 from services.radar_service import calculate_radar_6d
-from services.risk_service import current_prediction, latest_snapshot, risk_fields, student_risk_summary
+from services.risk_service import current_prediction, latest_snapshot, risk_fields, student_risk_summary, student_risk_summaries, current_predictions
 from services.prediction_service import BEHAVIOR_FIELDS
 from schemas.prediction import BehaviorFeatures
 
@@ -60,7 +60,7 @@ async def get_advisor_classes(db: AsyncSession, advisor_id: uuid.UUID) -> List[D
 
 async def get_advisor_students(
     db: AsyncSession, advisor_id: uuid.UUID, class_name: Optional[str] = None,
-    academic_year: Optional[str] = None,
+    academic_year: Optional[str] = None, limit: Optional[int] = None, offset: int = 0,
 ) -> List[Dict[str, Any]]:
     """Lấy danh sách sinh viên do GVCN quản lý kèm điểm rủi ro AI gần nhất"""
     query = (
@@ -74,23 +74,26 @@ async def get_advisor_students(
     if academic_year:
         query = query.where(AdvisorStudent.academic_year == academic_year)
 
-    result = await db.execute(query)
-    records = result.all()
-
+    query = query.order_by(StudentProfile.student_code, StudentProfile.id)
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
+    records = (await db.execute(query)).all()
+    ids = [sp.id for sp, _, _ in records]
+    summaries = await student_risk_summaries(db, ids)
+    plan_counts = {}
+    if ids:
+        counts = await db.execute(select(InterventionPlan.student_id,
+            func.count(func.distinct(InterventionPlan.id)),
+            func.count(InterventionTask.id).filter(InterventionTask.is_completed.is_(False)))
+            .outerjoin(InterventionTask, InterventionTask.plan_id == InterventionPlan.id)
+            .where(InterventionPlan.student_id.in_(ids), InterventionPlan.status == "ACTIVE")
+            .group_by(InterventionPlan.student_id))
+        plan_counts = {student_id: (plans, tasks) for student_id, plans, tasks in counts}
     students_data = []
     for sp, u, c_name in records:
-        summary = await student_risk_summary(db, sp.id)
+        summary = dict(summaries[sp.id])
         summary.pop("representative_prediction")
-
-        # Kiểm tra kế hoạch can thiệp đang active
-        plan_query = (
-            select(InterventionPlan)
-            .where(and_(InterventionPlan.student_id == sp.id, InterventionPlan.status == "ACTIVE"))
-            .options(selectinload(InterventionPlan.tasks))
-        )
-        plan_res = await db.execute(plan_query)
-        active_plans = plan_res.scalars().all()
-        uncompleted = sum(not task.is_completed for plan in active_plans for task in plan.tasks)
+        active_plans, uncompleted = plan_counts.get(sp.id, (0, 0))
 
         students_data.append({
             "student_id": sp.id,
@@ -153,25 +156,18 @@ async def get_lecturer_profile_by_user_id(db: AsyncSession, user_id: uuid.UUID) 
 
 async def get_lecturer_assigned_courses(db: AsyncSession, lecturer_id: uuid.UUID) -> List[Dict[str, Any]]:
     """Lấy danh sách các lớp học phần do GVBM phụ trách"""
-    query = (
-        select(CoursePresentation, Course, CourseLecturer.role_in_course)
+    counts = select(StudentEnrollment.presentation_id,
+        func.count(StudentEnrollment.id).label("total_students")).group_by(StudentEnrollment.presentation_id).subquery()
+    query = (select(CoursePresentation, Course, CourseLecturer.role_in_course,
+                    func.coalesce(counts.c.total_students, 0))
         .join(CourseLecturer, CourseLecturer.presentation_id == CoursePresentation.id)
         .join(Course, CoursePresentation.course_id == Course.id)
+        .outerjoin(counts, counts.c.presentation_id == CoursePresentation.id)
         .where(CourseLecturer.lecturer_id == lecturer_id)
-    )
-    result = await db.execute(query)
-    rows = result.all()
-
+        .order_by(CoursePresentation.id))
+    rows = (await db.execute(query)).all()
     courses = []
-    for cp, c, role in rows:
-        # Đếm sĩ số
-        count_query = (
-            select(func.count(StudentEnrollment.id))
-            .where(StudentEnrollment.presentation_id == cp.id)
-        )
-        count_res = await db.execute(count_query)
-        total_students = count_res.scalar_one()
-
+    for cp, c, role, total_students in rows:
         courses.append({
             "presentation_id": cp.id,
             "code_module": c.code_module,
@@ -185,7 +181,7 @@ async def get_lecturer_assigned_courses(db: AsyncSession, lecturer_id: uuid.UUID
 
 
 async def get_course_risk_board(
-    db: AsyncSession, presentation_id: uuid.UUID
+    db: AsyncSession, presentation_id: uuid.UUID, limit: Optional[int] = None, offset: int = 0
 ) -> List[Dict[str, Any]]:
     """Lấy danh sách sinh viên kèm tương tác và nguy cơ trong lớp học phần"""
     query = (
@@ -194,12 +190,16 @@ async def get_course_risk_board(
         .join(User, StudentProfile.user_id == User.id)
         .where(StudentEnrollment.presentation_id == presentation_id)
     )
+    query = query.order_by(StudentProfile.student_code, StudentEnrollment.id)
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     enrollments = result.all()
 
+    current = await current_predictions(db, [se.id for se, _, _ in enrollments])
     risk_board = []
     for se, sp, u in enrollments:
-        snap, pred = await current_prediction(db, se.id)
+        snap, pred = current.get(se.id, (None, None))
 
         total_clicks = snap.total_clicks_to_t if snap else 0
         late_sub = snap.late_submissions_to_t if snap else 0
@@ -223,7 +223,7 @@ async def get_course_risk_board(
 
 
 async def get_course_students(
-    db: AsyncSession, presentation_id: uuid.UUID
+    db: AsyncSession, presentation_id: uuid.UUID, limit: Optional[int] = None, offset: int = 0
 ) -> List[Dict[str, Any]]:
     """Danh sách sinh viên trong lớp học phần (kèm kết quả & mức độ tương tác)"""
     query = (
@@ -232,12 +232,16 @@ async def get_course_students(
         .join(User, StudentProfile.user_id == User.id)
         .where(StudentEnrollment.presentation_id == presentation_id)
     )
+    query = query.order_by(StudentProfile.student_code, StudentEnrollment.id)
+    if limit is not None:
+        query = query.limit(limit).offset(offset)
     result = await db.execute(query)
     enrollments = result.all()
 
+    current = await current_predictions(db, [se.id for se, _, _ in enrollments])
     students = []
     for se, sp, u in enrollments:
-        snap, pred = await current_prediction(db, se.id)
+        snap, pred = current.get(se.id, (None, None))
         risk = risk_fields(pred)
 
         students.append({

@@ -1,4 +1,4 @@
-import { authenticatedFetch, getStoredToken, setStoredTokens, clearStoredTokens } from './session';
+import { authenticatedFetch, getStoredToken, setStoredTokens, clearStoredTokens, getSessionEpoch } from './session';
 import {
   PredictionRequest,
   PredictionResponse,
@@ -242,9 +242,23 @@ export async function getAdvisorStudentsApi(
     ? `${cleanUrl}/api/v1/advisor/students?class_name=${encodeURIComponent(className)}`
     : `${cleanUrl}/api/v1/advisor/students`;
 
-  const res = await authenticatedFetch(baseUrl, url, { headers: authHeaders() });
-  if (!res.ok) throw new Error('Không thể tải danh sách sinh viên lớp chủ nhiệm');
-  return res.json();
+  return fetchAllPages<AdvisorStudentItem>(baseUrl, url, 'Không thể tải danh sách sinh viên lớp chủ nhiệm');
+}
+
+async function fetchAllPages<T>(baseUrl: string, url: string, message: string): Promise<T[]> {
+  const result: T[] = [];
+  const epoch = getSessionEpoch();
+  const limit = 100;
+  for (let offset = 0; ; offset += limit) {
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    const res = await authenticatedFetch(baseUrl,
+      `${url}${url.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(message);
+    const page: T[] = await res.json();
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    result.push(...page);
+    if (page.length < limit) return result;
+  }
 }
 
 export async function createInterventionPlanApi(
@@ -281,11 +295,8 @@ export async function getCourseRiskBoardApi(
   presentationId: string
 ): Promise<CourseStudentRiskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Không thể tải bảng cảnh báo nguy cơ học phần');
-  return res.json();
+  return fetchAllPages<CourseStudentRiskItem>(baseUrl,
+    `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, 'Không thể tải bảng cảnh báo nguy cơ học phần');
 }
 
 // -------------------------------------------------------------

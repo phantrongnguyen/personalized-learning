@@ -2,7 +2,7 @@ import io
 import uuid
 from datetime import datetime
 from typing import List, Optional
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -64,13 +64,15 @@ async def get_my_classes(
 @router.get("/students", response_model=List[AdvisorStudentSummaryOut], summary="Danh sách sinh viên lớp chủ nhiệm")
 async def get_my_students(
     class_name: Optional[str] = None,
+    limit: int = Query(100, ge=1, le=500),
+    offset: int = Query(0, ge=0),
     current_user: User = Depends(require_advisor),
     db: AsyncSession = Depends(get_db),
 ):
     profile = await get_advisor_profile_by_user_id(db, current_user.id)
     if not profile:
         return []
-    return await get_advisor_students(db, profile.id, class_name)
+    return await get_advisor_students(db, profile.id, class_name, limit=limit, offset=offset)
 
 
 @router.post("/interventions", response_model=PlanOut, summary="Lập kế hoạch can thiệp cho sinh viên")
