@@ -358,3 +358,138 @@
 @media (prefers-reduced-motion: reduce) {
   .gauge-circle { transition: none; }
 }
+
+/* Evaluation charts inherit the root theme, including SVG and matrix colors. */
+.evaluation-charts {
+  --chart-lightgbm: #1d4ed8;
+  --chart-xgboost: #6d28d9;
+  --chart-catboost: #0f766e;
+  --chart-good-rgb: 191, 219, 254;
+  --chart-error-rgb: 253, 230, 138;
+  --chart-good-border: #93c5fd;
+  --chart-error-border: #fcd34d;
+}
+
+:root.dark .evaluation-charts {
+  --chart-lightgbm: #2563eb;
+  --chart-xgboost: #7c3aed;
+  --chart-catboost: #0f766e;
+  --chart-good-rgb: 30, 58, 138;
+  --chart-error-rgb: 120, 53, 15;
+  --chart-good-border: #1e40af;
+  --chart-error-border: #78350f;
+}
+
+.evaluation-chart-card {
+  background-color: var(--surface);
+  border-color: var(--border-subtle);
+}
+
+.evaluation-matrix-good, .evaluation-matrix-error {
+  color: var(--text-primary);
+}
+
+.evaluation-matrix-good { border-color: var(--chart-good-border); }
+.evaluation-matrix-error { border-color: var(--chart-error-border); }
+.evaluation-chart-point:focus-visible circle { stroke: var(--text-primary); stroke-width: 3; }
+
+/* Subtle chart-card motion, shared by both color themes. */
+.evaluation-chart-card {
+  --chart-hover-shadow: 0 12px 28px -18px rgb(15 23 42 / 0.3);
+  animation: evaluation-card-enter 420ms ease-out backwards;
+  transition: transform 200ms ease, box-shadow 200ms ease,
+    border-color 200ms ease, background-color 240ms ease, color 240ms ease;
+}
+
+:root.dark .evaluation-chart-card {
+  --chart-hover-shadow: 0 14px 30px -16px rgb(0 0 0 / 0.6);
+}
+
+.evaluation-chart-card:nth-of-type(2) { animation-delay: 70ms; }
+.evaluation-chart-card:nth-of-type(3) { animation-delay: 140ms; }
+.evaluation-chart-card:nth-of-type(4) { animation-delay: 210ms; }
+
+.evaluation-chart-card:focus-within {
+  border-color: var(--accent);
+  box-shadow: var(--chart-hover-shadow);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .evaluation-chart-card:hover {
+    transform: translateY(-3px);
+    border-color: var(--accent);
+    box-shadow: var(--chart-hover-shadow);
+  }
+
+  .evaluation-chart-point:hover circle {
+    stroke: var(--text-primary);
+    stroke-width: 3;
+    fill-opacity: 1;
+  }
+}
+
+.evaluation-chart-card svg rect,
+.evaluation-chart-point circle {
+  transition: fill 200ms ease, fill-opacity 160ms ease, stroke 160ms ease,
+    stroke-width 160ms ease;
+}
+
+.evaluation-matrix-good, .evaluation-matrix-error {
+  transition: background-color 240ms ease, border-color 200ms ease, color 240ms ease;
+}
+
+@keyframes evaluation-card-enter {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .evaluation-chart-card,
+  .evaluation-chart-card svg rect,
+  .evaluation-chart-point circle,
+  .evaluation-matrix-good,
+  .evaluation-matrix-error {
+    animation: none;
+    transition: none;
+  }
+
+  .evaluation-chart-card:hover { transform: none; }
+}
+
+.evaluation-chart-dialog {
+  width: min(1200px, calc(100vw - 2rem));
+  max-width: none;
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  background: var(--surface);
+  color: var(--text-primary);
+  border-color: var(--border-subtle);
+  box-shadow: 0 24px 80px rgb(0 0 0 / 0.3);
+}
+
+.evaluation-chart-dialog::backdrop {
+  background: rgb(15 23 42 / 0.6);
+  backdrop-filter: blur(4px);
+}
+
+.evaluation-chart-dialog-header {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--surface);
+  border-color: var(--border-subtle);
+}
+
+.evaluation-chart-dialog-content > div > svg {
+  max-height: 65dvh;
+}
+
+.evaluation-table-dialog {
+  width: min(1440px, calc(100vw - 2rem));
+}
+
+.evaluation-table-zoom:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 4px;
+  border-radius: 1rem;
+}

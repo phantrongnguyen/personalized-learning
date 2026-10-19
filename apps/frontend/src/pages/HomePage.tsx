@@ -1,3 +1,4 @@
+import { ZoomableChart } from '../components/evaluation/ZoomableChart';
 import React from 'react';
 import { useApp } from '../state/AppContext';
 import {
@@ -114,6 +115,7 @@ export const HomePage: React.FC = () => {
             Lợi ích chính là độ gọn của đầu vào; chưa có bằng chứng cải thiện khả năng phát hiện nguy cơ.
           </p>
         </div>
+        <ZoomableChart title="So sánh kết quả các bộ học tại cutoff 75%" variant="table">
         <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
           <table className="w-full min-w-[640px] text-sm text-left">
             <caption className="text-left px-5 py-4 text-xs text-slate-400">
@@ -146,6 +148,7 @@ export const HomePage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        </ZoomableChart>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
           <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
             <h3 className="font-semibold text-white mb-2">Hiểu đúng cảnh báo</h3>

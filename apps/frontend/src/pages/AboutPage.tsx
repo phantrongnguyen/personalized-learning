@@ -1,6 +1,9 @@
+import { RocAucChart } from '../components/evaluation/RocAucChart';
+import { ZoomableChart } from '../components/evaluation/ZoomableChart';
 import React, { useState } from 'react';
 import { BrainCircuit, Cpu, Target, Award } from 'lucide-react';
 import { modelEvaluation } from '../data/modelEvaluation';
+import { EvaluationCharts } from '../components/evaluation/EvaluationCharts';
 
 const percent = (value: number) => `${(value * 100).toLocaleString('vi-VN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}%`;
 const score = (value: number) => value.toLocaleString('vi-VN', { minimumFractionDigits: 6, maximumFractionDigits: 6 });
@@ -72,6 +75,9 @@ export const AboutPage: React.FC = () => {
           Đang xem {rows.length} cấu hình · {reference.n.toLocaleString('vi-VN')} lượt đăng ký học phần validation.
           Precision, Recall, F1 và AP đo cho lớp nguy cơ (Fail / Withdrawn).
         </p>
+        <EvaluationCharts cutoff={cutoff} />
+
+        <ZoomableChart title="Bảng đầy đủ các chỉ số đánh giá mô hình" variant="table">
         <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/80" role="region" aria-label="Chỉ số phân loại; cuộn ngang để xem đủ cột" tabIndex={0}>
           <table className="w-full min-w-[1200px] text-left text-xs">
             <caption className="text-left px-4 py-3 text-slate-400">
@@ -97,6 +103,9 @@ export const AboutPage: React.FC = () => {
             </tbody>
           </table>
         </div>
+        </ZoomableChart>
+
+        <RocAucChart cutoff={cutoff} />
         <p className="text-xs text-slate-400 leading-relaxed">
           LightGBM dùng mask đóng băng từ notebook 05b; XGBoost/CatBoost tìm mask với evaluator tương ứng,
           nên các phương pháp cùng tên không nhất thiết dùng cùng tập cột. CatBoost giữ category gốc,
@@ -105,6 +114,7 @@ export const AboutPage: React.FC = () => {
 
         <details className="rounded-2xl border border-slate-800 bg-slate-900/60 p-4">
           <summary className="cursor-pointer text-sm font-semibold text-slate-200">Xem số cảnh báo và ma trận nhầm lẫn</summary>
+          <ZoomableChart title="Số cảnh báo và ma trận nhầm lẫn" variant="table">
           <div className="overflow-x-auto mt-4" role="region" aria-label="Ma trận nhầm lẫn" tabIndex={0}>
             <table className="w-full min-w-[720px] text-xs text-left">
               <caption className="text-left pb-3 text-slate-400">TN: không nguy cơ nhận đúng; FP: cảnh báo nhầm; FN: bỏ sót nguy cơ; TP: nguy cơ nhận đúng. Số liệu theo lượt đăng ký học phần.</caption>
@@ -117,6 +127,7 @@ export const AboutPage: React.FC = () => {
               </tbody>
             </table>
           </div>
+          </ZoomableChart>
         </details>
       </section>
 
