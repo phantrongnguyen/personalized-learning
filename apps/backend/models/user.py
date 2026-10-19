@@ -62,13 +62,13 @@ class User(Base):
         Role, secondary=user_roles, back_populates="users", lazy="selectin"
     )
     student_profile: Mapped[Optional["StudentProfile"]] = relationship(
-        "StudentProfile", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin"
+        "StudentProfile", back_populates="user", uselist=False, passive_deletes="all", lazy="selectin"
     )
     advisor_profile: Mapped[Optional["AdvisorProfile"]] = relationship(
-        "AdvisorProfile", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin"
+        "AdvisorProfile", back_populates="user", uselist=False, passive_deletes="all", lazy="selectin"
     )
     lecturer_profile: Mapped[Optional["LecturerProfile"]] = relationship(
-        "LecturerProfile", back_populates="user", uselist=False, cascade="all, delete-orphan", lazy="selectin"
+        "LecturerProfile", back_populates="user", uselist=False, passive_deletes="all", lazy="selectin"
     )
 
     def __repr__(self) -> str:

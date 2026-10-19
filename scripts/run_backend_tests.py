@@ -34,9 +34,22 @@ async def prepare():
             await connection.execute(f'CREATE DATABASE "{name}"')
     finally:
         await connection.close()
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy.ext.asyncio import create_async_engine
+    migration_engine = create_async_engine(target.set(drivername='postgresql+asyncpg'))
+    try:
+        async with migration_engine.begin() as migration_connection:
+            def upgrade(sync_connection):
+                config = Config(str(ROOT / 'alembic.ini'))
+                config.attributes['connection'] = sync_connection
+                command.upgrade(config, 'head')
+            await migration_connection.run_sync(upgrade)
+    finally:
+        await migration_engine.dispose()
     connection = await asyncpg.connect(dsn(target))
     try:
-        for filename in ("01_init_schema.sql", "02_seed_data.sql", "03_prediction_integrity.sql"):
+        for filename in ("02_seed_data.sql",):
             await connection.execute((ROOT / "docker/postgres/init-scripts" / filename).read_text(encoding="utf-8"))
     finally:
         await connection.close()

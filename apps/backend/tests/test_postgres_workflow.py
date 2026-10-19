@@ -95,13 +95,14 @@ async def test_account_to_completed_intervention(integration_db):
         assert not after or all(item["pending_tasks"] == 0 for item in after)
         summary = await call("GET", "/advisor/students", advisor_headers)
         assert summary[0]["uncompleted_tasks_count"] == 0
-        # Document the current DB deletion contract (migration hardening is task 4).
-        savepoint = await db.begin_nested()
-        await db.execute(text("DELETE FROM student_feature_snapshots WHERE id=:id"),
-                         {"id": uuid.UUID(risk["snapshot_id"])})
+        # Historical predictions and intervention tasks must survive attempted deletion.
+        with pytest.raises(IntegrityError) as restricted_snapshot:
+            async with db.begin_nested():
+                await db.execute(text("DELETE FROM student_feature_snapshots WHERE id=:id"),
+                                 {"id": uuid.UUID(risk["snapshot_id"])})
+        assert restricted_snapshot.value.orig.sqlstate == "23503"
         assert await db.scalar(text("SELECT count(*) FROM prediction_runs WHERE snapshot_id=:id"),
-                               {"id": uuid.UUID(risk["snapshot_id"])}) == 0
-        await savepoint.rollback()
+                               {"id": uuid.UUID(risk["snapshot_id"])}) == 1
         assert len(await call("GET", f"/student/tasks?enrollment_id={enrollment.id}", student_headers)) == 3
         # A fresh imported snapshot invalidates current risk without changing old results.
         db.add(StudentFeatureSnapshot(enrollment_id=enrollment.id))

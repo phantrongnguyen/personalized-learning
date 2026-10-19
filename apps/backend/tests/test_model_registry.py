@@ -13,6 +13,7 @@ from unittest.mock import AsyncMock, patch
 import joblib
 from fastapi import HTTPException
 from sqlalchemy import select, update, func
+from sqlalchemy.exc import IntegrityError
 
 import test_course_scope as scope_fixture
 import test_database_predictions as feature_fixture
@@ -215,17 +216,19 @@ class ModelRegistryDatabaseTests(unittest.IsolatedAsyncioTestCase):
         response = await self.request("POST", "/admin/ml/models/activate", student, json={"model_id": str(self.second_id)})
         self.assertEqual(response.status_code, 403)
 
-    async def test_no_or_multiple_active_models_fail_closed_instead_of_using_cache(self):
-        for count in (0, 2):
-            await self.db.execute(update(MLModel).values(is_active=False))
-            if count:
-                await self.db.execute(update(MLModel).where(MLModel.id.in_([self.first_id, self.second_id])).values(is_active=True))
-            await self.db.commit()
-            response = await self.predict()
-            self.assertEqual(response.status_code, 503, response.text)
-            health_response = await self.request("GET", "/health", self.admin)
-            self.assertEqual(health_response.status_code, 503)
-            self.assertFalse(health_response.json()["model_loaded"])
+    async def test_no_active_fails_closed_and_multiple_active_is_rejected_by_database(self):
+        await self.db.execute(update(MLModel).values(is_active=False))
+        await self.db.commit()
+        response = await self.predict()
+        self.assertEqual(response.status_code, 503, response.text)
+        health_response = await self.request("GET", "/health", self.admin)
+        self.assertEqual(health_response.status_code, 503)
+        self.assertFalse(health_response.json()["model_loaded"])
+        with self.assertRaises(IntegrityError) as caught:
+            async with self.db.begin_nested():
+                await self.db.execute(update(MLModel).where(
+                    MLModel.id.in_([self.first_id, self.second_id])).values(is_active=True))
+        self.assertEqual(caught.exception.orig.sqlstate, '23505')
 
     async def test_registry_edits_cannot_reuse_old_cache_identity(self):
         record = await self.db.get(MLModel, self.first_id)

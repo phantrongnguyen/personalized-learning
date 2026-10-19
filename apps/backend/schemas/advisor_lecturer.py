@@ -1,6 +1,6 @@
 import uuid
 from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
 from schemas.prediction import RiskLevel, Ratio
 
@@ -40,7 +40,7 @@ class AdvisorStudentSummaryOut(BaseModel):
 
 class TaskCreateIn(BaseModel):
     category: str = Field(..., description="CHUYEN_CAN, HOC_THUAT, TIEN_DO, TAM_LY")
-    priority: str = Field("MEDIUM", description="LOW, MEDIUM, HIGH, URGENT")
+    priority: Literal['LOW', 'MEDIUM', 'HIGH'] = 'MEDIUM'
     title: str
     description: str
     target_metric: str = "Tăng lượt tương tác / Hoàn thành bài tập"
@@ -116,7 +116,7 @@ class ClassStatisticsOut(BaseModel):
 
 
 class PlanUpdateIn(BaseModel):
-    status: Optional[str] = Field(None, description="ACTIVE, COMPLETED, CANCELLED")
+    status: Literal['ACTIVE', 'COMPLETED', 'CANCELLED'] | None = None
     target_completion_date: Optional[date] = None
     advisor_note_summary: Optional[str] = None
 
@@ -177,7 +177,7 @@ class CourseTaskAssignIn(BaseModel):
     student_id: uuid.UUID
     title: str
     description: str
-    priority: str = "HIGH"
+    priority: Literal['LOW', 'MEDIUM', 'HIGH'] = 'HIGH'
     target_metric: str = "Hoàn thành bài tập ôn tập môn học"
 
 
@@ -201,7 +201,7 @@ class AssessmentUpdateIn(BaseModel):
     assessments_submitted: Optional[int] = Field(None, ge=0)
     late_submissions: Optional[int] = Field(None, ge=0)
     submission_rate: Ratio | None = None
-    final_result: Optional[str] = Field(None, description="PASS, FAIL, WITHDRAWN, DISTINCTION")
+    final_result: Literal['PASS', 'FAIL', 'WITHDRAWN', 'DISTINCTION', 'Pass', 'Fail', 'Withdrawn', 'Distinction'] | None = None
 
 
 class AlertAdvisorIn(BaseModel):
