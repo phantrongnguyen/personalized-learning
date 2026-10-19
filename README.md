@@ -8,6 +8,12 @@ Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công 
 
 Giảng viên mở học phần và sinh viên để xem riêng dự báo model tại cutoff 75%, gợi ý quy tắc có nguồn/thời điểm/giới hạn, rồi chọn gợi ý vào bản nháp, tự chỉnh sửa mức ưu tiên và bấm giao. Đọc gợi ý không tạo task. Nếu thiếu dữ liệu, API trả `insufficient_data` hoặc `abstained`; nếu thiếu dự báo, bảng nguy cơ hiển thị `NOT_PREDICTED` thay vì SAFE. Chỉ cố vấn/admin tạo plan hợp lệ khi đã có dự báo thật; chưa có plan thì giảng viên không thể giao nhiệm vụ trong luồng này. Không xác định bài nộp thiếu/trễ theo từng bài từ số liệu tổng hợp. Chi tiết API, nguồn và điều kiện xác nhận nằm trong [README backend](apps/backend/README.md); nhật ký từng bước ở [docs/lecturer-suggestions-process.md](docs/lecturer-suggestions-process.md).
 
+## Kết quả model và kiểm thử hai vai trò (19/10/2026)
+
+Model đã chốt trong app là HCO-VNLS + LightGBM tại cutoff 75%, 17 đặc trưng gốc và ngưỡng 0,50; không thay artifact. [Báo cáo kết quả và tám biểu đồ](reports/model_final/MODEL_FINAL.md) phân biệt test lịch sử với validation, ghi rõ số trường hợp bỏ sót và giới hạn đánh giá. Hình báo cáo không được dùng như dự báo cá nhân trên giao diện.
+
+Mở frontend đang chạy tại `http://127.0.0.1:5173/`. Database seed chỉ có admin; để thử sinh viên/giảng viên cần cấp hai tài khoản và dữ liệu demo **giả lập** theo [hướng dẫn kiểm thử hai vai trò](docs/local-role-testing.md). Không báo cáo dự báo demo 0,82 như kết quả LightGBM.
+
 ## Mục lục
 
 - [Mục tiêu và kiến trúc](#mục-tiêu-và-kiến-trúc)
