@@ -11,7 +11,8 @@ def evaluate_suggestions(snapshot, presentation, today=None):
     if snapshot is None or snapshot.cutoff_stage != "CUTOFF_75":
         return "insufficient_data", suggestions, warnings + ["Chưa có snapshot hợp lệ tại cutoff 75%."], None
 
-    metadata = (snapshot.raw_features_json or {}).get("support_evidence")
+    raw_features = snapshot.raw_features_json
+    metadata = raw_features.get("support_evidence") if isinstance(raw_features, dict) else None
     if not presentation or not presentation.module_presentation_length or presentation.module_presentation_length <= 0:
         return "insufficient_data", suggestions, warnings + ["Thiếu độ dài học phần hợp lệ."], None
     cutoff_day = floor(presentation.module_presentation_length * 0.75)

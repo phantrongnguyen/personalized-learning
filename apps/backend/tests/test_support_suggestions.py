@@ -30,7 +30,8 @@ def test_complete_evidence_yields_aggregate_and_cutoff_activity_only():
 
 
 def test_missing_or_unconfirmed_metadata_abstains():
-    for change in ({"raw_features_json": None}, {"metadata": {"snapshot_day": 74}},
+    for change in ({"raw_features_json": None}, {"raw_features_json": ["invalid"]},
+                   {"metadata": {"snapshot_day": 74}},
                    {"metadata": {"activity_complete": False, "assessments_complete": False}},
                    {"metadata": {"source": ""}}):
         state, suggestions, _, _ = evaluate_suggestions(*fixture(**change), today=date(2026, 2, 1))
