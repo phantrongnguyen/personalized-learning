@@ -92,6 +92,13 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 
+# Recreated research data and artifacts (not the deployed backend model)
+experiments/hco_vnls/ket_qua/du_lieu_*.csv
+experiments/hco_vnls/ket_qua/phan_tap_sinh_vien.csv
+experiments/hco_vnls/ket_qua/du_doan_*.csv
+experiments/hco_vnls/mo_hinh/
+experiments/hco_vnls/hinh/
+
 # Model Checkpoints & Large Artifacts
 packages/ml/artifacts/models/*
 !packages/ml/artifacts/models/.gitkeep

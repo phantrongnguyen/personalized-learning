@@ -116,7 +116,18 @@ Pipeline dự báo trả `prediction` bằng cách so xác suất lớp 1 với 
 
 17 đặc trưng gồm thông tin học phần/nhân khẩu học, tín chỉ, thời điểm đăng ký, tổng click, click tài nguyên/URL, ngày hoạt động, bài nộp/trễ hạn, tỷ lệ hoạt động/nộp bài, số ngày không hoạt động và click trong 7/30 ngày gần nhất. Xem [schema đầu vào](apps/backend/schemas/prediction.py) và [định nghĩa frontend](packages/shared/constants/fields.ts).
 
-Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Đường dẫn notebook/dữ liệu ghi trong metadata là nguồn gốc thực nghiệm, không bảo đảm còn có trong checkout. Dữ liệu OULAD đầy đủ cũng không được đóng gói vào repository.
+Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Bảy notebook nghiên cứu cuối từ nhánh `gb` nay nằm tại `experiments/hco_vnls/notebooks`: đọc `01 → 02 → 05b → 09 → 10` để kiểm kê dữ liệu, tạo đặc trưng, chọn/kiểm chứng biến và đóng gói LightGBM; `06 → 07` so sánh CatBoost/XGBoost. Mã Python chúng dùng nằm cạnh notebook trong `clht_code` và `code_dung_chung`. Bảng validation/kiểm chứng và giao thức so sánh đã thực hiện được giữ trong `experiments/hco_vnls/ket_qua`; đó không phải đánh giá test mới. Model trong `apps/backend/artifacts` trùng artifact cuối của `gb` và là bản duy nhất được app nạp; chạy notebook 10 chỉ ghi model vào `experiments/hco_vnls/mo_hinh`, không thay model của app.
+
+Để chạy lại nghiên cứu, cần bảy CSV OULAD (`studentInfo`, `studentRegistration`, `assessments`, `studentAssessment`, `studentVle`, `vle`, `courses`) trong `data/raw/`; các file này không được đóng gói trong Git. Kiểm tra quyền sử dụng dữ liệu trước khi tải hoặc chia sẻ. Dùng môi trường Python 3.12 riêng với backend:
+
+```powershell
+cd experiments/hco_vnls
+py -3.12 -m venv .venv
+.\.venv\Scripts\python -m pip install -r requirements.txt
+.\.venv\Scripts\python -m jupyterlab
+```
+
+Mở các notebook từ Jupyter trong thư mục trên. Không cần Docker hay chạy lại notebook để dùng model đã có trong app. Output hiển thị trong notebook là kết quả lịch sử từ `gb`; khi chưa có CSV nguồn, chỉ đọc được output chứ chưa tái chạy được. Không đưa dữ liệu gốc, bảng cấp sinh viên hay model tái tạo lên Git.
 
 ## Cấu trúc dự án
 
