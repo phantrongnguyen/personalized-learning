@@ -13,8 +13,8 @@ from sklearn.preprocessing import OneHotEncoder
 GOC = Path(__file__).resolve().parents[1]
 NGHIEN_CUU = GOC
 DATA = GOC.parents[1] / "data" / "raw"
-KET_QUA = NGHIEN_CUU / "ket_qua"
-HINH = NGHIEN_CUU / "hinh"
+KET_QUA = NGHIEN_CUU / "results"
+HINH = NGHIEN_CUU / "figures"
 CAC_MOC = (0.50, 0.60, 0.65, 0.70, 0.75)
 KHOA = ["id_student", "code_module", "code_presentation"]
 BO_QUA = {
