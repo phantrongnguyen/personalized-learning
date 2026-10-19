@@ -1,5 +1,7 @@
 # Backend EduRisk AI — Tài liệu kỹ thuật và đánh giá
 
+**Cập nhật database 19/10/2026:** Schema hiện hành là Alembic `0002_normalize`, gồm 19 bảng nghiệp vụ và `alembic_version`. SQL/ORM đã đồng bộ CHECK/UNIQUE/default/FK/index; các quan hệ lịch sử dùng RESTRICT, metric có cột average_precision riêng. [Schema đầy đủ](../../database/database_design_plan.md), [migration và khôi phục](../../docs/database_migrations.md), [bằng chứng thực thi](../../reports/dailys/19-10-2026.md) thay thế các mô tả schema và đề xuất migration cũ trong tài liệu này.
+
 Tài liệu đối chiếu mã nguồn trong working tree ngày **13/10/2026**, bao gồm các thay đổi local chưa commit. Đây là mô tả hiện trạng triển khai, không phải cam kết rằng mọi chức năng đã chạy thành công trên database thật. Nguồn chính: `main.py`, `api/router.py`, `api/v1/endpoints`, `schemas`, `repositories`, `services`, `models`, `core`, `ml` và `../../docker/postgres/init-scripts/01_init_schema.sql`.
 
 **Phạm vi:** 53 operation ứng dụng (52 dưới `/api/v1` và GET `/`), 53 schema Pydantic và 19 bảng SQL. Phần 1–12 giải thích kiến trúc, nghiệp vụ, database, đánh giá và kiểm thử; phụ lục A liệt kê mọi operation; phụ lục B mô tả từng field request/response; phụ lục C chứa DDL đầy đủ.

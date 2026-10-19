@@ -4,6 +4,8 @@ Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công 
 
 **Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
 
+**Cập nhật database 19/10/2026:** SQL/ORM đã đồng bộ 19 bảng, có Alembic `0002_normalize`, CHECK/UNIQUE và chính sách giữ lịch sử bằng RESTRICT. Xem [schema hiện hành](database/database_design_plan.md), [hướng dẫn migration/backup/khôi phục](docs/database_migrations.md) và [kết quả kiểm thử](reports/dailys/19-10-2026.md). Các mô tả schema/migration cũ bên dưới được thay thế bởi các tài liệu này.
+
 ## Mục lục
 
 - [Mục tiêu và kiến trúc](#mục-tiêu-và-kiến-trúc)
