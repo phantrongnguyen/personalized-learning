@@ -1,3 +1,37 @@
+
+def relationship_summary(relations):
+    """Present physical and associative relationships beside the FK matrix."""
+    rows = []
+    matrix = relations.split('### 3.2.', 1)[1].split('### 3.3.', 1)[0]
+    for line in matrix.splitlines():
+        if not line.startswith('| `'):
+            continue
+        parent, child_fk, children, parents, deletion, meaning = [v.strip() for v in line.strip('|').split('|')]
+        child, fk = child_fk.split('.', 1)
+        child += '`'
+        kind = '1–1 (tùy chọn ở phía hồ sơ)' if children == '0..1' else '1–N'
+        optional = 'Có thể NULL' if parents == '0..1' else 'Bắt buộc'
+        rows.append(f'| {parent} | {child} | {kind} | `{fk} | {optional} | {meaning} |')
+    return '\n'.join([
+        '### 3.4. Bảng tổng hợp mối quan hệ giữa các bảng', '',
+        'Bảng dưới đọc từ bảng A sang bảng B: 1–N nghĩa là một bản ghi A có thể liên kết nhiều bản ghi B; '
+        'số bản ghi B tối thiểu đều là 0. Với quan hệ hồ sơ 1–1, mỗi tài khoản có tối đa một hồ sơ của từng loại, '
+        'còn mỗi hồ sơ phải thuộc đúng một tài khoản. Cột tùy chọn áp dụng cho khóa ngoại ở bảng B. '
+        'Chi tiết hành vi khi xóa nằm ở mục 3.2 và 3.3.', '',
+        '| Bảng A (được tham chiếu) | Bảng B (chứa khóa ngoại) | Loại quan hệ A → B | Khóa ngoại B → A.id | Tùy chọn của FK | Ý nghĩa nghiệp vụ |',
+        '| --- | --- | --- | --- | --- | --- |', *rows, '',
+        '**Quan hệ nhiều–nhiều qua bảng liên kết**', '',
+        '| Bảng A | Bảng B | Loại quan hệ | Bảng liên kết và cặp khóa ngoại | Ý nghĩa và ràng buộc |',
+        '| --- | --- | --- | --- | --- |',
+        '| `users` | `roles` | N–N | `user_roles(user_id, role_id)` | Một tài khoản có nhiều vai trò; một vai trò được gán cho nhiều tài khoản. Khóa chính ghép ngăn gán trùng. |',
+        '| `student_profiles` | `course_presentations` | N–N | `student_enrollments(student_id, presentation_id)` | Sinh viên học nhiều đợt mở môn; mỗi đợt có nhiều sinh viên. UNIQUE cặp khóa ngoại ngăn đăng ký trùng; bảng còn lưu kết quả và thông tin đăng ký. |',
+        '| `lecturer_profiles` | `course_presentations` | N–N | `course_lecturers(lecturer_id, presentation_id)` | Giảng viên dạy nhiều đợt mở môn và một đợt có thể có nhiều giảng viên. UNIQUE cặp khóa ngoại ngăn phân công trùng. |',
+        '| `advisor_profiles` | `student_profiles` | N–N | `advisor_students(advisor_id, student_id)` | Cố vấn phụ trách nhiều sinh viên; schema cho phép sinh viên có nhiều cố vấn. UNIQUE cặp khóa ngoại không bao gồm academic_year, nên không lưu nhiều dòng theo năm cho cùng cặp. |', '',
+        'Các quan hệ N–N được thực hiện bằng hai FK 1–N tại bảng liên kết, không phải FK trực tiếp giữa hai bảng đầu cuối. '
+        '`audit_logs.target_type` và `target_id` là tham chiếu đa hình do ứng dụng quản lý, không phải FK. '
+        '`alembic_version` là bảng hạ tầng độc lập, không có quan hệ FK với các bảng nghiệp vụ.', '',
+    ])
+
 """Detailed narrative following the original database design's nine sections.
 
 The old document is a reference; physical facts are generated from current ORM.
@@ -316,6 +350,7 @@ def detailed_document(lines, tables, dialect):
     relations = source[source.index('## 2. Sơ đồ'):source.index('## 3. Đặc tả')]
     relations = relations.replace('## 2. Sơ đồ quan hệ và chính sách giữ lịch sử', '## 3. Sơ đồ thực thể và quan hệ')
     relations = relations.replace('### 2.', '### 3.').replace('tại mục 3.', 'tại mục 4.')
+    relations += '\n' + relationship_summary(relations)
     detail = source[source.index('## 3. Đặc tả'):source.index('### 3.21.')]
     detail = detail.replace('## 3. Đặc tả toàn bộ bảng', '## 4. Đặc tả chi tiết 19 bảng và bảng hạ tầng').replace('### 3.', '### 4.')
     for table in tables:

@@ -370,6 +370,49 @@ Các quan hệ tài khoản → hồ sơ → đăng ký → snapshot → dự b�
 
 Trigger `protect_prediction_snapshot` chặn sửa snapshot đã được dự báo; `protect_prediction_context` chặn sửa đầu vào, danh tính model và kết quả dự báo. DELETE được bảo vệ bằng FK RESTRICT khi có bản ghi con; bản ghi lá không có phụ thuộc vẫn có thể xóa bằng SQL nếu tài khoản DB đủ quyền. Artifact archive phải được sao lưu cùng database.
 
+### 3.4. Bảng tổng hợp mối quan hệ giữa các bảng
+
+Bảng dưới đọc từ bảng A sang bảng B: 1–N nghĩa là một bản ghi A có thể liên kết nhiều bản ghi B; số bản ghi B tối thiểu đều là 0. Với quan hệ hồ sơ 1–1, mỗi tài khoản có tối đa một hồ sơ của từng loại, còn mỗi hồ sơ phải thuộc đúng một tài khoản. Cột tùy chọn áp dụng cho khóa ngoại ở bảng B. Chi tiết hành vi khi xóa nằm ở mục 3.2 và 3.3.
+
+| Bảng A (được tham chiếu) | Bảng B (chứa khóa ngoại) | Loại quan hệ A → B | Khóa ngoại B → A.id | Tùy chọn của FK | Ý nghĩa nghiệp vụ |
+| --- | --- | --- | --- | --- | --- |
+| `roles` | `user_roles` | 1–N | `role_id` → `id` | Bắt buộc | Vai trò được gán; thành phần thứ hai của khóa chính ghép. |
+| `users` | `user_roles` | 1–N | `user_id` → `id` | Bắt buộc | Tài khoản được gán vai trò; thành phần thứ nhất của khóa chính ghép. |
+| `users` | `student_profiles` | 1–1 (tùy chọn ở phía hồ sơ) | `user_id` → `id` | Bắt buộc | Tài khoản sở hữu hồ sơ sinh viên; UNIQUE bảo đảm tối đa một hồ sơ sinh viên cho mỗi tài khoản. |
+| `users` | `advisor_profiles` | 1–1 (tùy chọn ở phía hồ sơ) | `user_id` → `id` | Bắt buộc | Tài khoản sở hữu hồ sơ cố vấn; UNIQUE bảo đảm tối đa một hồ sơ cố vấn cho mỗi tài khoản. |
+| `users` | `lecturer_profiles` | 1–1 (tùy chọn ở phía hồ sơ) | `user_id` → `id` | Bắt buộc | Tài khoản sở hữu hồ sơ giảng viên; UNIQUE bảo đảm tối đa một hồ sơ giảng viên cho mỗi tài khoản. |
+| `courses` | `course_presentations` | 1–N | `course_id` → `id` | Bắt buộc | Môn học được tổ chức trong đợt này. |
+| `course_presentations` | `student_enrollments` | 1–N | `presentation_id` → `id` | Bắt buộc | Đợt mở môn mà sinh viên theo học; không phải ID danh mục môn courses. |
+| `student_profiles` | `student_enrollments` | 1–N | `student_id` → `id` | Bắt buộc | Sinh viên đăng ký học; không thể trùng cặp với presentation_id. |
+| `lecturer_profiles` | `course_lecturers` | 1–N | `lecturer_id` → `id` | Bắt buộc | Giảng viên được phân công giảng dạy. |
+| `course_presentations` | `course_lecturers` | 1–N | `presentation_id` → `id` | Bắt buộc | Đợt mở môn thuộc phạm vi giảng dạy của giảng viên. |
+| `advisor_profiles` | `advisor_students` | 1–N | `advisor_id` → `id` | Bắt buộc | Cố vấn được giao theo dõi sinh viên. |
+| `student_profiles` | `advisor_students` | 1–N | `student_id` → `id` | Bắt buộc | Sinh viên thuộc phạm vi phụ trách của cố vấn. |
+| `student_enrollments` | `student_feature_snapshots` | 1–N | `enrollment_id` → `id` | Bắt buộc | Đăng ký học phần mà các chỉ số trong snapshot mô tả. |
+| `ml_models` | `prediction_runs` | 1–N | `model_id` → `id` | Bắt buộc | Phiên bản registry đã thực hiện suy luận; RESTRICT không cho xóa model đang có lịch sử. |
+| `student_feature_snapshots` | `prediction_runs` | 1–N | `snapshot_id` → `id` | Bắt buộc | Snapshot đầu vào của lần suy luận; RESTRICT giữ snapshot khi có dự báo tham chiếu. |
+| `users` | `prediction_runs` | 1–N | `triggered_by_user_id` → `id` | Có thể NULL | Tài khoản kích hoạt suy luận nếu có; NULL khi không xác định hoặc tài khoản bị xóa theo SET NULL. |
+| `prediction_runs` | `intervention_plans` | 1–N | `prediction_run_id` → `id` | Bắt buộc | Lần dự báo làm căn cứ lập kế hoạch; truy ra học phần qua snapshot và enrollment. |
+| `student_profiles` | `intervention_plans` | 1–N | `student_id` → `id` | Bắt buộc | Sinh viên nhận can thiệp. API/service phải xác minh trùng sinh viên trong enrollment của dự báo; hai FK độc lập chưa bảo đảm điều này tại DB. |
+| `intervention_plans` | `intervention_tasks` | 1–N | `plan_id` → `id` | Bắt buộc | Kế hoạch chứa nhiệm vụ; mỗi nhiệm vụ thuộc đúng một kế hoạch. |
+| `advisor_profiles` | `advising_notes` | 1–N | `advisor_id` → `id` | Bắt buộc | Cố vấn ghi biên bản; API kiểm tra sinh viên thuộc phạm vi được phân công. |
+| `student_enrollments` | `advising_notes` | 1–N | `enrollment_id` → `id` | Bắt buộc | Đăng ký học phần được trao đổi trong buổi tư vấn; từ đó xác định sinh viên và đợt học. |
+| `course_presentations` | `student_help_requests` | 1–N | `presentation_id` → `id` | Có thể NULL | Đợt mở môn liên quan; NULL biểu diễn yêu cầu không gắn môn hoặc học phần bị xóa theo SET NULL. Yêu cầu tới giảng viên được service yêu cầu gắn học phần hợp lệ. |
+| `student_profiles` | `student_help_requests` | 1–N | `student_id` → `id` | Bắt buộc | Sinh viên tạo yêu cầu trợ giúp. |
+| `users` | `student_help_requests` | 1–N | `target_user_id` → `id` | Có thể NULL | Tài khoản nhận xử lý cụ thể; NULL khi chưa phân công hoặc người nhận bị xóa. Service xác minh vai trò, trạng thái và phân công. |
+| `users` | `audit_logs` | 1–N | `user_id` → `id` | Có thể NULL | Tài khoản thực hiện thao tác nếu xác định được; SET NULL giữ log khi tài khoản bị xóa. |
+
+**Quan hệ nhiều–nhiều qua bảng liên kết**
+
+| Bảng A | Bảng B | Loại quan hệ | Bảng liên kết và cặp khóa ngoại | Ý nghĩa và ràng buộc |
+| --- | --- | --- | --- | --- |
+| `users` | `roles` | N–N | `user_roles(user_id, role_id)` | Một tài khoản có nhiều vai trò; một vai trò được gán cho nhiều tài khoản. Khóa chính ghép ngăn gán trùng. |
+| `student_profiles` | `course_presentations` | N–N | `student_enrollments(student_id, presentation_id)` | Sinh viên học nhiều đợt mở môn; mỗi đợt có nhiều sinh viên. UNIQUE cặp khóa ngoại ngăn đăng ký trùng; bảng còn lưu kết quả và thông tin đăng ký. |
+| `lecturer_profiles` | `course_presentations` | N–N | `course_lecturers(lecturer_id, presentation_id)` | Giảng viên dạy nhiều đợt mở môn và một đợt có thể có nhiều giảng viên. UNIQUE cặp khóa ngoại ngăn phân công trùng. |
+| `advisor_profiles` | `student_profiles` | N–N | `advisor_students(advisor_id, student_id)` | Cố vấn phụ trách nhiều sinh viên; schema cho phép sinh viên có nhiều cố vấn. UNIQUE cặp khóa ngoại không bao gồm academic_year, nên không lưu nhiều dòng theo năm cho cùng cặp. |
+
+Các quan hệ N–N được thực hiện bằng hai FK 1–N tại bảng liên kết, không phải FK trực tiếp giữa hai bảng đầu cuối. `audit_logs.target_type` và `target_id` là tham chiếu đa hình do ứng dụng quản lý, không phải FK. `alembic_version` là bảng hạ tầng độc lập, không có quan hệ FK với các bảng nghiệp vụ.
+
 ## 4. Đặc tả chi tiết 19 bảng và bảng hạ tầng
 
 <a id="table-users"></a>
