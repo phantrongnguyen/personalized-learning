@@ -58,12 +58,29 @@ ipython_config.py
 
 # Environments & Virtual Envs
 .env
+.env.*
+!.env.example
+!.env.*.example
+!.env.sample
+!.env.template
+.envrc
 .venv
 env/
 venv/
 ENV/
 env.bak/
 venv.bak/
+
+# Private credentials / local certificates (never add real secrets to examples)
+.aws/
+.ssh/
+secrets/
+credentials/
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
 
 # Node / Frontend
 node_modules/
@@ -74,6 +91,11 @@ yarn-error.log*
 dist/
 *.tsbuildinfo
 .next/
+.vite/
+.turbo/
+coverage/
+playwright-report/
+test-results/
 apps/backend/uploads/
 apps/backend/artifacts/archive/
 
@@ -84,6 +106,25 @@ apps/backend/artifacts/archive/
 *.swo
 *~
 .DS_Store
+Thumbs.db
+Desktop.ini
+*.tmp
+*.temp
+*.bak
+*.orig
+*.rej
+*.log
+
+# Private/local datasets, including spreadsheets copied directly into data/.
+# Keep documentation/placeholders; add narrowly scoped exceptions only for
+# reviewed, anonymized public samples. Do not ignore all CSV/XLSX globally:
+# experiment result tables and document assets may be intentional deliverables.
+/data/*
+!/data/.gitkeep
+!/data/README.md
+!/data/raw/
+!/data/interim/
+!/data/processed/
 
 # Heavy Raw Data & Datasets (Only keep .gitkeep)
 data/raw/*
@@ -93,7 +134,38 @@ data/interim/*
 data/processed/*
 !data/processed/.gitkeep
 
+# Database backups, local database files and container volumes.
+# Do not ignore *.sql: schema, seed and migration SQL must stay versioned.
+*.dump
+*.backup
+*.sql.gz
+*.sql.bz2
+*.sqlite
+*.sqlite3
+*.db
+*.db-wal
+*.db-shm
+/backups/
+/database/backups/
+/docker/volumes/
+/docker/postgres/data/
+/docker/pgadmin/data/
+
+# Generated test output can contain account data, tokens, local paths or images.
+# Keep test source and daily reports; publish sanitized evidence deliberately.
+# Ignore rules do not remove files already tracked by Git.
+!/reports/test-results/
+/reports/test-results/*
+!/reports/test-results/.gitkeep
+!/reports/test-results/README.md
+
 # Model Checkpoints & Large Artifacts
+*.joblib
+*.pkl
+*.pickle
+*.ckpt
+# This reviewed artifact is a runtime dependency, not a disposable checkpoint.
+!apps/backend/artifacts/model_hco_vnls_lightgbm_cutoff75.joblib
 packages/ml/artifacts/models/*
 !packages/ml/artifacts/models/.gitkeep
 packages/ml/artifacts/scalers/*
