@@ -10,9 +10,9 @@ from models.user import User
 from models.assignment import CourseLecturer, AdvisorStudent
 from models.profile import AdvisorProfile
 from models.intervention import InterventionPlan, InterventionTask
-from models.ml import PredictionRun
+from models.ml import PredictionRun, MLModel
 from models.feature import StudentFeatureSnapshot
-from models.academic import StudentEnrollment
+from models.academic import StudentEnrollment, CoursePresentation
 from models.help_request import StudentHelpRequest
 from schemas.advisor_lecturer import (
     LecturerCourseOut,
@@ -23,6 +23,7 @@ from schemas.advisor_lecturer import (
     AlertAdvisorIn,
     TaskOut,
 )
+from services.support_suggestions import evaluate_suggestions, RULE_VERSION
 from repositories.academic_repo import (
     get_lecturer_profile_by_user_id,
     get_lecturer_assigned_courses,
@@ -81,6 +82,63 @@ async def get_course_risk(
 ):
     await _ensure_course_ownership(db, current_user, presentation_id)
     return await get_course_risk_board(db, presentation_id)
+
+
+@router.get("/courses/{presentation_id}/students/{student_id}/suggestions", summary="Gợi ý có căn cứ để giảng viên xem xét")
+async def get_course_student_suggestions(
+    presentation_id: uuid.UUID,
+    student_id: uuid.UUID,
+    current_user: User = Depends(require_lecturer),
+    db: AsyncSession = Depends(get_db),
+):
+    await _ensure_course_ownership(db, current_user, presentation_id)
+    enrollment = (await db.execute(select(StudentEnrollment).where(
+        StudentEnrollment.student_id == student_id,
+        StudentEnrollment.presentation_id == presentation_id,
+    ))).scalars().first()
+    if enrollment is None:
+        raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
+    presentation = await db.get(CoursePresentation, presentation_id)
+    snapshot = (await db.execute(select(StudentFeatureSnapshot).where(
+        StudentFeatureSnapshot.enrollment_id == enrollment.id,
+    ).order_by(StudentFeatureSnapshot.created_at.desc(), StudentFeatureSnapshot.id.desc()).limit(1))).scalars().first()
+    prediction = None
+    if snapshot is not None:
+        row = (await db.execute(select(PredictionRun, MLModel)
+            .join(MLModel, MLModel.id == PredictionRun.model_id)
+            .where(PredictionRun.snapshot_id == snapshot.id)
+            .order_by(PredictionRun.created_at.desc(), PredictionRun.id.desc())
+            .limit(1))).first()
+        if row:
+            run, model = row
+            prediction = {
+                "run_id": run.id, "snapshot_id": snapshot.id,
+                "risk_probability": run.risk_probability,
+                "prediction_label": run.prediction_label,
+                "threshold": model.threshold, "model_version": model.version,
+                "cutoff_fraction": model.cutoff_fraction,
+                "predicted_at": run.created_at,
+                "meaning": "Phân loại nguy cơ theo ngưỡng của model; không kết luận cá nhân bỏ học hoặc cần can thiệp.",
+            }
+    plan = (await db.execute(select(InterventionPlan.id)
+        .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+        .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+        .where(InterventionPlan.student_id == student_id,
+               InterventionPlan.status == "ACTIVE",
+               StudentFeatureSnapshot.enrollment_id == enrollment.id)
+        .order_by(InterventionPlan.created_at.desc(), InterventionPlan.id.desc())
+        .limit(1))).scalar_one_or_none()
+    state, suggestions, warnings, cutoff_date = evaluate_suggestions(snapshot, presentation)
+    if prediction is None:
+        warnings.append("Chưa có PredictionRun cho snapshot mới nhất; không phân loại SAFE.")
+    return {
+        "status": state, "rule_version": RULE_VERSION, "enrollment_id": enrollment.id,
+        "prediction": prediction, "cutoff_date": cutoff_date,
+        "suggestions": suggestions, "warnings": warnings,
+        "assignment": {"can_assign": plan is not None, "plan_id": plan,
+                       "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."
+                       if plan else "Chưa có plan ACTIVE đúng học phần. Cố vấn hoặc admin cần lập plan dựa trên PredictionRun thật trước khi giảng viên giao task."},
+    }
 
 
 @router.get("/courses/{presentation_id}/students", response_model=List[CourseStudentOut], summary="Danh sách sinh viên lớp học phần")

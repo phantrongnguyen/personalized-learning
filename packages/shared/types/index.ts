@@ -105,11 +105,41 @@ export interface CourseStudentRiskItem {
   student_code: string;
   full_name: string;
   enrollment_id: string;
-  total_clicks: number;
-  late_submissions: number;
-  submission_rate: number;
-  risk_probability: number;
-  risk_status: 'SAFE' | 'HIGH_RISK';
+  total_clicks: number | null;
+  late_submissions: number | null;
+  submission_rate: number | null;
+  risk_probability: number | null;
+  risk_status: 'SAFE' | 'HIGH_RISK' | 'NOT_PREDICTED';
+}
+
+export interface CourseSuggestion {
+  rule_id: string;
+  title: string;
+  observation: string;
+  evidence: Record<string, string | number>;
+  proposed_action: string;
+  limitation: string;
+  rule_version: string;
+}
+
+export interface CourseSuggestionResponse {
+  status: 'available' | 'abstained' | 'insufficient_data';
+  rule_version: string;
+  enrollment_id: string;
+  cutoff_date: string | null;
+  prediction: null | {
+    run_id: string;
+    risk_probability: number;
+    prediction_label: number;
+    threshold: number;
+    model_version: string;
+    cutoff_fraction: number;
+    predicted_at: string;
+    meaning: string;
+  };
+  suggestions: CourseSuggestion[];
+  warnings: string[];
+  assignment: { can_assign: boolean; plan_id: string | null; message: string };
 }
 
 // -------------------------------------------------------------

@@ -10,6 +10,7 @@ import {
   CreateInterventionPlanPayload,
   LecturerCourseItem,
   CourseStudentRiskItem,
+  CourseSuggestionResponse,
   StudentCourseItem,
   CourseReminder,
   StudentProfileDetail,
@@ -303,6 +304,14 @@ export async function getCourseRiskBoardApi(
 // -------------------------------------------------------------
 // 5. STUDENT APIS (SINH VIÊN)
 // -------------------------------------------------------------
+export async function getCourseSuggestionsApi(baseUrl: string, presentationId: string, studentId: string): Promise<CourseSuggestionResponse> {
+  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/suggestions`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Không thể tải gợi ý cho sinh viên trong học phần');
+  return res.json();
+}
+
 export async function getCourseRemindersApi(baseUrl: string, signal?: AbortSignal): Promise<CourseReminder[]> {
   const res = await fetch(`${cleanBase(baseUrl)}/api/v1/student/reminders`, { headers: authHeaders(), signal });
   if (!res.ok) throw new Error('Không thể tải thông báo nhắc nhở môn học.');

@@ -151,11 +151,11 @@ class StudentRiskInCourseOut(BaseModel):
     student_code: str
     full_name: str
     enrollment_id: uuid.UUID
-    total_clicks: int = 0
-    late_submissions: int = 0
-    submission_rate: float = 0.0
-    risk_probability: float = 0.0
-    risk_status: str = "SAFE"
+    total_clicks: Optional[int] = None
+    late_submissions: Optional[int] = None
+    submission_rate: Optional[float] = None
+    risk_probability: Optional[float] = None
+    risk_status: str = "NOT_PREDICTED"
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -175,11 +175,11 @@ class CourseStudentOut(BaseModel):
     enrollment_id: uuid.UUID
     gender: str = "M"
     final_result: Optional[str] = None
-    total_clicks: int = 0
-    late_submissions: int = 0
-    submission_rate: float = 0.0
-    risk_probability: float = 0.0
-    risk_status: str = "SAFE"
+    total_clicks: Optional[int] = None
+    late_submissions: Optional[int] = None
+    submission_rate: Optional[float] = None
+    risk_probability: Optional[float] = None
+    risk_status: str = "NOT_PREDICTED"
 
     model_config = ConfigDict(from_attributes=True)
 

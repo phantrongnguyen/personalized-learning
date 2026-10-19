@@ -4,6 +4,10 @@ Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công 
 
 **Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
 
+## Gợi ý có căn cứ cho giảng viên (19/10/2026)
+
+Giảng viên mở học phần và sinh viên để xem riêng dự báo model tại cutoff 75%, gợi ý quy tắc có nguồn/thời điểm/giới hạn, rồi chọn gợi ý vào bản nháp, tự chỉnh sửa mức ưu tiên và bấm giao. Đọc gợi ý không tạo task. Nếu thiếu dữ liệu, API trả `insufficient_data` hoặc `abstained`; nếu thiếu dự báo, bảng nguy cơ hiển thị `NOT_PREDICTED` thay vì SAFE. Chỉ cố vấn/admin tạo plan hợp lệ khi đã có dự báo thật; chưa có plan thì giảng viên không thể giao nhiệm vụ trong luồng này. Không xác định bài nộp thiếu/trễ theo từng bài từ số liệu tổng hợp. Chi tiết API, nguồn và điều kiện xác nhận nằm trong [README backend](apps/backend/README.md); nhật ký từng bước ở [docs/lecturer-suggestions-process.md](docs/lecturer-suggestions-process.md).
+
 ## Mục lục
 
 - [Mục tiêu và kiến trúc](#mục-tiêu-và-kiến-trúc)

@@ -6,6 +6,51 @@ Tài liệu đối chiếu mã nguồn trong working tree ngày **13/10/2026**, 
 
 > **Ghi chú ngày 14/10/2026:** Nội dung dưới đây giữ mốc khảo sát 13/10. Luồng dự báo từ database, xử lý lỗi batch và hiển thị radar đã được sửa sau đó; kết quả mới nằm trong [báo cáo 14/10](../../reports/dailys/14-10-2026.md).
 
+## Cập nhật 19/10/2026 - Gợi ý cho giảng viên (read-only)
+
+Phần 1–12 và số lượng operation ở phần lịch sử phía dưới là ảnh chụp cũ; cập nhật mới trong mục này thêm 1 GET. Ghi nhận cũ về plugin pytest cũng chỉ phản ánh môi trường khảo sát khi đó; kiểm chứng hiện tại dùng `-o asyncio_mode=auto`.
+
+Luồng: bảng risk board → GET gợi ý theo học phần/sinh viên → giảng viên chọn một gợi ý để điền **nháp** và chỉnh sửa (kể cả ưu tiên) → chủ động POST giao nhiệm vụ. GET không ghi database, không tạo plan/task/prediction. Gợi ý theo quy tắc không phải lời khuyên lâm sàng hay bằng chứng chắc chắn cải thiện điểm. Giảng viên xem xét và quyết định, không tự động giao.
+
+### API và ví dụ JSON
+
+`GET /api/v1/lecturer/courses/{presentation_id}/students/{student_id}/suggestions` (Bearer LECTURER được phân công học phần hoặc ADMIN; 403 nếu không được phân công, 404 nếu sinh viên không có enrollment tại học phần). GET không có request body.
+
+Response minh họa **giả lập**, không phải dự báo sinh viên thực:
+
+```json
+{
+  "status": "available", "rule_version": "lecturer-support-1.0",
+  "enrollment_id": "11111111-1111-4111-8111-111111111111",
+  "cutoff_date": "2025-03-17",
+  "prediction": {"run_id": "22222222-2222-4222-8222-222222222222", "snapshot_id": "33333333-3333-4333-8333-333333333333", "risk_probability": 0.61, "prediction_label": 1, "threshold": 0.5, "model_version": "demo-version", "cutoff_fraction": 0.75, "predicted_at": "2025-03-18T00:00:00Z", "meaning": "Phân loại nguy cơ theo ngưỡng của model; không kết luận cá nhân bỏ học hoặc cần can thiệp."},
+  "suggestions": [{"rule_id": "G03", "title": "Xác minh hoạt động học tập tại cutoff", "observation": "Không ghi nhận click trong 7 ngày kết thúc tại cutoff; có hoạt động trước đó.", "evidence": {"source": "verified-import", "confirmed_at": "2025-03-18T00:00:00Z", "snapshot_id": "33333333-3333-4333-8333-333333333333", "snapshot_day": 75, "cutoff_date": "2025-03-17", "recorded_at": "2025-03-18T00:00:00Z", "window_days": 7, "window_end_day": 75, "total_clicks_to_t": 12, "clicks_recent_7": 0, "clicks_recent_30": 4, "days_since_last_activity": 7}, "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.", "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.", "rule_version": "lecturer-support-1.0"}],
+  "warnings": ["Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ."],
+  "assignment": {"can_assign": true, "plan_id": "44444444-4444-4444-8444-444444444444", "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."}
+}
+```
+
+Khi không có PredictionRun **cùng snapshot mới nhất**, `prediction: null` và cảnh báo “Chưa có PredictionRun”; không gán SAFE/0. `status: insufficient_data` là không đủ mốc/nguồn hoặc xác nhận dữ liệu; `abstained` là đã kiểm tra được nhưng không đủ tín hiệu áp dụng (hoặc cutoff chưa đến). Hai trạng thái này có `suggestions: []`; `prediction` có thể tồn tại độc lập với gợi ý. Nếu thiếu plan ACTIVE đúng enrollment, `assignment.can_assign: false`; cố vấn/admin dùng luồng `POST /api/v1/advisor/interventions` với `enrollment_id` và **PredictionRun thật** trước, không cấp quyền tạo plan cho giảng viên. API giao task cũ vẫn từ chối nếu không có plan; không tự tạo.
+
+`POST /api/v1/lecturer/courses/{presentation_id}/tasks` vẫn nhận payload do giảng viên nhập/sửa và bấm gửi, ví dụ:
+
+```json
+{"student_id":"11111111-1111-4111-8111-111111111111","title":"Trao đổi cách học","description":"Xác minh tình hình với sinh viên","priority":"MEDIUM","target_metric":"Xác minh với sinh viên"}
+```
+
+Response là `TaskOut`, ví dụ giả lập: `{"id":"55555555-5555-4555-8555-555555555555","plan_id":"44444444-4444-4444-8444-444444444444","category":"HOC_THUAT","priority":"MEDIUM","title":"Trao đổi cách học","description":"Xác minh tình hình với sinh viên","target_metric":"Xác minh với sinh viên","is_completed":false,"completed_at":null,"student_feedback":null}`.
+
+### Nguồn dữ liệu và quy tắc
+
+- `StudentFeatureSnapshot` là số tổng hợp ở `CUTOFF_75`; `PredictionRun` cùng snapshot và `MLModel` cung cấp xác suất lớp nguy cơ, nhãn, phiên bản và ngưỡng. Ngưỡng `0.5` là của artifact/model (`THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json`), **không phải ngưỡng khẩn cấp**; hiển thị ngưỡng trên bản ghi `MLModel.threshold` và nhãn đã lưu, không tự phân loại lại. Nhãn không dự đoán chính xác kết cục từng cá nhân.
+- Mốc ngày cutoff là `start_date + floor(module_presentation_length * 0.75)` (quy ước OULAD); yêu cầu `raw_features_json.support_evidence` có `snapshot_day` đúng mốc, `source` không rỗng, `confirmed_at` ISO 8601 có múi giờ, và xác nhận `activity_complete: true` / `assessments_complete: true` riêng từng nguồn. Ví dụ metadata (chỉ khi người nhập thật sự đã kiểm tra): `{"support_evidence":{"snapshot_day":75,"source":"verified-import","confirmed_at":"2025-03-18T00:00:00Z","activity_complete":true,"assessments_complete":true}}`. Không tự suy tính xác nhận từ số 0, không dùng `created_at` làm ngày quan sát. Metadata do nguồn nhập xác nhận, API không tự kiểm toán được log gốc.
+- G01 không triển khai: không có danh sách bài, deadline và gia hạn. G02_AGGREGATE chỉ khi `assessments_complete=true` và `late_submissions_to_t > 0`, gợi ý kiểm tra **tổng** số nộp trễ, không nêu bài nào. G03 khi tổng click > 0, click 7 ngày = 0, click 30 ngày > 0 và ngày từ hoạt động cuối ≥ 7; G04 khi tổng > 0, click 30 ngày = 0 và ngày từ hoạt động cuối ≥ 30. Chỉ dùng khi `activity_complete=true`, chỉ số nhất quán và mốc cutoff đã xác nhận. Đây là cửa sổ 7/30 ngày **kết thúc tại cutoff**, không phải “gần đây” tính từ hôm nay. Không đặt ngưỡng nghiêm trọng mới.
+- Không có xác nhận hoặc số liệu mâu thuẫn thì bỏ qua quy tắc tương ứng; thiếu cả hai xác nhận → `insufficient_data`. Không biết dữ liệu một bài cụ thể, độ đầy đủ gốc, cách học offline hoặc hiệu quả task. Snapshot cutoff lịch sử luôn được cảnh báo là không phản ánh hiện tại.
+
+Không có schema/migration mới. API risk-board và students cũ **thay đổi tương thích có điều kiện**: khi snapshot mới nhất không có PredictionRun, `risk_probability: null`, `risk_status: NOT_PREDICTED` thay vì `0.0/SAFE`; các chỉ số click/nộp cũng null khi không có snapshot (không phải 0); client cũ cần xử lý null/trạng thái mới. Các trường hợp có prediction vẫn dùng nhãn đã lưu. Test: `python -m pytest -o asyncio_mode=auto apps/backend/tests/test_support_suggestions.py`; opt-in DB với PostgreSQL đã khởi tạo: `RUN_COURSE_SCOPE_DB=1 python -m pytest -o asyncio_mode=auto apps/backend/tests/test_course_scope.py`; frontend: `cd apps/frontend && npm run build`.
+
+---
+
 ## 1. Tổng quan và mức độ hoàn thiện
 
 Backend phục vụ hệ thống cảnh báo nguy cơ học tập và hỗ trợ can thiệp cho bốn vai trò ADMIN, ADVISOR, LECTURER, STUDENT. Các chức năng đã có: xác thực JWT, quản trị tài khoản, học phần và phân công, đọc kết quả dự báo, radar, kế hoạch can thiệp, nhiệm vụ, ghi chú tư vấn, yêu cầu trợ giúp, xuất báo cáo Excel và audit log.

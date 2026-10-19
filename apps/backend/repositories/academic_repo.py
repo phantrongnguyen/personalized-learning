@@ -215,12 +215,13 @@ async def get_course_risk_board(
         snap_res = await db.execute(snap_query)
         snap = snap_res.scalars().first()
 
-        total_clicks = snap.total_clicks_to_t if snap else 0
-        late_sub = snap.late_submissions_to_t if snap else 0
-        sub_rate = snap.submission_rate if snap else 0.0
+        total_clicks = snap.total_clicks_to_t if snap else None
+        late_sub = snap.late_submissions_to_t if snap else None
+        sub_rate = snap.submission_rate if snap else None
 
         # Lấy điểm rủi ro
-        risk_prob = 0.0
+        risk_prob = None
+        risk_status = "NOT_PREDICTED"
         if snap:
             pred_query = (
                 select(PredictionRun)
@@ -232,6 +233,7 @@ async def get_course_risk_board(
             pred = pred_res.scalars().first()
             if pred:
                 risk_prob = pred.risk_probability
+                risk_status = "HIGH_RISK" if pred.prediction_label == 1 else "SAFE"
 
         risk_board.append({
             "student_id": sp.id,
@@ -240,9 +242,9 @@ async def get_course_risk_board(
             "enrollment_id": se.id,
             "total_clicks": total_clicks,
             "late_submissions": late_sub,
-            "submission_rate": round(sub_rate, 2),
-            "risk_probability": round(risk_prob, 4),
-            "risk_status": "HIGH_RISK" if risk_prob >= 0.5 else "SAFE",
+            "submission_rate": round(sub_rate, 2) if sub_rate is not None else None,
+            "risk_probability": round(risk_prob, 4) if risk_prob is not None else None,
+            "risk_status": risk_status,
         })
 
     return risk_board
@@ -272,7 +274,8 @@ async def get_course_students(
         snap_res = await db.execute(snap_query)
         snap = snap_res.scalars().first()
 
-        risk_prob = 0.0
+        risk_prob = None
+        risk_status = "NOT_PREDICTED"
         if snap:
             pred_query = (
                 select(PredictionRun)
@@ -284,6 +287,7 @@ async def get_course_students(
             pred = pred_res.scalars().first()
             if pred:
                 risk_prob = pred.risk_probability
+                risk_status = "HIGH_RISK" if pred.prediction_label == 1 else "SAFE"
 
         students.append({
             "student_id": sp.id,
@@ -292,11 +296,11 @@ async def get_course_students(
             "enrollment_id": se.id,
             "gender": sp.gender,
             "final_result": se.final_result,
-            "total_clicks": snap.total_clicks_to_t if snap else 0,
-            "late_submissions": snap.late_submissions_to_t if snap else 0,
-            "submission_rate": round(snap.submission_rate, 2) if snap else 0.0,
-            "risk_probability": round(risk_prob, 4),
-            "risk_status": "HIGH_RISK" if risk_prob >= 0.5 else "SAFE",
+            "total_clicks": snap.total_clicks_to_t if snap else None,
+            "late_submissions": snap.late_submissions_to_t if snap else None,
+            "submission_rate": round(snap.submission_rate, 2) if snap else None,
+            "risk_probability": round(risk_prob, 4) if risk_prob is not None else None,
+            "risk_status": risk_status,
         })
 
     return students
