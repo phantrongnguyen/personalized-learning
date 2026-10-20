@@ -215,7 +215,7 @@ Dùng chuỗi được sinh làm `SECRET_KEY` trong `.env`.
 
 Cấu hình URL theo dạng `postgresql://<user>:<password>@127.0.0.1:5433/<database>`. Backend chuyển sang driver `postgresql+asyncpg`.
 
-`.env.example` đang chứa các giá trị phát triển mẫu. Frontend hiện lấy API base từ `AppContext`/localStorage; biến `VITE_API_BASE_URL` trong file mẫu chưa được sử dụng bởi luồng cấu hình này. API base phải là origin, ví dụ `http://127.0.0.1:8000`, không thêm `/api/v1` vì service tự ghép tiền tố.
+`.env.example` đang chứa các giá trị phát triển mẫu. Frontend hiện lấy API base từ `AppContext`/localStorage; biến `VITE_API_BASE_URL` được dùng làm mặc định khi trình duyệt chưa lưu `edurisk_api_base` trong localStorage; giá trị đã lưu vẫn được ưu tiên. API base phải là origin, ví dụ `http://127.0.0.1:8000`, không thêm `/api/v1` vì service tự ghép tiền tố.
 
 ### 4. PostgreSQL và pgAdmin
 
@@ -404,3 +404,25 @@ Mã nguồn sử dụng [giấy phép MIT](LICENSE). Bản quyền trong LICENSE
 Từ gốc repository chạy `.venv/Scripts/python.exe scripts/run_backend_tests.py -q`. Runner tạo database riêng có hậu tố `_test`, chạy toàn bộ suite và kiểm tra dữ liệu 19 bảng không đổi sau rollback. Không bật RUN_COURSE_SCOPE_DB trên database ứng dụng. Frontend: `npm --prefix apps/frontend test` và `npm --prefix apps/frontend run build`.
 
 Dockerfile backend/frontend, nginx proxy và healthcheck đã có. `docker compose up --build -d` dùng cấu hình .env; archive model/avatar được giữ trong volume. Để kiểm thử độc lập, dùng `docker-compose.verify.yml` với project `edurisk-verification`, hai biến VERIFY_DB_PASSWORD/VERIFY_SECRET_KEY và frontend port 13000; xem hướng dẫn đầy đủ trong apps/backend/README.md. Kết quả và giới hạn nằm trong reports/dailys/18-10-2026.md, mục 6.
+
+## Thử gợi ý giảng viên trên dữ liệu OULAD lịch sử (chưa phải dữ liệu HUIT)
+
+Luồng thử nghiệm tách khỏi database và cổng của app demo: bảy Parquet OULAD trong `../data/processed/` → trích xuất đúng dữ liệu đến ngày thứ 201/268 (75%) → đối chiếu bài đến hạn và log hoạt động → ghi snapshot và PredictionRun từ artifact LightGBM đang active vào database **riêng** có hậu tố `_oulad` → giảng viên mở lớp `AAA / OULAD_2013J` và xem căn cứ. Không nhập `final_result` cuối kỳ vào dự báo; không sinh kế hoạch hay tự giao bài.
+
+```mermaid
+flowchart LR
+    A[7 tệp Parquet OULAD] --> B[Ngày tương đối đến mốc 75%]
+    B --> C[11 chỉ số hành vi và lịch bài]
+    C --> D[Snapshot có nguồn và SHA-256]
+    D --> E[LightGBM: xác suất nguy cơ]
+    D --> F[Quy tắc: tín hiệu cần xác minh]
+    E --> G[Giảng viên xem căn cứ]
+    F --> G
+    G --> H[Giảng viên đối chiếu, chỉnh nháp và chủ động giao nếu có plan hợp lệ]
+```
+
+Đã kiểm chứng một hồ sơ lịch sử ẩn danh `OULAD-2164705`: model trả khoảng **98,9%**, 1/4 bài đến hạn có bản nộp đến mốc, ba bài chưa ghi nhận nộp, không ghi nhận hoạt động trên hệ thống trong 30 ngày cuối. Đây là quan sát theo nguồn OULAD, **không** kết luận sinh viên HUIT yếu một chủ đề, bỏ học hoặc không làm bài: dữ liệu thiếu ánh xạ bài–chủ đề/rubric, hạn cá nhân và cách học ngoài hệ thống. Các giới hạn và điều chưa thể chứng minh nằm trong mục mở rộng “Xem căn cứ và giới hạn dữ liệu”. Đây là kiểm thử tích hợp từ nguồn lịch sử, chưa có kiểm chứng parity từng đặc trưng với pipeline nghiên cứu ban đầu hay hiệu lực dự báo trên HUIT. Trong bản thử, không có plan ACTIVE nên không thể bấm giao bài; điều này tránh giao nhiệm vụ cho hồ sơ nghiên cứu lịch sử.
+
+Cách xuất và nạp lại, cùng thay đổi hợp đồng API, ở [README backend](apps/backend/README.md). Bản thử cục bộ dùng frontend `http://127.0.0.1:5174/#lecturer` trỏ tới API `http://127.0.0.1:8001`, tách khỏi app thường ở `5173/8000`. Chỉ sử dụng trên máy này; không push Parquet, JSON xuất, mật khẩu hoặc database nghiên cứu lên GitHub.
+
+[Hướng dẫn bằng ảnh cho giảng viên](docs/lecturer-guide.md) minh họa từng thao tác và giới hạn của ca thử lịch sử.

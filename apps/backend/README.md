@@ -1633,3 +1633,19 @@ Truy cập http://127.0.0.1:13000. Stack riêng đặt access token 1 phút đ�
 Frontend dùng chung authenticatedFetch cho toàn bộ request có xác thực, refresh một lần khi 401 và gom request đồng thời; không refresh khi chỉ bị 403 trên bản ghi. Refresh bị 401/403 sẽ kết thúc phiên; lỗi mạng/5xx giữ token để thử lại. Request cũ bị hủy khi đổi tài khoản, refresh đến muộn không khôi phục phiên đã logout. Lịch sử lưu theo API base và UUID user, không nhập lịch sử dùng chung v2 vào tài khoản mới. Logout xóa dữ liệu đang hiển thị nhưng giữ lịch sử riêng của từng tài khoản trên trình duyệt.
 
 Bằng chứng và giới hạn chi tiết: reports/dailys/18-10-2026.md, mục 6. Không coi test workflow này là bằng chứng đánh giá hiệu quả cá nhân hóa hoặc migration đã hoàn thành.
+
+## Dữ liệu OULAD thật cho gợi ý giảng viên (môi trường thử riêng)
+
+Chạy từ thư mục gốc repository. `scripts/prepare_oulad_case.py` cần Python có `pandas` và `pyarrow`; backend cần môi trường `.venv` đã cài `apps/backend/requirements.txt`. Dữ liệu nguồn có bảy tệp Parquet OULAD, nằm ngoài Git. Chỉ dùng dữ liệu nếu có quyền sử dụng.
+
+```powershell
+python scripts/prepare_oulad_case.py --parquet-dir ../data/processed --module AAA --presentation 2013J --student-id 2164705 --output .cache/oulad-case.json
+.venv/Scripts/python.exe scripts/load_oulad_case.py --case .cache/oulad-case.json --parquet-dir ../data/processed --database-url "<URL database riêng, tên kết thúc _oulad>" --lecturer-code GVDEMO01
+# Khi đã kiểm tra đúng database và nguồn, thêm --apply để ghi bản thử.
+```
+
+Importer từ chối URL không có hậu tố `_oulad`, từ chối nhập lặp, so SHA-256 của cả bảy nguồn và đối chiếu từng bài với số liệu snapshot trước khi ghi. Database `_oulad` phải được tạo riêng, có schema/migration hiện hành, một model active tương thích và hồ sơ giảng viên được chỉ định. Không chạy vào database app thường. Phần `--apply` chỉ thêm một học phần OULAD, hồ sơ ẩn danh, snapshot và PredictionRun; không tạo plan/task. Trên máy đang thử, URL database nằm trong `.cache/oulad-db-url.txt` (Git ignore); giảng viên thử dùng thông tin trong `.cache/oulad-login.txt`. Không đưa hai file này vào tài liệu công khai.
+
+API `GET /api/v1/lecturer/courses/{presentation_id}/students/{student_id}/suggestions` vẫn chỉ đọc và kiểm tra quyền sở hữu học phần. Khi snapshot chứa `support_evidence.timeline=relative_course_day`, nguồn OULAD và đủ SHA-256 của bảy tệp, response thêm `source_kind=historical_oulad`, `cutoff_day` và `assessment_details` (loại bài, hạn tương đối, ngày nộp, điểm có ghi nhận). Không dựng `cutoff_date` tuyệt đối vì OULAD không có ngày bắt đầu theo lịch. Quy tắc `G01` gợi ý kiểm tra bài đến hạn chưa ghi nhận nộp; `G04` nêu cửa sổ hoạt động 30 ngày, không suy diễn nguyên nhân. Trường hợp thiếu metadata hoặc số liệu bài không nhất quán vẫn abstain khỏi kết luận theo từng bài. Giao diện giữ cấu trúc của Nguyên, hiển thị nhãn OULAD lịch sử và giảng viên không thể giao nếu chưa có plan ACTIVE đúng enrollment.
+
+Bản thử chưa đối chiếu parity từng đặc trưng với pipeline tạo tập huấn luyện gốc, không phải đánh giá hiệu năng model mới; xác suất 98,9% là kết quả chạy artifact trên bộ đặc trưng đã trích xuất cho một hồ sơ lịch sử. Bản thử không phải tích hợp LMS/HUIT thực tế và không chứng minh lỗ hổng kiến thức theo chủ đề. Muốn đưa vào vận hành phải có lịch bài, log hoạt động, mapping bài–chủ đề/rubric, quyền truy cập và xác minh chất lượng dữ liệu tương ứng; không gán OULAD cho hồ sơ sinh viên HUIT.
