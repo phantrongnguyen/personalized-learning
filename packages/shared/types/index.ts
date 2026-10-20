@@ -133,6 +133,15 @@ export interface CourseSuggestionResponse {
   rule_version: string;
   enrollment_id: string;
   cutoff_date: string | null;
+  cutoff_day?: number | null;
+  source_kind?: 'historical_oulad' | 'course';
+  assessment_details?: Array<{
+    id: number;
+    type: string;
+    due_day: number;
+    submitted_day: number | null;
+    score: number | null;
+  }>;
   prediction: null | {
     run_id: string;
     risk_probability: number;

@@ -93,6 +93,8 @@ const API_BASE_KEY = 'edurisk_api_base';
 const USER_KEY = 'edurisk_current_user';
 
 function getDefaultApiBase(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, '');
   if (typeof window !== 'undefined' && window.location.origin.startsWith('http')) {
     // If running on Vite dev server (port 5173), point to default FastAPI port 8000
     if (window.location.port === '5173') {

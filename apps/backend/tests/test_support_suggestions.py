@@ -3,7 +3,7 @@ from datetime import date, datetime, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
-from services.support_suggestions import evaluate_suggestions
+from services.support_suggestions import evaluate_suggestions, OULAD_SOURCES
 
 
 def fixture(**overrides):
@@ -105,3 +105,81 @@ def test_confirmation_before_cutoff_is_insufficient():
     snapshot, presentation = fixture(metadata={"confirmed_at": "2025-01-02T00:00:00+00:00"})
     state, suggestions, _, _ = evaluate_suggestions(snapshot, presentation)
     assert state == "insufficient_data" and suggestions == []
+
+
+def test_relative_oulad_details_show_missing_without_inventing_calendar_or_topic():
+    snapshot, presentation = fixture(metadata={
+        "timeline": "relative_course_day", "source": "OULAD processed Parquet",
+        "source_sha256": {name: "a" * 64 for name in OULAD_SOURCES}, "assessment_records": [
+            {"id": 101, "type": "TMA", "due_day": 19, "submitted_day": 18, "score": 70},
+            {"id": 102, "type": "TMA", "due_day": 54, "submitted_day": None, "score": None},
+            {"id": 103, "type": "TMA", "due_day": 70, "submitted_day": None, "score": None},
+            {"id": 104, "type": "TMA", "due_day": 72, "submitted_day": None, "score": None},
+        ]}, late_submissions_to_t=0, assessments_submitted_to_t=1, submission_rate=.25)
+    presentation.start_date = None
+    state, suggestions, warnings, cutoff_date = evaluate_suggestions(snapshot, presentation)
+    assert state == "available" and cutoff_date is None
+    assert [item["rule_id"] for item in suggestions] == ["G01", "G03"]
+    assert "3/4" in suggestions[0]["observation"]
+    assert "chủ đề" in suggestions[0]["limitation"]
+    assert "cutoff_date" not in suggestions[0]["evidence"]
+    assert any("OULAD" in warning for warning in warnings)
+
+
+def test_inconsistent_assessment_detail_never_claims_missing_assignment():
+    snapshot, presentation = fixture(metadata={"assessment_records": [
+        {"id": 101, "type": "TMA", "due_day": 19, "submitted_day": None, "score": None},
+    ]})
+    _, suggestions, warnings, _ = evaluate_suggestions(snapshot, presentation)
+    assert all(item["rule_id"] != "G01" for item in suggestions)
+    assert any("đối chiếu" in warning for warning in warnings)
+
+
+def test_unverified_relative_source_cannot_be_labeled_historical():
+    snapshot, presentation = fixture(metadata={"timeline": "relative_course_day"})
+    presentation.start_date = None
+    state, suggestions, warnings, _ = evaluate_suggestions(snapshot, presentation)
+    assert state == "insufficient_data" and not suggestions
+    assert any("nguồn" in item.lower() for item in warnings)
+
+
+async def test_historical_endpoint_returns_verified_details_and_plan_without_writing(monkeypatch):
+    from unittest.mock import AsyncMock, MagicMock
+    from api.v1.endpoints import lecturer
+
+    student_id, presentation_id, enrollment_id, plan_id = uuid4(), uuid4(), uuid4(), uuid4()
+    records = [
+        {"id": 101, "type": "TMA", "due_day": 19, "submitted_day": 18, "score": 70},
+        {"id": 102, "type": "TMA", "due_day": 54, "submitted_day": None, "score": None},
+        {"id": 103, "type": "TMA", "due_day": 70, "submitted_day": None, "score": None},
+        {"id": 104, "type": "TMA", "due_day": 72, "submitted_day": None, "score": None},
+    ]
+    snapshot, presentation = fixture(metadata={
+        "timeline": "relative_course_day", "source": "OULAD processed Parquet",
+        "source_sha256": {name: "a" * 64 for name in OULAD_SOURCES},
+        "assessment_records": records,
+    }, late_submissions_to_t=0, assessments_submitted_to_t=1, submission_rate=.25)
+    presentation.start_date = None
+    enrollment = SimpleNamespace(id=enrollment_id)
+    run = SimpleNamespace(id=uuid4(), risk_probability=.989, prediction_label=1,
+                          created_at=snapshot.created_at)
+    model = SimpleNamespace(id=uuid4(), threshold=.5, version="test", cutoff_fraction=.75)
+    scalar = lambda value: SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: value),
+                                           scalar_one_or_none=lambda: value)
+    db = SimpleNamespace(execute=AsyncMock(side_effect=[scalar(enrollment), scalar(snapshot),
+                                                         SimpleNamespace(first=lambda: (run, model)), scalar(plan_id)]),
+                         get=AsyncMock(return_value=presentation), add=MagicMock(),
+                         commit=AsyncMock(), flush=AsyncMock())
+    owner = AsyncMock()
+    monkeypatch.setattr(lecturer, "_ensure_course_ownership", owner)
+    response = await lecturer.get_course_student_suggestions(
+        presentation_id, student_id, SimpleNamespace(id=uuid4()), db)
+    assert response["status"] == "available"
+    assert response["source_kind"] == "historical_oulad" and response["cutoff_date"] is None
+    assert response["assessment_details"] == records and response["cutoff_day"] == 75
+    assert response["assignment"] == {"can_assign": True, "plan_id": plan_id,
+        "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."}
+    db.add.assert_not_called()
+    db.commit.assert_not_awaited()
+    db.flush.assert_not_awaited()
+    owner.assert_awaited_once()
