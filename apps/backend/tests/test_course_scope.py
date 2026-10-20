@@ -2,6 +2,7 @@
 import os
 import unittest
 import uuid
+from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 
 import httpx
@@ -118,6 +119,63 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         await self.outer.rollback()
         await self.connection.close()
         await engine.dispose()
+
+    async def test_suggestions_read_is_scoped_and_does_not_create_tasks(self):
+        before = len((await self.db.execute(select(InterventionTask.id))).all())
+        response = await lecturer.get_course_student_suggestions(
+            self.presentations[0].id, self.profile.id, self.admin, self.db)
+        assert response["status"] == "insufficient_data"
+        assert response["prediction"] is not None
+        assert response["assignment"]["can_assign"] is True
+        assert len((await self.db.execute(select(InterventionTask.id))).all()) == before
+        with self.assertRaises(HTTPException) as error:
+            await lecturer.get_course_student_suggestions(
+                self.presentations[1].id, self.other_profile.id, self.admin, self.db)
+        assert error.exception.status_code == 404
+        actor = SimpleNamespace(id=self.other_user.id, roles=[SimpleNamespace(code="LECTURER")])
+        with self.assertRaises(HTTPException) as error:
+            await lecturer.get_course_student_suggestions(
+                self.presentations[1].id, self.profile.id, actor, self.db)
+        assert error.exception.status_code == 403
+        assert len((await self.db.execute(select(InterventionTask.id))).all()) == before
+
+    async def test_risk_board_without_snapshot_has_no_fake_zero_metrics(self):
+        from repositories.academic_repo import get_course_risk_board
+        board = await get_course_risk_board(self.db, self.presentations[0].id)
+        entry = next(item for item in board if item["student_id"] == self.other_profile.id)
+        assert entry["risk_status"] == "NOT_PREDICTED"
+        assert entry["risk_probability"] is None
+        assert entry["total_clicks"] is None
+        assert entry["late_submissions"] is None
+        assert entry["submission_rate"] is None
+
+    async def test_model_threshold_boundary_is_reported_not_reinterpreted(self):
+        for index, (probability, label) in enumerate(((0.499, 0), (0.5, 1))):
+            snapshot = StudentFeatureSnapshot(enrollment_id=self.enrollments[0].id,
+                                              created_at=datetime.now(timezone.utc) + timedelta(days=index + 1))
+            self.db.add(snapshot)
+            await self.db.flush()
+            self.db.add(PredictionRun(snapshot_id=snapshot.id, model_id=self.predictions[0].model_id,
+                                      prediction_label=label, risk_probability=probability))
+            await self.db.flush()
+            response = await lecturer.get_course_student_suggestions(
+                self.presentations[0].id, self.profile.id, self.admin, self.db)
+            assert response["prediction"]["risk_probability"] == probability
+            assert response["prediction"]["prediction_label"] == label
+            assert response["prediction"]["threshold"] == 0.5
+
+    async def test_latest_snapshot_without_prediction_is_not_safe(self):
+        from repositories.academic_repo import get_course_risk_board
+        latest = StudentFeatureSnapshot(enrollment_id=self.enrollments[0].id,
+                                        created_at=datetime.now(timezone.utc) + timedelta(days=1))
+        self.db.add(latest)
+        await self.db.flush()
+        response = await lecturer.get_course_student_suggestions(
+            self.presentations[0].id, self.profile.id, self.admin, self.db)
+        assert response["prediction"] is None
+        board = await get_course_risk_board(self.db, self.presentations[0].id)
+        entry = next(item for item in board if item["student_id"] == self.profile.id)
+        assert entry["risk_status"] == "NOT_PREDICTED" and entry["risk_probability"] is None
 
     async def test_tasks_are_separate_per_enrollment(self):
         for i, enrollment in enumerate(self.enrollments):

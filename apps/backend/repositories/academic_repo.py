@@ -201,9 +201,9 @@ async def get_course_risk_board(
     for se, sp, u in enrollments:
         snap, pred = current.get(se.id, (None, None))
 
-        total_clicks = snap.total_clicks_to_t if snap else 0
-        late_sub = snap.late_submissions_to_t if snap else 0
-        sub_rate = snap.submission_rate if snap else 0.0
+        total_clicks = snap.total_clicks_to_t if snap else None
+        late_sub = snap.late_submissions_to_t if snap else None
+        sub_rate = snap.submission_rate if snap else None
 
         risk = risk_fields(pred)
 
@@ -214,7 +214,7 @@ async def get_course_risk_board(
             "enrollment_id": se.id,
             "total_clicks": total_clicks,
             "late_submissions": late_sub,
-            "submission_rate": round(sub_rate, 2),
+            "submission_rate": round(sub_rate, 2) if sub_rate is not None else None,
             "risk_probability": risk["risk_probability"],
             "risk_status": risk["risk_level"],
         })

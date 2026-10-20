@@ -1,9 +1,11 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SuggestionReview } from '../components/lecturer/SuggestionReview';
 import { useApp } from '../state/AppContext';
-import { CourseStudentRiskItem, LecturerCourseItem } from '@shared/types';
+import { CourseStudentRiskItem, CourseSuggestionResponse, LecturerCourseItem } from '@shared/types';
 import {
   getLecturerCoursesApi,
   getCourseRiskBoardApi,
+  getCourseSuggestionsApi,
   assignCourseTaskApi,
   alertAdvisorApi,
   AssignCourseTaskPayload,
@@ -37,6 +39,12 @@ export const LecturerPage: React.FC = () => {
     target_metric: 'Hoàn thành bài tập ôn tập môn học',
   });
   const [savingTask, setSavingTask] = useState(false);
+  const [suggestionDetail, setSuggestionDetail] = useState<CourseSuggestionResponse | null>(null);
+  const [loadingSuggestions, setLoadingSuggestions] = useState(false);
+  const suggestionRequest = useRef(0);
+  const [suggestionError, setSuggestionError] = useState('');
+  const [verifiedBasis, setVerifiedBasis] = useState('');
+  const [selectedSuggestion, setSelectedSuggestion] = useState(false);
 
   // Cảnh báo GVCN
   const [alertTarget, setAlertTarget] = useState<CourseStudentRiskItem | null>(null);
@@ -86,18 +94,45 @@ export const LecturerPage: React.FC = () => {
   const highRiskCount = riskBoard.filter((r) => r.risk_status === 'HIGH_RISK').length;
   const notPredictedCount = riskBoard.filter((r) => r.risk_status === 'NOT_PREDICTED').length;
 
+  const openAssignment = async (student: CourseStudentRiskItem) => {
+    const request = ++suggestionRequest.current;
+    setAssignTarget(student);
+    setSuggestionDetail(null);
+    setSuggestionError('');
+    setVerifiedBasis('');
+    setSelectedSuggestion(false);
+    setSelectedSuggestion(false);
+    setTaskForm({ student_id: student.student_id, title: '', description: '', priority: 'MEDIUM', target_metric: '' });
+    setLoadingSuggestions(true);
+    try {
+      const detail = await getCourseSuggestionsApi(apiBase, selectedPresentation, student.student_id);
+      if (request === suggestionRequest.current) setSuggestionDetail(detail);
+    } catch (err) {
+      if (request === suggestionRequest.current) setSuggestionError((err as Error).message);
+    } finally {
+      if (request === suggestionRequest.current) setLoadingSuggestions(false);
+    }
+  };
+
   const handleAssignTask = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!assignTarget || !selectedPresentation) return;
+    if (!assignTarget || !selectedPresentation || !suggestionDetail?.assignment.can_assign) return;
+    if ((suggestionDetail.status !== 'available' || !selectedSuggestion) && !verifiedBasis.trim()) {
+      addToast('Hãy ghi căn cứ đã tự xác minh trước khi giao nhiệm vụ.', 'error');
+      return;
+    }
     setSavingTask(true);
     try {
       await assignCourseTaskApi(apiBase, selectedPresentation, {
         ...taskForm,
+        description: verifiedBasis.trim()
+          ? `${taskForm.description.trim()}\n\nCăn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}`
+          : taskForm.description,
         student_id: assignTarget.student_id,
       });
       addToast(`Đã giao bài tập bổ trợ cho ${assignTarget.full_name}.`, 'success');
       setAssignTarget(null);
-      setTaskForm({ student_id: '', title: '', description: '', priority: 'HIGH', target_metric: '' });
+      setTaskForm({ student_id: '', title: '', description: '', priority: 'MEDIUM', target_metric: '' });
       await loadRiskBoard(selectedPresentation);
     } catch (err) {
       addToast((err as Error).message, 'error', 6000);
@@ -113,7 +148,7 @@ export const LecturerPage: React.FC = () => {
     try {
       await alertAdvisorApi(apiBase, alertTarget.student_id, {
         presentation_id: selectedPresentation,
-        subject: `Cảnh báo học tập bất thường môn ${selectedCourse?.code_module || ''}`,
+        subject: `Trao đổi tình hình học tập môn ${selectedCourse?.code_module || ''}`,
         content: alertContent,
       });
       addToast('Đã gửi cảnh báo học vụ tới Giáo viên chủ nhiệm.', 'success');
@@ -157,7 +192,7 @@ export const LecturerPage: React.FC = () => {
             <button
               key={c.presentation_id}
               type="button"
-              onClick={() => setSelectedPresentation(c.presentation_id)}
+              onClick={() => { suggestionRequest.current++; setAssignTarget(null); setSuggestionDetail(null); setSelectedPresentation(c.presentation_id); }}
               className={`p-4 rounded-2xl border text-left transition-all ${
                 selectedPresentation === c.presentation_id
                   ? 'bg-purple-500/10 border-purple-500/40'
@@ -225,7 +260,7 @@ export const LecturerPage: React.FC = () => {
                 {!loadingBoard && riskBoard.length === 0 && (
                   <tr>
                     <td colSpan={7} className="px-4 py-10 text-center text-slate-400">
-                      Chưa có dữ liệu dự báo cho học phần này.
+                      Chưa có sinh viên đăng ký học phần này.
                     </td>
                   </tr>
                 )}
@@ -236,10 +271,10 @@ export const LecturerPage: React.FC = () => {
                       <tr key={s.student_id} className="border-b border-slate-800/60">
                         <td className="px-4 py-3 font-mono text-slate-300">{s.student_code}</td>
                         <td className="px-4 py-3 text-white">{s.full_name}</td>
-                        <td className="px-4 py-3 text-slate-300">{s.total_clicks}</td>
-                        <td className="px-4 py-3 text-slate-300">{s.late_submissions}</td>
+                        <td className="px-4 py-3 text-slate-300">{s.total_clicks ?? "—"}</td>
+                        <td className="px-4 py-3 text-slate-300">{s.late_submissions ?? "—"}</td>
                         <td className="px-4 py-3 text-slate-300">
-                          {(s.submission_rate * 100).toFixed(0)}%
+                          {s.submission_rate == null ? "—" : `${(s.submission_rate * 100).toFixed(0)}%`}
                         </td>
                         <td className="px-4 py-3">
                           <span
@@ -251,28 +286,19 @@ export const LecturerPage: React.FC = () => {
                                   : 'bg-brand-500/15 text-brand-300'
                             }`}
                           >
-                            {s.risk_probability === null ? 'Chưa dự báo' : `${(s.risk_probability * 100).toFixed(1)}% — ${highRisk ? 'HIGH' : 'SAFE'}`}
+                            {s.risk_probability === null ? 'Chưa dự báo' : `${(s.risk_probability * 100).toFixed(1)}% — ${highRisk ? 'Cần theo dõi' : 'Dưới ngưỡng'}`}
                           </span>
                         </td>
                         <td className="px-4 py-3">
                           <div className="flex items-center justify-end gap-2">
                             <button
                               type="button"
-                              onClick={() => {
-                                setAssignTarget(s);
-                                setTaskForm({
-                                  student_id: s.student_id,
-                                  title: '',
-                                  description: '',
-                                  priority: 'HIGH',
-                                  target_metric: 'Hoàn thành bài tập ôn tập môn học',
-                                });
-                              }}
+                              onClick={() => { void openAssignment(s); }}
                               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-purple-600 hover:bg-purple-500 text-white text-[11px] font-semibold"
-                              title="Giao bài tập bổ trợ"
+                              title="Xem gợi ý và soạn nháp"
                             >
                               <ClipboardPlus className="w-3.5 h-3.5" />
-                              Giao bài
+                              Xem gợi ý
                             </button>
                             <button
                               type="button"
@@ -299,13 +325,29 @@ export const LecturerPage: React.FC = () => {
 
       {/* Assign Task Modal */}
       {assignTarget && (
-        <ModalShell title="Giao bài tập bổ trợ môn học" onClose={() => setAssignTarget(null)}>
+        <ModalShell title="Giao bài tập bổ trợ môn học" onClose={() => { suggestionRequest.current++; setAssignTarget(null); }}>
           <p className="text-xs text-slate-400 mb-4">
             {assignTarget.full_name} ({assignTarget.student_code}) — môn{' '}
             {selectedCourse?.code_module}. Nhiệm vụ sẽ thuộc nhóm{' '}
-            <strong className="text-slate-200">HOC_THUAT</strong> của kế hoạch can thiệp đang hoạt động.
+            <strong className="text-slate-200">hỗ trợ học tập</strong> của kế hoạch đang hoạt động.
           </p>
-          <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
+          {loadingSuggestions && <p className="text-xs text-slate-400 mb-3">Đang tải căn cứ…</p>}
+          {suggestionError && <p className="text-xs text-rose-300 mb-3">{suggestionError}</p>}
+          {suggestionDetail && <SuggestionReview detail={suggestionDetail} onChoose={(suggestion) => {
+            setSelectedSuggestion(true);
+            setTaskForm({
+              ...taskForm, title: suggestion.title, description: suggestion.proposed_action,
+              target_metric: 'Xác minh tiến độ cùng sinh viên',
+            });
+          }} />}
+          {suggestionDetail?.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
+            {(suggestionDetail.status !== 'available' || !selectedSuggestion) && <div>
+              <label className="block font-semibold text-slate-300 mb-1" htmlFor="verified-basis">Điều giảng viên đã tự xác minh (bắt buộc):</label>
+              <textarea id="verified-basis" required value={verifiedBasis} onChange={(e) => setVerifiedBasis(e.target.value)}
+                placeholder="VD: Đã trao đổi với sinh viên về phần kiến thức cần ôn. Không suy đoán từ tỷ lệ dự báo."
+                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100" />
+              <p className="text-slate-400 mt-1">Căn cứ này sẽ được lưu trong mô tả nhiệm vụ và sinh viên có thể đọc được.</p>
+            </div>}
             <div>
               <label className="block font-semibold text-slate-300 mb-1">Tiêu đề nhiệm vụ:</label>
               <input
@@ -313,7 +355,7 @@ export const LecturerPage: React.FC = () => {
                 required
                 value={taskForm.title}
                 onChange={(e) => setTaskForm({ ...taskForm, title: e.target.value })}
-                placeholder="VD: Ôn tập chương 4 & nộp bài quiz"
+                placeholder="VD: Xác minh tiến độ học và đề xuất hỗ trợ"
                 className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-purple-500 focus:outline-none"
               />
             </div>
@@ -355,7 +397,7 @@ export const LecturerPage: React.FC = () => {
             <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 type="button"
-                onClick={() => setAssignTarget(null)}
+                onClick={() => { suggestionRequest.current++; setAssignTarget(null); }}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-semibold"
               >
                 Hủy
@@ -370,7 +412,7 @@ export const LecturerPage: React.FC = () => {
                 Giao bài tập
               </button>
             </div>
-          </form>
+          </form>}
         </ModalShell>
       )}
 
@@ -379,8 +421,8 @@ export const LecturerPage: React.FC = () => {
         <ModalShell title="Gửi cảnh báo học vụ tới GVCN" onClose={() => setAlertTarget(null)}>
           <form onSubmit={handleAlertAdvisor} className="space-y-3.5 text-xs">
             <p className="text-slate-400">
-              Sinh viên <strong className="text-white">{alertTarget.full_name}</strong> có dấu hiệu
-              nguy cơ bất thường khiến GVBM cần chủ nhiệm lớp trao đổi trực tiếp.
+              Nếu cần thêm thông tin, hãy trao đổi với cố vấn về sinh viên <strong className="text-white">{alertTarget.full_name}</strong>.
+              Chỉ ghi điều đã xác minh; không kết luận từ số liệu tổng hợp.
             </p>
             <div>
               <label className="block font-semibold text-slate-300 mb-1">Nội dung cảnh báo:</label>
@@ -388,7 +430,7 @@ export const LecturerPage: React.FC = () => {
                 required
                 value={alertContent}
                 onChange={(e) => setAlertContent(e.target.value)}
-                placeholder="VD: Sinh viên không nộp bài tập TMA đã quá hạn 2 tuần…"
+                placeholder="VD: Đề nghị xác minh tiến độ và nhu cầu hỗ trợ của sinh viên…"
                 className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-purple-500 focus:outline-none"
               />
             </div>
@@ -424,7 +466,7 @@ const ModalShell: React.FC<{
 }> = ({ title, onClose, children }) => {
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl">
+      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 shadow-2xl">
         <div className="flex items-center justify-between mb-1">
           <h3 className="text-lg font-bold text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-purple-400" />

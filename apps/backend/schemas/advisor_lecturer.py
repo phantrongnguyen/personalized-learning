@@ -164,9 +164,9 @@ class StudentRiskInCourseOut(BaseModel):
     student_code: str
     full_name: str
     enrollment_id: uuid.UUID
-    total_clicks: int = 0
-    late_submissions: int = 0
-    submission_rate: float = 0.0
+    total_clicks: int | None = None
+    late_submissions: int | None = None
+    submission_rate: float | None = None
     risk_probability: Ratio | None = None
     risk_status: RiskLevel = "NOT_PREDICTED"
 
