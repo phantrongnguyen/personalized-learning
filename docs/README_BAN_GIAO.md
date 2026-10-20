@@ -10,6 +10,7 @@
 | 2. Mở nhiệm vụ cho sinh viên | ![Form giao bài gốc](handoff/images/02-nguyen-assignment-draft.png) | ![Bước xem gợi ý và căn cứ](handoff/images/04-combined-suggestion-review.png) |
 | 3. Xem điều chưa biết | Chưa có bước riêng | ![Giới hạn dữ liệu được giải thích](handoff/images/05-combined-evidence-limitations.png) |
 | 4. Màn hình nhỏ | Không chụp trong lần đối chiếu này | ![Form sau tích hợp trên điện thoại](handoff/images/06-combined-mobile.png) |
+| 5. Đối chiếu và chọn mức bài | Chưa có bước riêng | ![Giảng viên tự chọn mức bài tập](handoff/images/07-learning-level-detail.png) |
 
 **Giữ lại:** bố cục, bảng chọn lớp, bảng sinh viên và form soạn/giao bài của Nguyên. **Thêm:** nút xem gợi ý, phân biệt dự báo với căn cứ, giải thích dữ liệu thiếu bằng tiếng Việt, chọn gợi ý vào *nháp* rồi chỉnh sửa. Ở demo này API trả `insufficient_data`, nên không có gợi ý tự động; ảnh sau chỉ cho thấy thông báo thiếu dữ liệu và trường ghi điều giảng viên đã tự xác minh. Không chụp hay khẳng định luồng giao thành công bằng dữ liệu chưa xác minh.
 
@@ -26,6 +27,10 @@ flowchart LR
   H -- Có --> I[Giảng viên chủ động bấm giao]
   H -- Không --> J[Cố vấn hoặc admin lập kế hoạch hợp lệ trước]
 ```
+
+## Xem chi tiết và chọn mức bài tập
+
+Bản tích hợp có nút **Xem chi tiết** giữa **Hủy** và **Giao bài tập** trong form của Nguyên. Nút mở số liệu tổng hợp cần đối chiếu và cho giảng viên **tự chọn độ khó của nhiệm vụ**: củng cố nền tảng, luyện tập có hướng dẫn, vận dụng mở rộng hoặc chưa xác định. Đây không phải nhãn năng lực hay mức độ nghiêm trọng của sinh viên; model không tự gán mức. Dữ liệu chưa đủ thì phải xác minh trước khi giao. Mức đã chọn được ghi vào mô tả nhiệm vụ mà sinh viên đọc được, không đổi `priority` hoặc xác suất dự báo; không thêm cột database/API mới. Nếu sau này cần thống kê mức bài tập, phải thiết kế một trường có cấu trúc và migration riêng, không phân tích chuỗi mô tả.
 
 ## Điều kiện và ý nghĩa
 
@@ -44,6 +49,6 @@ flowchart LR
 ## Kiểm thử và tiếp nhận
 
 - Mở `http://127.0.0.1:5173/#lecturer`, đăng nhập tài khoản giảng viên demo local đã có. Theo `docs/local-role-testing.md` để thiết lập dữ liệu demo; không dùng nó làm dữ liệu thực.
-- Kiểm tra bước 1: chọn lớp; người chưa có dự báo hiện `Chưa dự báo`, các chỉ số thiếu hiện dấu `—`. Bước 2: nhấn **Xem gợi ý**, đọc căn cứ/giới hạn. Bước 3: nếu dữ liệu chưa đủ, nhập căn cứ tự xác minh, soạn/chỉnh nháp rồi mới bấm giao khi có plan đúng học phần. Không bấm giao trên dữ liệu giả nếu không muốn tạo task demo.
+- Kiểm tra bước 1: chọn lớp; người chưa có dự báo hiện `Chưa dự báo`, các chỉ số thiếu hiện dấu `—`. Bước 2: nhấn **Xem gợi ý**, đọc căn cứ/giới hạn. Bước 3: nhấn **Xem chi tiết** giữa **Hủy** và **Giao bài tập**, đối chiếu số liệu, chọn mức bài nếu đã có căn cứ. Nếu dữ liệu chưa đủ, nhập căn cứ tự xác minh, soạn/chỉnh nháp rồi mới bấm giao khi có plan đúng học phần. Không bấm giao trên dữ liệu giả nếu không muốn tạo task demo.
 - Backend độc lập: `python -m pytest -q apps/backend/tests/test_support_suggestions.py`; PostgreSQL riêng: `python scripts/run_backend_tests.py -q -k 'CourseScopeTests or DatabaseContract'`. Runner tạo database `_test`, kiểm tra rollback; không thử trên database ứng dụng. Frontend: `npm run build --prefix apps/frontend` và `npm test --prefix apps/frontend`.
 - Biểu đồ đánh giá model đã chốt ở `reports/model_final/figures/` (ma trận nhầm lẫn, ROC/PR, hiệu chuẩn, độ nhạy ngưỡng, so sánh validation, ablation). Đây là minh chứng *nghiên cứu* tách với ảnh luồng demo; README này không suy diễn độ tin cậy cá nhân từ các biểu đồ.

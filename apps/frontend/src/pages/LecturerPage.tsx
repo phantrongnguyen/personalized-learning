@@ -45,6 +45,8 @@ export const LecturerPage: React.FC = () => {
   const [suggestionError, setSuggestionError] = useState('');
   const [verifiedBasis, setVerifiedBasis] = useState('');
   const [selectedSuggestion, setSelectedSuggestion] = useState(false);
+  const [showLearningDetail, setShowLearningDetail] = useState(false);
+  const [learningLevel, setLearningLevel] = useState<'FOUNDATION' | 'GUIDED' | 'APPLICATION' | ''>('');
 
   // Cảnh báo GVCN
   const [alertTarget, setAlertTarget] = useState<CourseStudentRiskItem | null>(null);
@@ -101,7 +103,8 @@ export const LecturerPage: React.FC = () => {
     setSuggestionError('');
     setVerifiedBasis('');
     setSelectedSuggestion(false);
-    setSelectedSuggestion(false);
+    setShowLearningDetail(false);
+    setLearningLevel('');
     setTaskForm({ student_id: student.student_id, title: '', description: '', priority: 'MEDIUM', target_metric: '' });
     setLoadingSuggestions(true);
     try {
@@ -123,11 +126,16 @@ export const LecturerPage: React.FC = () => {
     }
     setSavingTask(true);
     try {
+      const learningLabel = learningLevel === 'FOUNDATION' ? 'Củng cố nền tảng'
+        : learningLevel === 'GUIDED' ? 'Luyện tập có hướng dẫn'
+          : learningLevel === 'APPLICATION' ? 'Vận dụng mở rộng' : '';
+      const description = [taskForm.description.trim(),
+        learningLabel ? `Mức bài tập do giảng viên chọn: ${learningLabel}` : '',
+        verifiedBasis.trim() ? `Căn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}` : '',
+      ].filter(Boolean).join('\n\n');
       await assignCourseTaskApi(apiBase, selectedPresentation, {
         ...taskForm,
-        description: verifiedBasis.trim()
-          ? `${taskForm.description.trim()}\n\nCăn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}`
-          : taskForm.description,
+        description,
         student_id: assignTarget.student_id,
       });
       addToast(`Đã giao bài tập bổ trợ cho ${assignTarget.full_name}.`, 'success');
@@ -394,13 +402,54 @@ export const LecturerPage: React.FC = () => {
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
+            {showLearningDetail && (
+              <section id="learning-detail" aria-label="Chi tiết chọn mức bài tập" className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 space-y-2 text-slate-200">
+              <h4 className="font-semibold text-sm">Chọn mức bài tập phù hợp</h4>
+              <p>Đây là độ khó của nhiệm vụ giảng viên dự định giao, không phải xếp hạng năng lực sinh viên hay mức nghiêm trọng do mô hình quyết định.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" aria-label="Các chỉ số tổng hợp cần đối chiếu">
+                <p>Lượt hoạt động: <strong>{assignTarget.total_clicks ?? 'Chưa có'}</strong></p>
+                <p>Lượt nộp trễ: <strong>{assignTarget.late_submissions ?? 'Chưa có'}</strong></p>
+                <p>Tỷ lệ nộp: <strong>{assignTarget.submission_rate == null ? 'Chưa có' : `${(assignTarget.submission_rate * 100).toFixed(0)}%`}</strong></p>
+              </div>
+              <p className="text-slate-400">Các số liệu này cần được đối chiếu với nguồn học tập; chúng không cho biết điểm số, bài nào trễ hay kiến thức nào còn thiếu.</p>
+              <p>{suggestionDetail?.status === 'available'
+                ? 'Có gợi ý hỗ trợ dựa trên căn cứ hiện có; vẫn cần đối chiếu kết quả học và trao đổi với sinh viên.'
+                : 'Dữ liệu hiện chưa đủ để hệ thống đưa ra gợi ý hỗ trợ. Hãy xác minh kiến thức và nhu cầu hỗ trợ với sinh viên trước khi chọn.'}</p>
+              <label className="block font-semibold" htmlFor="learning-level">Mức bài tập (giảng viên tự chọn, không bắt buộc):</label>
+              <select id="learning-level" value={learningLevel} onChange={(e) => setLearningLevel(e.target.value as typeof learningLevel)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100">
+                <option value="">Chưa xác định</option>
+                <option value="FOUNDATION">Củng cố nền tảng</option>
+                <option value="GUIDED">Luyện tập có hướng dẫn</option>
+                <option value="APPLICATION">Vận dụng mở rộng</option>
+              </select>
+              {learningLevel && <p className="text-slate-300">{learningLevel === 'FOUNDATION'
+                ? 'Nên bắt đầu bằng bài ngắn kiểm tra kiến thức nền và hướng dẫn từng bước.'
+                : learningLevel === 'GUIDED'
+                  ? 'Nên dùng ví dụ mẫu, bài luyện tập tương tự và phản hồi sau mỗi bước.'
+                  : 'Nên dùng bài vận dụng tình huống và yêu cầu giải thích cách làm.'}</p>}
+              <p className="text-slate-400">Mức đã chọn sẽ được ghi trong mô tả nhiệm vụ và sinh viên có thể xem. Nó không thay đổi độ ưu tiên hoặc dự báo model.</p>
+              </section>
+            )}
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => { suggestionRequest.current++; setAssignTarget(null); }}
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-semibold"
               >
                 Hủy
+              </button>
+              <button
+                type="button"
+                aria-expanded={showLearningDetail}
+                aria-controls="learning-detail"
+                onClick={() => {
+                  setShowLearningDetail((visible) => !visible);
+                  if (!showLearningDetail) requestAnimationFrame(() => document.getElementById('learning-detail')?.scrollIntoView({ block: 'nearest' }));
+                }}
+                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold"
+              >
+                {showLearningDetail ? 'Ẩn chi tiết' : 'Xem chi tiết'}
               </button>
               <button
                 type="submit"
