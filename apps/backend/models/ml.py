@@ -14,12 +14,13 @@ class MLModel(Base):
     id: Mapped[uuid.UUID] = mapped_column(
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
-    model_name: Mapped[str] = mapped_column(String(100), nullable=False)
-    version: Mapped[str] = mapped_column(String(50), nullable=False)
-    model_file_path: Mapped[str] = mapped_column(String(255), nullable=False)
+    model_name: Mapped[str] = mapped_column(String(150), nullable=False)
+    version: Mapped[str] = mapped_column(String(30), nullable=False)
+    model_file_path: Mapped[str] = mapped_column(String(500), nullable=False)
     threshold: Mapped[float] = mapped_column(Float, default=0.5, nullable=False)
     cutoff_fraction: Mapped[float] = mapped_column(Float, default=0.75, nullable=False)
     accuracy: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
+    average_precision: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     roc_auc: Mapped[Optional[float]] = mapped_column(Float, nullable=True)
     is_active: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     metadata_json: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
@@ -38,13 +39,15 @@ class PredictionRun(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     snapshot_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_feature_snapshots.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_feature_snapshots.id", ondelete="RESTRICT"), nullable=False
     )
     model_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("ml_models.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("ml_models.id", ondelete="RESTRICT"), nullable=False
     )
     prediction_label: Mapped[int] = mapped_column(SmallInteger, nullable=False)
     risk_probability: Mapped[float] = mapped_column(Float, nullable=False)
+    # NULL denotes a legacy run whose exact input/model identity is unknown.
+    inference_context: Mapped[Optional[Dict[str, Any]]] = mapped_column(JSONB, nullable=True)
     execution_time_ms: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     triggered_by_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(
         UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True

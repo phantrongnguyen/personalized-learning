@@ -1,0 +1,52 @@
+TAP version 13
+# Subtest: concurrent 401s refresh once and retry with the new access token
+ok 1 - concurrent 401s refresh once and retry with the new access token
+  ---
+  duration_ms: 97.5256
+  type: 'test'
+  ...
+# Subtest: invalid refresh clears tokens and dispatches session ended
+ok 2 - invalid refresh clears tokens and dispatches session ended
+  ---
+  duration_ms: 0.998
+  type: 'test'
+  ...
+# Subtest: 403 on a protected record does not refresh or end the session
+ok 3 - 403 on a protected record does not refresh or end the session
+  ---
+  duration_ms: 0.5073
+  type: 'test'
+  ...
+# Subtest: refresh network errors and 5xx preserve the session
+ok 4 - refresh network errors and 5xx preserve the session
+  ---
+  duration_ms: 1.5683
+  type: 'test'
+  ...
+# Subtest: logout while refresh is pending cannot resurrect the session
+ok 5 - logout while refresh is pending cannot resurrect the session
+  ---
+  duration_ms: 2.4764
+  type: 'test'
+  ...
+# Subtest: account switch aborts the old request instead of replaying it as the new account
+ok 6 - account switch aborts the old request instead of replaying it as the new account
+  ---
+  duration_ms: 3.3414
+  type: 'test'
+  ...
+# Subtest: history keys isolate accounts and API servers; guests cannot write shared history
+ok 7 - history keys isolate accounts and API servers; guests cannot write shared history
+  ---
+  duration_ms: 0.7295
+  type: 'test'
+  ...
+1..7
+# tests 7
+# suites 0
+# pass 7
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 356.6462

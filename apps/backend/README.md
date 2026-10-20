@@ -1,55 +1,92 @@
 # Backend EduRisk AI — Tài liệu kỹ thuật và đánh giá
 
+**Cập nhật database 19/10/2026:** Schema hiện hành là Alembic `0002_normalize`, gồm 19 bảng nghiệp vụ và `alembic_version`. SQL/ORM đã đồng bộ CHECK/UNIQUE/default/FK/index; các quan hệ lịch sử dùng RESTRICT, metric có cột average_precision riêng. [Schema đầy đủ](../../database/database_design_plan.md), [migration và khôi phục](../../docs/database_migrations.md), [bằng chứng thực thi](../../reports/dailys/19-10-2026.md) thay thế các mô tả schema và đề xuất migration cũ trong tài liệu này.
+
 Tài liệu đối chiếu mã nguồn trong working tree ngày **13/10/2026**, bao gồm các thay đổi local chưa commit. Đây là mô tả hiện trạng triển khai, không phải cam kết rằng mọi chức năng đã chạy thành công trên database thật. Nguồn chính: `main.py`, `api/router.py`, `api/v1/endpoints`, `schemas`, `repositories`, `services`, `models`, `core`, `ml` và `../../docker/postgres/init-scripts/01_init_schema.sql`.
 
 **Phạm vi:** 53 operation ứng dụng (52 dưới `/api/v1` và GET `/`), 53 schema Pydantic và 19 bảng SQL. Phần 1–12 giải thích kiến trúc, nghiệp vụ, database, đánh giá và kiểm thử; phụ lục A liệt kê mọi operation; phụ lục B mô tả từng field request/response; phụ lục C chứa DDL đầy đủ.
 
 > **Ghi chú ngày 14/10/2026:** Nội dung dưới đây giữ mốc khảo sát 13/10. Luồng dự báo từ database, xử lý lỗi batch và hiển thị radar đã được sửa sau đó; kết quả mới nằm trong [báo cáo 14/10](../../reports/dailys/14-10-2026.md).
 
-## Cập nhật 19/10/2026 - Gợi ý cho giảng viên (read-only)
+### Cập nhật phân quyền ngày 18/10/2026
 
-Phần 1–12 và số lượng operation ở phần lịch sử phía dưới là ảnh chụp cũ; cập nhật mới trong mục này thêm 1 GET. Ghi nhận cũ về plugin pytest cũng chỉ phản ánh môi trường khảo sát khi đó; kiểm chứng hiện tại dùng `-o asyncio_mode=auto`.
+Phần cập nhật này thay thế các mô tả phân quyền cũ bên dưới nếu có khác biệt. Chi tiết triển khai và kết quả kiểm tra được ghi trong [báo cáo 18/10](../../reports/dailys/18-10-2026.md).
 
-Luồng: bảng risk board → GET gợi ý theo học phần/sinh viên → giảng viên chọn một gợi ý để điền **nháp** và chỉnh sửa (kể cả ưu tiên) → chủ động POST giao nhiệm vụ. GET không ghi database, không tạo plan/task/prediction. Gợi ý theo quy tắc không phải lời khuyên lâm sàng hay bằng chứng chắc chắn cải thiện điểm. Giảng viên xem xét và quyết định, không tự động giao.
+| Phạm vi | Quy tắc hiện tại |
+| --- | --- |
+| `/admin/*` | Yêu cầu ADMIN; các thao tác quản trị toàn hệ thống nằm tại đây |
+| `/advisor/*` | ADVISOR hoặc ADMIN qua cổng vai trò; dữ liệu vẫn giới hạn theo hồ sơ cố vấn và phân công của chính tài khoản, gồm tạo kế hoạch, ghi chú, sửa kế hoạch và thêm nhiệm vụ |
+| `/lecturer/*` | LECTURER hoặc ADMIN qua cổng vai trò; thao tác trên học phần bắt buộc có hồ sơ giảng viên và phân công tương ứng |
+| `/student/*` | STUDENT hoặc ADMIN qua cổng vai trò; chỉ truy cập hồ sơ, đăng ký, nhiệm vụ và yêu cầu của chính tài khoản |
+| `POST /predictions/` | Mọi tài khoản đang hoạt động có access token hợp lệ; không cho truy cập ẩn danh hoặc dùng refresh token |
 
-### API và ví dụ JSON
+ADMIN chỉ được miễn kiểm tra vai trò tại các portal, không được bỏ qua quyền sở hữu hoặc mạo danh hồ sơ khác. Đây là thay đổi so với việc ADMIN trước đây có thể bỏ qua phân công khi tạo kế hoạch hoặc thao tác học phần. Khi chưa có hồ sơ, các API danh sách cá nhân trả danh sách rỗng; các API cần hồ sơ trả 400 (cố vấn), 403 (giảng viên) hoặc 404 (sinh viên).
 
-`GET /api/v1/lecturer/courses/{presentation_id}/students/{student_id}/suggestions` (Bearer LECTURER được phân công học phần hoặc ADMIN; 403 nếu không được phân công, 404 nếu sinh viên không có enrollment tại học phần). GET không có request body.
+- Ghi chú tư vấn kiểm tra sinh viên của enrollment thuộc cố vấn trước khi lưu; thiếu enrollment trả 404, ngoài phân công trả 403.
+- Cảnh báo giảng viên bắt buộc có `presentation_id`; thiếu/null trả 422, ngoài phân công trả 403, sinh viên không thuộc học phần trả 404.
+- Yêu cầu trợ giúp chỉ nhận `ADVISOR` hoặc `LECTURER`. Người nhận được chỉ định phải còn hoạt động, có đúng vai trò và được phân công. Yêu cầu gửi giảng viên bắt buộc chọn học phần mà sinh viên theo học. Khi không chỉ định người nhận, hệ thống chọn người phụ trách hợp lệ mới nhất; nếu chưa có thì lưu yêu cầu chưa gán người nhận (`target_user_id = null`).
+- Frontend React gửi bearer token khi gọi dự báo; client gọi API trực tiếp cũng phải bổ sung token.
 
-Response minh họa **giả lập**, không phải dự báo sinh viên thực:
+Kiểm thử quyền trên PostgreSQL sử dụng fixture riêng trong outer transaction và rollback sau từng test:
 
-```json
-{
-  "status": "available", "rule_version": "lecturer-support-1.0",
-  "enrollment_id": "11111111-1111-4111-8111-111111111111",
-  "cutoff_date": "2025-03-17",
-  "prediction": {"run_id": "22222222-2222-4222-8222-222222222222", "snapshot_id": "33333333-3333-4333-8333-333333333333", "risk_probability": 0.61, "prediction_label": 1, "threshold": 0.5, "model_version": "demo-version", "cutoff_fraction": 0.75, "predicted_at": "2025-03-18T00:00:00Z", "meaning": "Phân loại nguy cơ theo ngưỡng của model; không kết luận cá nhân bỏ học hoặc cần can thiệp."},
-  "suggestions": [{"rule_id": "G03", "title": "Xác minh hoạt động học tập tại cutoff", "observation": "Không ghi nhận click trong 7 ngày kết thúc tại cutoff; có hoạt động trước đó.", "evidence": {"source": "verified-import", "confirmed_at": "2025-03-18T00:00:00Z", "snapshot_id": "33333333-3333-4333-8333-333333333333", "snapshot_day": 75, "cutoff_date": "2025-03-17", "recorded_at": "2025-03-18T00:00:00Z", "window_days": 7, "window_end_day": 75, "total_clicks_to_t": 12, "clicks_recent_7": 0, "clicks_recent_30": 4, "days_since_last_activity": 7}, "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.", "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.", "rule_version": "lecturer-support-1.0"}],
-  "warnings": ["Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ."],
-  "assignment": {"can_assign": true, "plan_id": "44444444-4444-4444-8444-444444444444", "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."}
-}
+```powershell
+python scripts/run_backend_tests.py -q -k 'CourseScopeTests or PredictionAccess'
 ```
 
-Khi không có PredictionRun **cùng snapshot mới nhất**, `prediction: null` và cảnh báo “Chưa có PredictionRun”; không gán SAFE/0. `status: insufficient_data` là không đủ mốc/nguồn hoặc xác nhận dữ liệu; `abstained` là đã kiểm tra được nhưng không đủ tín hiệu áp dụng (hoặc cutoff chưa đến). Hai trạng thái này có `suggestions: []`; `prediction` có thể tồn tại độc lập với gợi ý. Nếu thiếu plan ACTIVE đúng enrollment, `assignment.can_assign: false`; cố vấn/admin dùng luồng `POST /api/v1/advisor/interventions` với `enrollment_id` và **PredictionRun thật** trước, không cấp quyền tạo plan cho giảng viên. API giao task cũ vẫn từ chối nếu không có plan; không tự tạo.
+Chạy từ gốc repository với môi trường Python có các dependency backend. Runner tự bật cờ opt-in sau khi chọn database riêng; test xác thực dự báo vẫn có thể chạy riêng không cần database.
 
-`POST /api/v1/lecturer/courses/{presentation_id}/tasks` vẫn nhận payload do giảng viên nhập/sửa và bấm gửi, ví dụ:
+### Cập nhật lịch sử dự báo ngày 18/10/2026
 
-```json
-{"student_id":"11111111-1111-4111-8111-111111111111","title":"Trao đổi cách học","description":"Xác minh tình hình với sinh viên","priority":"MEDIUM","target_metric":"Xác minh với sinh viên"}
+Cập nhật tiến độ có thay đổi chỉ số sẽ tạo snapshot mới, sao chép các chỉ số còn lại và ghi `snapshot_metadata` trong `raw_features_json`: nguồn `lecturer_assessment`, thời điểm quan sát, người cập nhật và ID snapshot trước. Chỉ cập nhật kết quả cuối kỳ không tạo snapshot. Nếu chưa có snapshot nền, cập nhật chỉ số trả 409 để tránh tạo dữ liệu hành vi giả từ giá trị 0.
+
+Database có cột nullable `prediction_runs.inference_context`, lưu đủ 17 đầu vào thực tế, phiên bản model, threshold và SHA-256 của artifact. Trigger chặn sửa snapshot đã được dự báo, cũng như sửa đầu vào, danh tính model và kết quả của một dự báo đã lưu. Cơ chế này bảo vệ cập nhật; chính sách xóa CASCADE vẫn cần rà soát ở công việc database tiếp theo.
+
+Artifact được lưu trong `artifacts/archive/<sha256>.joblib` từ đúng các byte đã nạp. Thư mục này bị bỏ qua bởi Git và phải được sao lưu cùng database khi vận hành. Không xóa artifact mà các bản ghi dự báo còn tham chiếu. Dữ liệu dự báo cũ có `inference_context = null` được ghi nhận là `LEGACY_UNVERIFIED`; không dựng lại thông tin từ hồ sơ hoặc registry hiện tại.
+
+Database mới chạy script 03 qua Compose. Với database đã tồn tại, chạy từ gốc repository trước khi dùng mã mới:
+
+```powershell
+python apps/backend/scripts/apply_prediction_integrity.py
 ```
 
-Response là `TaskOut`, ví dụ giả lập: `{"id":"55555555-5555-4555-8555-555555555555","plan_id":"44444444-4444-4444-8444-444444444444","category":"HOC_THUAT","priority":"MEDIUM","title":"Trao đổi cách học","description":"Xác minh tình hình với sinh viên","target_metric":"Xác minh với sinh viên","is_completed":false,"completed_at":null,"student_feedback":null}`.
+Script bổ sung cột và trigger trong một transaction, có thể chạy lại; đã áp dụng trên database local trong phiên này. Đây là bước nâng cấp phục vụ bảo toàn dự báo, chưa thay thế hệ thống Alembic được lên kế hoạch.
 
-### Nguồn dữ liệu và quy tắc
+Kiểm tra lại một bản ghi có provenance, độc lập với hồ sơ hiện tại:
 
-- `StudentFeatureSnapshot` là số tổng hợp ở `CUTOFF_75`; `PredictionRun` cùng snapshot và `MLModel` cung cấp xác suất lớp nguy cơ, nhãn, phiên bản và ngưỡng. Ngưỡng `0.5` là của artifact/model (`THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json`), **không phải ngưỡng khẩn cấp**; hiển thị ngưỡng trên bản ghi `MLModel.threshold` và nhãn đã lưu, không tự phân loại lại. Nhãn không dự đoán chính xác kết cục từng cá nhân.
-- Mốc ngày cutoff là `start_date + floor(module_presentation_length * 0.75)` (quy ước OULAD); yêu cầu `raw_features_json.support_evidence` có `snapshot_day` đúng mốc, `source` không rỗng, `confirmed_at` ISO 8601 có múi giờ, và xác nhận `activity_complete: true` / `assessments_complete: true` riêng từng nguồn. Ví dụ metadata (chỉ khi người nhập thật sự đã kiểm tra): `{"support_evidence":{"snapshot_day":75,"source":"verified-import","confirmed_at":"2025-03-18T00:00:00Z","activity_complete":true,"assessments_complete":true}}`. Không tự suy tính xác nhận từ số 0, không dùng `created_at` làm ngày quan sát. Metadata do nguồn nhập xác nhận, API không tự kiểm toán được log gốc.
-- G01 không triển khai: không có danh sách bài, deadline và gia hạn. G02_AGGREGATE chỉ khi `assessments_complete=true` và `late_submissions_to_t > 0`, gợi ý kiểm tra **tổng** số nộp trễ, không nêu bài nào. G03 khi tổng click > 0, click 7 ngày = 0, click 30 ngày > 0 và ngày từ hoạt động cuối ≥ 7; G04 khi tổng > 0, click 30 ngày = 0 và ngày từ hoạt động cuối ≥ 30. Chỉ dùng khi `activity_complete=true`, chỉ số nhất quán và mốc cutoff đã xác nhận. Đây là cửa sổ 7/30 ngày **kết thúc tại cutoff**, không phải “gần đây” tính từ hôm nay. Không đặt ngưỡng nghiêm trọng mới.
-- Không có xác nhận hoặc số liệu mâu thuẫn thì bỏ qua quy tắc tương ứng; thiếu cả hai xác nhận → `insufficient_data`. Không biết dữ liệu một bài cụ thể, độ đầy đủ gốc, cách học offline hoặc hiệu quả task. Snapshot cutoff lịch sử luôn được cảnh báo là không phản ánh hiện tại.
+```powershell
+python apps/backend/scripts/replay_prediction.py --prediction-id <UUID>
+```
 
-Không có schema/migration mới. API risk-board và students cũ **thay đổi tương thích có điều kiện**: khi snapshot mới nhất không có PredictionRun, `risk_probability: null`, `risk_status: NOT_PREDICTED` thay vì `0.0/SAFE`; các chỉ số click/nộp cũng null khi không có snapshot (không phải 0); client cũ cần xử lý null/trạng thái mới. Các trường hợp có prediction vẫn dùng nhãn đã lưu. Test: `python -m pytest -o asyncio_mode=auto apps/backend/tests/test_support_suggestions.py`; opt-in DB với PostgreSQL đã khởi tạo: `RUN_COURSE_SCOPE_DB=1 python -m pytest -o asyncio_mode=auto apps/backend/tests/test_course_scope.py`; frontend: `cd apps/frontend && npm run build`.
+Lệnh kiểm tra checksum trước khi giải mã artifact, dùng đúng đầu vào/threshold đã lưu, rồi đối chiếu nhãn và xác suất. Bản ghi cũ thiếu context hoặc thiếu/hỏng artifact sẽ báo lỗi rõ ràng.
 
----
+Quy ước kết quả hiện hành:
+
+- Mỗi enrollment chỉ dùng dự báo mới nhất thuộc snapshot mới nhất, sắp xếp theo thời điểm rồi ID. Snapshot mới chưa dự báo không kế thừa kết quả cũ.
+- API sinh viên trả 200 với `risk_probability: null`, `risk_level: "NOT_PREDICTED"` và danh sách khuyến nghị rỗng nếu enrollment hợp lệ chưa có dự báo hiện hành. Enrollment ngoài quyền vẫn trả 404.
+- Cố vấn tổng hợp tất cả học phần: có bất kỳ môn nhãn 1 thì HIGH_RISK và lấy xác suất lớn nhất trong các môn nguy cơ cao; chỉ SAFE khi có học phần và tất cả đều được dự báo, đều nhãn 0. Các trường hợp còn lại là NOT_PREDICTED. Response kèm số môn đã/chưa dự báo và số môn nguy cơ cao.
+- Các nhãn dùng `prediction_label` đã lưu, không tính lại bằng ngưỡng cố định 0.5. Trường `latest_risk_*` ở overview được giữ tên để tương thích nhưng mang ý nghĩa tổng hợp nêu trên.
+- Thống kê lớp tách `safe_count`, `high_risk_count`, `not_predicted_count`; trung bình chỉ tính trên xác suất đã biết, trả null khi không có. Excel giữ ô xác suất trống và thêm số học phần chưa dự báo.
+- Tạo kế hoạch mới yêu cầu dự báo của snapshot hiện hành; kế hoạch/nhiệm vụ cũ vẫn được giữ để theo dõi.
+- `StudentFeatures` dùng chung cho dự báo thủ công và dữ liệu database: số đếm nguyên không âm, tỷ lệ trong [0,1], số hữu hạn, tín chỉ dương và danh mục OULAD hợp lệ. `date_registration` là số ngày nguyên có thể âm.
+- Dự báo thủ công trả thêm `provenance`; frontend lưu vào lịch sử trình duyệt cùng bộ đầu vào. Endpoint này không tự tạo enrollment, snapshot hay prediction_run trong database. Khuyến nghị/radar sau dự báo dùng dữ liệu của lần phân tích đó.
+
+### Cập nhật registry mô hình ngày 18/10/2026
+
+`services/model_registry.py` là nguồn chọn model chung cho startup, health, dự báo thủ công, batch và CLI. Mỗi request truy vấn đúng một `ml_models.is_active = true`; không dùng `app.state.model` hoặc `MODEL_PATH` để chọn model nữa. Thiếu hoặc có nhiều model active thì từ chối dự báo, không dùng lại một model mặc định trong RAM.
+
+- Khi khởi động, model active chưa có thông tin runtime được kiểm tra từ artifact nguồn rồi lưu hợp đồng vào `metadata_json.validated_runtime`. Các lần khởi động sau dùng artifact lưu theo SHA-256 đã xác nhận. Phải có database và artifact hợp lệ để startup thành công.
+- Hợp đồng gồm model ID/version, SHA-256, threshold, cutoff 0.75, positive label 1 và thứ tự 17 cột. Kiểm tra metadata nhúng, metadata registry và metadata JSON ngoài nếu có; kiểm tra schema/lớp của pipeline và chạy một dự báo thử.
+- Với model mới, `metadata_json.metadata_file_path` có thể chỉ rõ file JSON tuyệt đối hoặc tương đối với thư mục artifact. Nếu không chỉ định, registry tìm file cùng tên đuôi `.json`; artifact mặc định dùng `THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json`. Metadata nhúng phải đủ hợp đồng; mọi khai báo bổ sung đều phải khớp.
+- Activate kiểm tra artifact trước khi đổi cờ active. Đổi cờ, runtime metadata và audit log được commit trong cùng transaction; lỗi nạp, kiểm tra, audit hoặc commit sẽ rollback. Model đã có runtime không được thay byte/threshold/cutoff/version tại chỗ; cần đăng ký một phiên bản mới.
+- Reload kiểm tra lại đúng model đang active trong database. Reload không chuyển về file cấu hình hoặc tự kích hoạt model khác; nguồn hỏng không làm mất bản artifact đã xác nhận và model cũ vẫn sử dụng được.
+- PostgreSQL advisory transaction lock tuần tự hóa activate/reload/khởi tạo giữa các tiến trình. Cache mỗi worker có tối đa 4 mục, dùng danh tính đã xác nhận làm khóa; mỗi request đọc lại database trước khi chọn cache. Worker thấy model mới ở request tiếp theo sau commit, không cần broadcast hoặc restart.
+- Request đã bắt đầu tiếp tục dùng model đã chọn lúc bắt đầu; batch không đổi model giữa các sinh viên trong cùng lượt chạy. Cache có thể chứa candidate của transaction thất bại, nhưng candidate không thể được chọn nếu database chưa công bố active tương ứng.
+- Các worker/replica phải dùng cùng database và truy cập cùng nội dung `artifacts/archive` tại đường dẫn tương ứng, ví dụ qua volume chung. Worker lạnh thiếu/hỏng artifact trả lỗi, không dùng phiên bản khác để thay thế. Cache trong RAM đã giữ artifact hợp lệ có thể tiếp tục phục vụ đúng danh tính đó.
+- Provenance của dự báo mới bổ sung `model_id`, `cutoff_fraction`, `positive_label`. Kết quả batch có model ID/version, threshold và SHA-256; reload trả danh tính trong `model`. Health trả cùng danh tính khi sẵn sàng, HTTP 503 khi không thể xác nhận model active.
+
+Không cần migration SQL mới cho công việc này: runtime dùng cột JSONB đã có. Partial unique index cho cờ active vẫn thuộc công việc 4; guard runtime từ chối trạng thái sai và khóa advisory chỉ bảo đảm tuần tự cho những thao tác đi qua registry.
+
+Kiểm thử registry: `python scripts/run_backend_tests.py -q -k Registry`. Test dùng hai instance registry có cache riêng, API thực qua ASGI và PostgreSQL; có kiểm tra khóa bằng hai kết nối riêng. Chưa chạy thử tải nhiều tiến trình hệ điều hành hoặc nhiều máy.
 
 ## 1. Tổng quan và mức độ hoàn thiện
 
@@ -111,7 +148,7 @@ flowchart LR
     R --> D
     A --> S[Auth / Radar / Audit / Prediction services]
     S --> D
-    S --> M[Pipeline ML trong app.state.model]
+    S --> M[Registry active từ PostgreSQL và cache theo SHA-256]
     L[Lifespan / Reload] --> M
     J[Artifact joblib] --> L
 ```
@@ -127,7 +164,7 @@ Việc dùng async DB giúp request chờ I/O không giữ luồng theo cách đ
 
 ### 3.2. Vòng đời và trạng thái model
 
-`lifespan` gọi `load_model(settings.model_path)` trước khi phục vụ request. Artifact thiếu/hỏng hoặc không tương thích có thể làm startup thất bại. Model được lưu trong `app.state.model`, giải phóng tham chiếu khi shutdown. Loader có shim `_RemainderColsList` dùng API nội bộ sklearn để hỗ trợ unpickle; shim không bảo đảm tương thích mọi phiên bản.
+`lifespan` khởi tạo registry từ model active trong PostgreSQL và xác nhận artifact trước khi phục vụ request. Cache giữ artifact theo danh tính đã xác nhận; database được đọc lại khi chọn model cho mỗi request. Loader có shim `_RemainderColsList` dùng API nội bộ sklearn để hỗ trợ unpickle; shim không bảo đảm tương thích mọi phiên bản.
 
 Mỗi worker có bản model riêng. `/admin/ml/reload` chỉ thay model của process nhận request; chưa có cơ chế đồng bộ worker. `/admin/ml/models/activate` chỉ đổi `is_active` trong DB, không đổi `settings.model_path` và không nạp artifact của record được chọn.
 
@@ -335,7 +372,7 @@ Các phát hiện dưới đây dựa trên source; chưa phải xác nhận kha
 | P2 | Assessment sửa snapshot đã dùng để dự báo; không snapshot mới/re-predict | Mất khả năng tái lập vì input thay đổi sau khi lưu prediction | Snapshot bất biến/versioned, liên kết input hash, tạo dự báo mới |
 | P2 | Lệch DDL/ORM và thiếu migration | Môi trường khác nhau có constraint/cascade khác | Alembic làm nguồn migration, kiểm tra drift và migration trên DB thử |
 | P2 | Wildcard CORS và allow_private_network trong main.py | Cấu hình dev chưa giới hạn origin; tham số có thể không hợp phiên bản Starlette cài | Xác minh phiên bản runtime và allowlist origin theo môi trường |
-| P2 | requirements chưa khai báo trực tiếp asyncpg/joblib/pytest-asyncio và bcrypt dùng trực tiếp | Môi trường cài mới không tái lập ổn định | Khai báo dependency trực tiếp và lock/pin tương thích artifact |
+| Đã xử lý 18/10 | Manifest backend runtime/test khai báo asyncpg, joblib, bcrypt, pytest-asyncio và SQLAlchemy asyncio | Đã dựng image Python sạch | Xem requirements trong apps/backend |
 | P2 | Không thấy Dockerfile tương ứng cấu hình backend/frontend trong Compose | Không thể coi compose build toàn bộ là luồng hoàn chỉnh | Thêm Dockerfile, biến SECRET_KEY/MODEL_PATH, health và deployment checks |
 | P3 | get_client_ip tin X-Forwarded-For do client gửi | Audit IP có thể bị giả nếu không qua proxy đáng tin | Trust proxy allowlist; chuẩn hóa IP tại reverse proxy |
 | P3 | N+1, list không pagination và limit admin không giới hạn | Latency/bộ nhớ tăng theo dữ liệu | Batch query, bounded pagination, đo EXPLAIN/latency trước tối ưu |
@@ -352,14 +389,14 @@ Chạy từ gốc repository, dùng Python 3.12. Không ghi đè `.env` đang s�
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pip install asyncpg bcrypt joblib pytest-asyncio
+# Các dependency này đã nằm trong manifest backend được pin phiên bản.
 if (-not (Test-Path .env)) { Copy-Item .env.example .env }
 docker compose up -d postgres pgadmin
 cd apps/backend
 python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 ```
 
-Lệnh pip bổ sung là workaround cho manifest hiện tại, không thay cho việc sửa requirements. Database Compose mở cổng host 5433, bên trong 5432. pgAdmin mặc định cổng 5050. Compose toàn hệ thống chưa hoàn thiện Dockerfile; phần hướng dẫn này dùng Compose cho DB và chạy Python trên host.
+Cập nhật 18/10/2026: manifest runtime/test đã đầy đủ; Dockerfile backend/frontend đã được bổ sung và kiểm thử trong stack riêng. Database Compose mở cổng host 5433, bên trong 5432. pgAdmin mặc định cổng 5050. Xem hướng dẫn công việc 5 ở cuối tài liệu.
 
 | Biến | Công dụng |
 | --- | --- |
@@ -368,7 +405,7 @@ Lệnh pip bổ sung là workaround cho manifest hiện tại, không thay cho v
 | ALGORITHM | Mặc định HS256 |
 | ACCESS_TOKEN_EXPIRE_MINUTES | Mặc định 1440 |
 | REFRESH_TOKEN_EXPIRE_DAYS | Field settings mặc định 7 |
-| MODEL_PATH | Artifact; đường dẫn tương đối resolve theo gốc repository |
+| MODEL_PATH | Cấu hình cũ; không còn chọn model phục vụ API. Artifact phục vụ lấy từ model active trong database |
 | APP_NAME / APP_VERSION | Metadata ứng dụng |
 | POSTGRES_USER/PASSWORD/DB/HOST_PORT | Cấu hình Compose; phải khớp DATABASE_URL |
 
@@ -1558,3 +1595,41 @@ Thông báo được tính từ task chưa hoàn thành thuộc plan ACTIVE, joi
 Response gồm id, enrollment_id, code_module, course_name, code_presentation, title, message, pending_tasks, due_date, days_remaining, state và level. Danh sách ưu tiên quá hạn trước, rồi sắp đến hạn, rồi pending. Trạng thái đã đọc nằm trong localStorage riêng từng tài khoản/trình duyệt, không đồng bộ nhiều thiết bị.
 
 Đã chạy 10 kiểm thử quy tắc/API giả lập và 1 kiểm thử PostgreSQL về quyền sở hữu/task hoàn thành với fixture rollback. Backend đang chạy trả HTTP 200 cho tài khoản 2045230069: AAA có 12 task chưa hoàn thành, hạn kế hoạch gần nhất 14/10/2026, quá hạn 2 ngày tại thời điểm kiểm tra 16/10; request không token trả 401. Frontend build thành công. Chưa có push khi đóng trang, email, SMS hoặc scheduler gửi thông báo ngoài ứng dụng.
+
+
+## Kiểm thử PostgreSQL và Docker — công việc 5, ngày 18/10/2026
+
+Dùng Python 3.12 và cài manifest nhỏ dành riêng backend:
+
+```powershell
+python -m venv .venv
+.venv/Scripts/python.exe -m pip install -r apps/backend/requirements-dev.txt
+.venv/Scripts/python.exe scripts/run_backend_tests.py -q --junitxml=reports/test-results/task5-backend.xml
+npm --prefix apps/frontend ci
+npm --prefix apps/frontend test
+npm --prefix apps/frontend run build
+```
+
+Chạy lệnh từ gốc repository. Runner dùng DATABASE_URL trong .env để kết nối server, tạo database có tên gốc + `_test`, khởi tạo schema/seed/trigger, rồi truyền TEST_DATABASE_URL cho pytest. Có thể chọn database riêng bằng TEST_DATABASE_URL, nhưng tên phải kết thúc `_test` và khác database ứng dụng. User PostgreSQL cần CREATEDB khi database chưa tồn tại. Runner không drop database; so sánh số dòng và hash nội dung của cả 19 bảng trước/sau để phát hiện fixture chưa rollback. Sequence có thể tăng dù transaction rollback. Fixture dùng outer transaction và savepoint kể cả khi endpoint gọi commit. Chạy pytest trực tiếp không cấu hình TEST_DATABASE_URL sẽ chặn kết nối database; các test tích hợp bỏ qua nếu chưa opt-in.
+
+Runtime được pin cùng scikit-learn 1.6.0, LightGBM 4.7.0, numpy 1.26.4, pandas 2.2.3. SQLAlchemy phải cài extra `[asyncio]` để có greenlet; lỗi thiếu greenlet đã được phát hiện bằng image cài sạch và sửa.
+
+Chạy stack phát triển hiện tại: cấu hình .env từ .env.example, SECRET_KEY riêng và DOCKER_DATABASE_URL khớp POSTGRES_USER/PASSWORD/DB, rồi `docker compose up --build -d`. Frontend dùng nginx port 3000, proxy `/api/` và `/media/` tới backend. Archive model và avatar có volume riêng. Init SQL chỉ tự chạy khi volume PostgreSQL mới; database đang có vẫn cần script nâng cấp phù hợp. Không xóa volume đang dùng để áp dụng schema.
+
+Stack kiểm thử riêng (không dùng volume/container của hệ thống hiện tại):
+
+```powershell
+# Tạo file .cache/task5-docker.env, chỉ chứa hai giá trị ngẫu nhiên:
+# VERIFY_DB_PASSWORD=<chuỗi hex riêng>
+# VERIFY_SECRET_KEY=<chuỗi ngẫu nhiên riêng>
+docker compose --env-file .cache/task5-docker.env -p edurisk-verification -f docker-compose.verify.yml up --build -d
+.venv/Scripts/python.exe scripts/verify_stack.py
+# Khi xong, dừng stack riêng và giữ lại volume:
+docker compose --env-file .cache/task5-docker.env -p edurisk-verification -f docker-compose.verify.yml stop
+```
+
+Truy cập http://127.0.0.1:13000. Stack riêng đặt access token 1 phút để kiểm tra refresh; cấu hình ứng dụng chính không đổi. Seed admin của database tạo mới là admin@huit.edu.vn / admin (chỉ dùng thử local). HTTP smoke tạo thêm một tài khoản fixture cho kiểm tra đổi tài khoản. Không dùng script này trỏ vào server vận hành.
+
+Frontend dùng chung authenticatedFetch cho toàn bộ request có xác thực, refresh một lần khi 401 và gom request đồng thời; không refresh khi chỉ bị 403 trên bản ghi. Refresh bị 401/403 sẽ kết thúc phiên; lỗi mạng/5xx giữ token để thử lại. Request cũ bị hủy khi đổi tài khoản, refresh đến muộn không khôi phục phiên đã logout. Lịch sử lưu theo API base và UUID user, không nhập lịch sử dùng chung v2 vào tài khoản mới. Logout xóa dữ liệu đang hiển thị nhưng giữ lịch sử riêng của từng tài khoản trên trình duyệt.
+
+Bằng chứng và giới hạn chi tiết: reports/dailys/18-10-2026.md, mục 6. Không coi test workflow này là bằng chứng đánh giá hiệu quả cá nhân hóa hoặc migration đã hoàn thành.

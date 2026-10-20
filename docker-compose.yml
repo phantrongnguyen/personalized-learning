@@ -48,25 +48,28 @@ services:
       - "8000:8000"
     environment:
       - DATABASE_URL=${DOCKER_DATABASE_URL:-postgresql://postgres:123@postgres:5432/personalized_learning_db}
+      - SECRET_KEY=${SECRET_KEY:?Set SECRET_KEY in .env before starting backend}
       - LOG_LEVEL=${LOG_LEVEL:-INFO}
     depends_on:
       postgres:
         condition: service_healthy
     volumes:
-      - ./apps/backend:/app
-      - ./packages:/packages
-      - ./data:/data
+      - model_archive:/workspace/apps/backend/artifacts/archive
+      - avatar_uploads:/workspace/apps/backend/uploads/avatars
 
   frontend:
     build:
-      context: ./apps/frontend
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: apps/frontend/Dockerfile
     container_name: kltn13_frontend
     ports:
       - "3000:80"
     depends_on:
-      - backend
+      backend:
+        condition: service_healthy
 
 volumes:
   postgres_data:
   pgadmin_data:
+  model_archive:
+  avatar_uploads:

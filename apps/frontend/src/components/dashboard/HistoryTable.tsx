@@ -28,7 +28,7 @@ export const HistoryTable: React.FC = () => {
 
   const handleClear = () => {
     if (history.length === 0) return;
-    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử dự đoán trong phiên này?')) {
+    if (window.confirm('Bạn có chắc chắn muốn xóa toàn bộ lịch sử dự đoán của tài khoản này?')) {
       clearHistory();
     }
   };
@@ -42,7 +42,7 @@ export const HistoryTable: React.FC = () => {
             <History className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Lịch sử Đánh giá trong phiên</h3>
+            <h3 className="text-base font-bold text-white">Lịch sử đánh giá của tài khoản</h3>
             <p className="text-xs text-slate-400">
               Lưu trữ tối đa 50 bản ghi gần nhất (lưu cục bộ trong LocalStorage)
             </p>

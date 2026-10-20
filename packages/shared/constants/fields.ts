@@ -52,7 +52,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     type: 'number',
     default: 60,
     step: 5,
-    min: 0,
+    min: 1,
     max: 300,
   },
   {

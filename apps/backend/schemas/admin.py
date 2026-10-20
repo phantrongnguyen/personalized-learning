@@ -75,14 +75,14 @@ class UserRolesUpdateIn(BaseModel):
 class CourseCreateIn(BaseModel):
     code_module: str
     name: str
-    credits_default: int = 30
+    credits_default: int = Field(30, gt=0)
     description: Optional[str] = None
 
 
 class CoursePresentationCreateIn(BaseModel):
     course_id: uuid.UUID
     code_presentation: str
-    module_presentation_length: int = 268
+    module_presentation_length: int = Field(268, gt=0)
     start_date: Optional[date] = None
 
 
@@ -110,6 +110,7 @@ class MLModelOut(BaseModel):
     cutoff_fraction: float
     accuracy: Optional[float] = None
     roc_auc: Optional[float] = None
+    average_precision: Optional[float] = None
     is_active: bool
     created_at: datetime
 
@@ -126,6 +127,10 @@ class BatchPredictResultOut(BaseModel):
     high_risk_count: int
     safe_count: int
     execution_time_ms: int
+    model_id: uuid.UUID | None = None
+    model_version: str | None = None
+    threshold: float | None = None
+    model_sha256: str | None = None
 
 
 # -------------------------------------------------------------

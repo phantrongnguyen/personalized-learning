@@ -51,7 +51,7 @@ export const Footer: React.FC = () => {
                 <span>Giải pháp AI Quản trị Rủi ro Đào tạo Tiên phong</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Sẵn sàng Tối ưu Tỷ lệ Tốt nghiệp &amp; Giữ chân Học viên?
+                Sẵn sàng Tối ưu Tỷ lệ Tốt nghiệp
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
                 Nhận tài liệu kỹ thuật, nghiên cứu thực nghiệm mô hình HCO-VNLS và bản tin phân tích rủi ro học tập định kỳ dành cho các cơ sở giáo dục.

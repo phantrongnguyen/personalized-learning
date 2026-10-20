@@ -8,6 +8,9 @@ from models.ml import MLModel, PredictionRun
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
 from models.help_request import StudentHelpRequest
 from models.audit import AuditLog
+from models.schema_contract import configure_schema
+
+configure_schema(Base.metadata)
 
 __all__ = [
     "Base",

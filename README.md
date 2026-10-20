@@ -1,18 +1,12 @@
 # EduRisk AI — Hệ thống gợi ý chiến lược học tập cá nhân hóa
 
+- [Bàn giao giao diện Nguyên + gợi ý giảng viên (ảnh trước/sau và sơ đồ)](docs/README_BAN_GIAO.md)
+
 Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT). Hệ thống kết hợp dự báo nguy cơ học tập bằng LightGBM với các không gian làm việc dành cho quản trị viên, cố vấn học tập, giảng viên và sinh viên.
 
 **Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
 
-## Gợi ý có căn cứ cho giảng viên (19/10/2026)
-
-Giảng viên mở học phần và sinh viên để xem riêng dự báo model tại cutoff 75%, gợi ý quy tắc có nguồn/thời điểm/giới hạn, rồi chọn gợi ý vào bản nháp, tự chỉnh sửa mức ưu tiên và bấm giao. Đọc gợi ý không tạo task. Nếu thiếu dữ liệu, API trả `insufficient_data` hoặc `abstained`; nếu thiếu dự báo, bảng nguy cơ hiển thị `NOT_PREDICTED` thay vì SAFE. Chỉ cố vấn/admin tạo plan hợp lệ khi đã có dự báo thật; chưa có plan thì giảng viên không thể giao nhiệm vụ trong luồng này. Không xác định bài nộp thiếu/trễ theo từng bài từ số liệu tổng hợp. Chi tiết API, nguồn và điều kiện xác nhận nằm trong [README backend](apps/backend/README.md); nhật ký từng bước ở [docs/lecturer-suggestions-process.md](docs/lecturer-suggestions-process.md).
-
-## Kết quả model và kiểm thử hai vai trò (19/10/2026)
-
-Model đã chốt trong app là HCO-VNLS + LightGBM tại cutoff 75%, 17 đặc trưng gốc và ngưỡng 0,50; không thay artifact. [Báo cáo kết quả và tám biểu đồ](reports/model_final/MODEL_FINAL.md) phân biệt test lịch sử với validation, ghi rõ số trường hợp bỏ sót và giới hạn đánh giá. Hình báo cáo không được dùng như dự báo cá nhân trên giao diện.
-
-Mở frontend đang chạy tại `http://127.0.0.1:5173/`. Database seed chỉ có admin; để thử sinh viên/giảng viên cần cấp hai tài khoản và dữ liệu demo **giả lập** theo [hướng dẫn kiểm thử hai vai trò](docs/local-role-testing.md). Không báo cáo dự báo demo 0,82 như kết quả LightGBM.
+**Cập nhật database 19/10/2026:** SQL/ORM đã đồng bộ 19 bảng, có Alembic `0002_normalize`, CHECK/UNIQUE và chính sách giữ lịch sử bằng RESTRICT. Xem [schema hiện hành](database/database_design_plan.md), [hướng dẫn migration/backup/khôi phục](docs/database_migrations.md) và [kết quả kiểm thử](reports/dailys/19-10-2026.md). Các mô tả schema/migration cũ bên dưới được thay thế bởi các tài liệu này.
 
 ## Mục lục
 
@@ -124,6 +118,8 @@ Ba chỉ số trên thuộc `validation_reference_train_only`, không phải k�
 
 Pipeline dự báo trả `prediction` bằng cách so xác suất lớp 1 với ngưỡng trong artifact. `confidence` là xác suất lớp nguy cơ, kể cả khi nhãn trả về là 0.
 
+Cập nhật 18/10/2026: dự báo mới lưu đủ đầu vào và danh tính artifact để tái lập; cập nhật tiến độ tạo snapshot mới. Chưa có dự báo cho snapshot hiện hành được biểu diễn bằng `null`/`NOT_PREDICTED`, không gán an toàn. Cố vấn tổng hợp theo tất cả học phần. Database có sẵn cần nâng cấp bằng `python apps/backend/scripts/apply_prediction_integrity.py`; xem [hướng dẫn bảo toàn và replay dự báo](apps/backend/README.md#cập-nhật-lịch-sử-dự-báo-ngày-18102026).
+
 17 đặc trưng gồm thông tin học phần/nhân khẩu học, tín chỉ, thời điểm đăng ký, tổng click, click tài nguyên/URL, ngày hoạt động, bài nộp/trễ hạn, tỷ lệ hoạt động/nộp bài, số ngày không hoạt động và click trong 7/30 ngày gần nhất. Xem [schema đầu vào](apps/backend/schemas/prediction.py) và [định nghĩa frontend](packages/shared/constants/fields.ts).
 
 Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Bảy notebook nghiên cứu cuối từ nhánh `gb` nay nằm tại `experiments/hco_vnls/notebooks`: đọc `01 → 02 → 05b → 09 → 10` để kiểm kê dữ liệu, tạo đặc trưng, chọn/kiểm chứng biến và đóng gói LightGBM; `06 → 07` so sánh CatBoost/XGBoost. Mã Python chúng dùng nằm cạnh notebook trong `clht_code` và `code_dung_chung`. Bảng validation/kiểm chứng và giao thức so sánh đã thực hiện được giữ trong `experiments/hco_vnls/ket_qua`; đó không phải đánh giá test mới. Model trong `apps/backend/artifacts` trùng artifact cuối của `gb` và là bản duy nhất được app nạp; chạy notebook 10 chỉ ghi model vào `experiments/hco_vnls/mo_hinh`, không thay model của app.
@@ -192,10 +188,10 @@ Các lệnh dưới đây dùng PowerShell, bắt đầu tại thư mục gốc 
 python -m venv .venv
 .\.venv\Scripts\Activate.ps1
 python -m pip install -r requirements.txt
-python -m pip install asyncpg bcrypt joblib pytest-asyncio
+# Dependency backend/test đã được khai báo trong manifest được pin.
 ```
 
-`requirements.txt` hiện chưa khai báo trực tiếp đầy đủ các gói ở lệnh bổ sung. scikit-learn được pin `1.6.0`; metadata artifact cũng ghi phiên bản này.
+`requirements.txt` dùng manifest runtime/test trong `apps/backend`; scikit-learn 1.6.0 và LightGBM 4.7.0 khớp môi trường đã kiểm thử artifact. Cài backend gọn bằng `pip install -r apps/backend/requirements-dev.txt`.
 
 ### 3. Cấu hình môi trường
 
@@ -212,7 +208,7 @@ Dùng chuỗi được sinh làm `SECRET_KEY` trong `.env`.
 | --- | --- |
 | `DATABASE_URL` | URL PostgreSQL từ host; mặc định Compose mở cổng 5433 |
 | `SECRET_KEY` | Khóa ký JWT bắt buộc; thay khóa mẫu |
-| `MODEL_PATH` | Đường dẫn artifact, được resolve từ gốc repository |
+| `MODEL_PATH` | Cấu hình cũ; API hiện chọn artifact từ bản ghi model active trong database |
 | `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB` | Khởi tạo database trong Compose |
 | `POSTGRES_HOST_PORT` | Cổng database trên host, mặc định 5433 |
 | `PGADMIN_DEFAULT_EMAIL`, `PGADMIN_DEFAULT_PASSWORD` | Tài khoản quản trị pgAdmin |
@@ -247,7 +243,7 @@ python -m uvicorn main:app --host 127.0.0.1 --port 8000 --reload
 - Health: [http://127.0.0.1:8000/api/v1/health](http://127.0.0.1:8000/api/v1/health).
 - OpenAPI: [http://127.0.0.1:8000/openapi.json](http://127.0.0.1:8000/openapi.json).
 
-Backend nạp mô hình ngay trong lifespan; artifact thiếu hoặc không tương thích sẽ ngăn khởi động. `main.py` đang truyền `allow_private_network=True` vào CORSMiddleware; nếu phiên bản Starlette không hỗ trợ, cần xử lý tham số này trước khi chạy. Chưa coi lệnh khởi động là đã được xác minh trên môi trường cài mới.
+Backend xác nhận model active từ PostgreSQL ngay trong lifespan; thiếu database, sai số lượng active hoặc artifact không hợp lệ sẽ ngăn khởi động. Dashboard, batch và CLI dùng chung registry; activate/reload kiểm tra hợp đồng rồi commit cùng audit. Worker chọn lại danh tính model ở mỗi request và cache artifact theo SHA-256. Xem [cơ chế registry và vận hành nhiều worker](apps/backend/README.md#cập-nhật-registry-mô-hình-ngày-18102026). Đã smoke test startup, JWT, health và dự báo trên môi trường hiện có; chưa xác nhận cài mới toàn bộ hệ thống.
 
 ### 6. Frontend
 
@@ -351,7 +347,7 @@ Mật khẩu tối thiểu 6 ký tự, tối đa 72 byte UTF-8; không được 
 {"prediction": 1, "confidence": 0.82}
 ```
 
-Endpoint này hiện chưa có dependency xác thực. Chưa nên công khai bên ngoài trước khi rà soát quyền và giới hạn truy cập.
+Từ ngày 18/10/2026, endpoint yêu cầu bearer access token của tài khoản đang hoạt động. Frontend đã gửi token khi dự báo; yêu cầu ẩn danh hoặc refresh token bị từ chối. Quy tắc quyền trên từng bản ghi và phạm vi ADMIN được mô tả tại [cập nhật phân quyền backend](apps/backend/README.md#cập-nhật-phân-quyền-ngày-18102026).
 
 ## Kiểm thử
 
@@ -371,7 +367,7 @@ python -m pytest tests/test_login_identifier.py tests/test_admin_accounts.py -q
 
 Kết quả ghi nhận trước lần cập nhật tài liệu này: frontend build thành công; **14 test** trong hai file trên đạt. Test dùng mock, không xác nhận hành vi SQL trên PostgreSQL thật. Có cảnh báo deprecation Pydantic cần xử lý về sau.
 
-Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py` kiểm tra các luồng khác. Khi chuẩn bị đủ backend/database và dữ liệu theo fixture, có thể chạy `python -m pytest tests -q`; chưa ghi nhận toàn bộ suite tích hợp đều đạt. Đợt kiểm tra trước gặp lỗi database/Docker chưa sẵn sàng.
+Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py` kiểm tra các luồng khác. Cập nhật 18/10/2026: toàn bộ suite đạt 119 test và 48 subtest; chạy từ gốc repository bằng `python scripts/run_backend_tests.py -q` để dùng database riêng và rollback fixture.
 
 Đã kiểm tra render trang hồ sơ cho bốn vai trò và khách; đã thử luồng cấp tài khoản/lọc/khóa trên trình duyệt bằng fixture. Đây là kiểm tra dữ liệu giả lập, không phải xác nhận vận hành với dữ liệu thật.
 
@@ -401,3 +397,10 @@ Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrong
 Commit theo Conventional Commits, ví dụ `feat(admin): add account management APIs`, `test(auth): cover student code login`, `docs(readme): document current project implementation`. Mỗi commit có một mục đích chính; không commit `.env`, thông tin bí mật, file build, môi trường ảo hoặc dữ liệu lớn. Rà soát diff và chạy kiểm tra phù hợp trước khi push; review qua PR trước khi merge nhánh chính.
 
 Mã nguồn sử dụng [giấy phép MIT](LICENSE). Bản quyền trong LICENSE ghi năm 2026, HUIT — đề tài KLTN 13.
+
+
+### Kiểm thử tích hợp ngày 18/10/2026
+
+Từ gốc repository chạy `.venv/Scripts/python.exe scripts/run_backend_tests.py -q`. Runner tạo database riêng có hậu tố `_test`, chạy toàn bộ suite và kiểm tra dữ liệu 19 bảng không đổi sau rollback. Không bật RUN_COURSE_SCOPE_DB trên database ứng dụng. Frontend: `npm --prefix apps/frontend test` và `npm --prefix apps/frontend run build`.
+
+Dockerfile backend/frontend, nginx proxy và healthcheck đã có. `docker compose up --build -d` dùng cấu hình .env; archive model/avatar được giữ trong volume. Để kiểm thử độc lập, dùng `docker-compose.verify.yml` với project `edurisk-verification`, hai biến VERIFY_DB_PASSWORD/VERIFY_SECRET_KEY và frontend port 13000; xem hướng dẫn đầy đủ trong apps/backend/README.md. Kết quả và giới hạn nằm trong reports/dailys/18-10-2026.md, mục 6.

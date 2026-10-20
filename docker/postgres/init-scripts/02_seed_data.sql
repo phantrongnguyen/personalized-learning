@@ -58,6 +58,7 @@ INSERT INTO ml_models (
     cutoff_fraction,
     accuracy,
     roc_auc,
+    average_precision,
     is_active,
     metadata_json,
     created_at
@@ -69,13 +70,16 @@ INSERT INTO ml_models (
     0.5,
     0.75,
     0.8741,
-    0.8968,
-    TRUE,
+    NULL, -- ROC-AUC not established by the validation reference
+    0.8967566497124569, -- average precision, validation reference only
+    NOT EXISTS (SELECT 1 FROM ml_models WHERE is_active),
     '{
         "description": "Mô hình phân loại nguy cơ học tập sinh viên tại mốc Cutoff 75% thời lượng học phần OULAD",
         "algorithm": "LightGBM + Tối ưu hóa siêu tham số lai ghép HCO-VNLS",
         "positive_label": 1,
-        "features_count": 17
+        "features_count": 17,
+        "metric_scope": "validation_reference_train_only",
+        "metric_source": "THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json"
     }'::jsonb,
     NOW()
 ) ON CONFLICT (version) DO NOTHING;

@@ -1,0 +1,1674 @@
+{
+  "advising_notes": {
+    "columns": [
+      [
+        "advisor_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "agreed_actions",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "content",
+        "TEXT",
+        false,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "enrollment_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "meeting_date",
+        "DATE",
+        false,
+        "CURRENT_DATE"
+      ],
+      [
+        "meeting_type",
+        "VARCHAR(50)",
+        false,
+        "'IN_PERSON'::character varying"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "advisor_id"
+        ],
+        "advisor_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "enrollment_id"
+        ],
+        "student_enrollments",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "advising_notes_pkey",
+        "CREATE UNIQUE INDEX advising_notes_pkey ON public.advising_notes USING btree (id)"
+      ]
+    ]
+  },
+  "advisor_profiles": {
+    "columns": [
+      [
+        "department",
+        "VARCHAR(150)",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "lms_api_key",
+        "VARCHAR(255)",
+        true,
+        null
+      ],
+      [
+        "office_location",
+        "VARCHAR(255)",
+        true,
+        null
+      ],
+      [
+        "user_id",
+        "UUID",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "user_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "advisor_profiles_pkey",
+        "CREATE UNIQUE INDEX advisor_profiles_pkey ON public.advisor_profiles USING btree (id)"
+      ],
+      [
+        "advisor_profiles_user_id_key",
+        "CREATE UNIQUE INDEX advisor_profiles_user_id_key ON public.advisor_profiles USING btree (user_id)"
+      ]
+    ]
+  },
+  "advisor_students": {
+    "columns": [
+      [
+        "academic_year",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "advisor_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "assigned_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "class_name",
+        "VARCHAR(100)",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "student_id",
+        "UUID",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "advisor_id",
+        "student_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "advisor_id"
+        ],
+        "advisor_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "student_id"
+        ],
+        "student_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "advisor_students_pkey",
+        "CREATE UNIQUE INDEX advisor_students_pkey ON public.advisor_students USING btree (id)"
+      ],
+      [
+        "uq_advisor_student",
+        "CREATE UNIQUE INDEX uq_advisor_student ON public.advisor_students USING btree (advisor_id, student_id)"
+      ]
+    ]
+  },
+  "audit_logs": {
+    "columns": [
+      [
+        "action",
+        "VARCHAR(100)",
+        false,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "detail",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "ip_address",
+        "VARCHAR(50)",
+        true,
+        null
+      ],
+      [
+        "target_id",
+        "UUID",
+        true,
+        null
+      ],
+      [
+        "target_type",
+        "VARCHAR(50)",
+        true,
+        null
+      ],
+      [
+        "user_id",
+        "UUID",
+        true,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "SET NULL"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "audit_logs_pkey",
+        "CREATE UNIQUE INDEX audit_logs_pkey ON public.audit_logs USING btree (id)"
+      ]
+    ]
+  },
+  "course_lecturers": {
+    "columns": [
+      [
+        "assigned_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "lecturer_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "presentation_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "role_in_course",
+        "VARCHAR(50)",
+        false,
+        "'GIANG_VIEN_CHINH'::character varying"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "lecturer_id",
+        "presentation_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "lecturer_id"
+        ],
+        "lecturer_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "presentation_id"
+        ],
+        "course_presentations",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "course_lecturers_pkey",
+        "CREATE UNIQUE INDEX course_lecturers_pkey ON public.course_lecturers USING btree (id)"
+      ],
+      [
+        "uq_lecturer_presentation",
+        "CREATE UNIQUE INDEX uq_lecturer_presentation ON public.course_lecturers USING btree (lecturer_id, presentation_id)"
+      ]
+    ]
+  },
+  "course_presentations": {
+    "columns": [
+      [
+        "code_presentation",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "course_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "module_presentation_length",
+        "INTEGER",
+        false,
+        "260"
+      ],
+      [
+        "start_date",
+        "DATE",
+        true,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "code_presentation",
+        "course_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "course_id"
+        ],
+        "courses",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "course_presentations_pkey",
+        "CREATE UNIQUE INDEX course_presentations_pkey ON public.course_presentations USING btree (id)"
+      ],
+      [
+        "uq_course_presentation",
+        "CREATE UNIQUE INDEX uq_course_presentation ON public.course_presentations USING btree (course_id, code_presentation)"
+      ]
+    ]
+  },
+  "courses": {
+    "columns": [
+      [
+        "code_module",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "credits_default",
+        "INTEGER",
+        false,
+        "30"
+      ],
+      [
+        "description",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "name",
+        "VARCHAR(255)",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "code_module"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "courses_code_module_key",
+        "CREATE UNIQUE INDEX courses_code_module_key ON public.courses USING btree (code_module)"
+      ],
+      [
+        "courses_pkey",
+        "CREATE UNIQUE INDEX courses_pkey ON public.courses USING btree (id)"
+      ]
+    ]
+  },
+  "intervention_plans": {
+    "columns": [
+      [
+        "advisor_note_summary",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "prediction_run_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "status",
+        "VARCHAR(30)",
+        false,
+        "'ACTIVE'::character varying"
+      ],
+      [
+        "student_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "target_completion_date",
+        "DATE",
+        true,
+        null
+      ],
+      [
+        "updated_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "prediction_run_id"
+        ],
+        "prediction_runs",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "student_id"
+        ],
+        "student_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_intervention_plans_student",
+        [
+          "student_id",
+          "status"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_intervention_plans_student",
+        "CREATE INDEX idx_intervention_plans_student ON public.intervention_plans USING btree (student_id, status)"
+      ],
+      [
+        "intervention_plans_pkey",
+        "CREATE UNIQUE INDEX intervention_plans_pkey ON public.intervention_plans USING btree (id)"
+      ]
+    ]
+  },
+  "intervention_tasks": {
+    "columns": [
+      [
+        "category",
+        "VARCHAR(50)",
+        false,
+        null
+      ],
+      [
+        "completed_at",
+        "TIMESTAMP WITH TIME ZONE",
+        true,
+        null
+      ],
+      [
+        "description",
+        "TEXT",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "is_completed",
+        "BOOLEAN",
+        false,
+        "false"
+      ],
+      [
+        "plan_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "priority",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "student_feedback",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "target_metric",
+        "VARCHAR(255)",
+        false,
+        null
+      ],
+      [
+        "title",
+        "VARCHAR(255)",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [
+      "priority = ANY (ARRAY['HIGH', 'MEDIUM', 'LOW'])"
+    ],
+    "foreign_keys": [
+      [
+        [
+          "plan_id"
+        ],
+        "intervention_plans",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_intervention_tasks_plan_status",
+        [
+          "plan_id",
+          "is_completed"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_intervention_tasks_plan_status",
+        "CREATE INDEX idx_intervention_tasks_plan_status ON public.intervention_tasks USING btree (plan_id, is_completed)"
+      ],
+      [
+        "intervention_tasks_pkey",
+        "CREATE UNIQUE INDEX intervention_tasks_pkey ON public.intervention_tasks USING btree (id)"
+      ]
+    ]
+  },
+  "lecturer_profiles": {
+    "columns": [
+      [
+        "academic_rank",
+        "VARCHAR(50)",
+        true,
+        "'Gi\u1ea3ng vi\u00ean'::character varying"
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "department",
+        "VARCHAR(150)",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "lecturer_code",
+        "VARCHAR(50)",
+        false,
+        null
+      ],
+      [
+        "user_id",
+        "UUID",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "lecturer_code"
+      ],
+      [
+        "user_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "lecturer_profiles_lecturer_code_key",
+        "CREATE UNIQUE INDEX lecturer_profiles_lecturer_code_key ON public.lecturer_profiles USING btree (lecturer_code)"
+      ],
+      [
+        "lecturer_profiles_pkey",
+        "CREATE UNIQUE INDEX lecturer_profiles_pkey ON public.lecturer_profiles USING btree (id)"
+      ],
+      [
+        "lecturer_profiles_user_id_key",
+        "CREATE UNIQUE INDEX lecturer_profiles_user_id_key ON public.lecturer_profiles USING btree (user_id)"
+      ]
+    ]
+  },
+  "ml_models": {
+    "columns": [
+      [
+        "accuracy",
+        "DOUBLE PRECISION",
+        true,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "cutoff_fraction",
+        "DOUBLE PRECISION",
+        false,
+        "0.75"
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "is_active",
+        "BOOLEAN",
+        false,
+        "true"
+      ],
+      [
+        "metadata_json",
+        "JSONB",
+        true,
+        null
+      ],
+      [
+        "model_file_path",
+        "VARCHAR(500)",
+        false,
+        null
+      ],
+      [
+        "model_name",
+        "VARCHAR(150)",
+        false,
+        null
+      ],
+      [
+        "roc_auc",
+        "DOUBLE PRECISION",
+        true,
+        null
+      ],
+      [
+        "threshold",
+        "DOUBLE PRECISION",
+        false,
+        "0.5"
+      ],
+      [
+        "version",
+        "VARCHAR(30)",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "version"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "ml_models_pkey",
+        "CREATE UNIQUE INDEX ml_models_pkey ON public.ml_models USING btree (id)"
+      ],
+      [
+        "ml_models_version_key",
+        "CREATE UNIQUE INDEX ml_models_version_key ON public.ml_models USING btree (version)"
+      ]
+    ]
+  },
+  "prediction_runs": {
+    "columns": [
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "execution_time_ms",
+        "INTEGER",
+        true,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "inference_context",
+        "JSONB",
+        true,
+        null
+      ],
+      [
+        "model_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "prediction_label",
+        "SMALLINT",
+        false,
+        null
+      ],
+      [
+        "risk_probability",
+        "DOUBLE PRECISION",
+        false,
+        null
+      ],
+      [
+        "snapshot_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "triggered_by_user_id",
+        "UUID",
+        true,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [
+      "prediction_label = ANY (ARRAY[0, 1])"
+    ],
+    "foreign_keys": [
+      [
+        [
+          "model_id"
+        ],
+        "ml_models",
+        [
+          "id"
+        ],
+        "RESTRICT"
+      ],
+      [
+        [
+          "snapshot_id"
+        ],
+        "student_feature_snapshots",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "triggered_by_user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "SET NULL"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_predictions_created_at_desc",
+        [
+          "created_at"
+        ],
+        false
+      ],
+      [
+        "idx_predictions_snapshot",
+        [
+          "snapshot_id"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_predictions_created_at_desc",
+        "CREATE INDEX idx_predictions_created_at_desc ON public.prediction_runs USING btree (created_at DESC)"
+      ],
+      [
+        "idx_predictions_snapshot",
+        "CREATE INDEX idx_predictions_snapshot ON public.prediction_runs USING btree (snapshot_id)"
+      ],
+      [
+        "prediction_runs_pkey",
+        "CREATE UNIQUE INDEX prediction_runs_pkey ON public.prediction_runs USING btree (id)"
+      ]
+    ]
+  },
+  "roles": {
+    "columns": [
+      [
+        "code",
+        "VARCHAR(50)",
+        false,
+        null
+      ],
+      [
+        "description",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "id",
+        "SMALLINT",
+        false,
+        "nextval('roles_id_seq'::regclass)"
+      ],
+      [
+        "name",
+        "VARCHAR(100)",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "code"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "roles_code_key",
+        "CREATE UNIQUE INDEX roles_code_key ON public.roles USING btree (code)"
+      ],
+      [
+        "roles_pkey",
+        "CREATE UNIQUE INDEX roles_pkey ON public.roles USING btree (id)"
+      ]
+    ]
+  },
+  "student_enrollments": {
+    "columns": [
+      [
+        "date_registration",
+        "INTEGER",
+        false,
+        "'-10'::integer"
+      ],
+      [
+        "date_unregistration",
+        "INTEGER",
+        true,
+        null
+      ],
+      [
+        "final_result",
+        "VARCHAR(20)",
+        true,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "num_of_prev_attempts",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "presentation_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "student_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "studied_credits",
+        "INTEGER",
+        false,
+        "60"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "presentation_id",
+        "student_id"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "presentation_id"
+        ],
+        "course_presentations",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "student_id"
+        ],
+        "student_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_enrollments_presentation",
+        [
+          "presentation_id"
+        ],
+        false
+      ],
+      [
+        "idx_enrollments_student",
+        [
+          "student_id"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_enrollments_presentation",
+        "CREATE INDEX idx_enrollments_presentation ON public.student_enrollments USING btree (presentation_id)"
+      ],
+      [
+        "idx_enrollments_student",
+        "CREATE INDEX idx_enrollments_student ON public.student_enrollments USING btree (student_id)"
+      ],
+      [
+        "student_enrollments_pkey",
+        "CREATE UNIQUE INDEX student_enrollments_pkey ON public.student_enrollments USING btree (id)"
+      ],
+      [
+        "uq_student_presentation",
+        "CREATE UNIQUE INDEX uq_student_presentation ON public.student_enrollments USING btree (student_id, presentation_id)"
+      ]
+    ]
+  },
+  "student_feature_snapshots": {
+    "columns": [
+      [
+        "active_day_ratio",
+        "DOUBLE PRECISION",
+        false,
+        "0.0"
+      ],
+      [
+        "active_days_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "assessments_submitted_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "clicks_recent_30",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "clicks_recent_7",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "clicks_resource_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "clicks_url_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "cutoff_stage",
+        "VARCHAR(30)",
+        false,
+        "'CUTOFF_75'::character varying"
+      ],
+      [
+        "days_since_last_activity",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "enrollment_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "late_submissions_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ],
+      [
+        "raw_features_json",
+        "JSONB",
+        true,
+        null
+      ],
+      [
+        "submission_rate",
+        "DOUBLE PRECISION",
+        false,
+        "0.0"
+      ],
+      [
+        "total_clicks_to_t",
+        "INTEGER",
+        false,
+        "0"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "enrollment_id"
+        ],
+        "student_enrollments",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_feature_snapshots_enrollment",
+        [
+          "enrollment_id",
+          "cutoff_stage"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_feature_snapshots_enrollment",
+        "CREATE INDEX idx_feature_snapshots_enrollment ON public.student_feature_snapshots USING btree (enrollment_id, cutoff_stage)"
+      ],
+      [
+        "student_feature_snapshots_pkey",
+        "CREATE UNIQUE INDEX student_feature_snapshots_pkey ON public.student_feature_snapshots USING btree (id)"
+      ]
+    ]
+  },
+  "student_help_requests": {
+    "columns": [
+      [
+        "content",
+        "TEXT",
+        false,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "presentation_id",
+        "UUID",
+        true,
+        null
+      ],
+      [
+        "response_note",
+        "TEXT",
+        true,
+        null
+      ],
+      [
+        "status",
+        "VARCHAR(30)",
+        false,
+        "'PENDING'::character varying"
+      ],
+      [
+        "student_id",
+        "UUID",
+        false,
+        null
+      ],
+      [
+        "subject",
+        "VARCHAR(255)",
+        false,
+        null
+      ],
+      [
+        "target_role",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "target_user_id",
+        "UUID",
+        true,
+        null
+      ],
+      [
+        "updated_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [],
+    "checks": [
+      "status = ANY (ARRAY['PENDING', 'IN_PROGRESS', 'RESOLVED'])",
+      "target_role = ANY (ARRAY['ADVISOR', 'LECTURER'])"
+    ],
+    "foreign_keys": [
+      [
+        [
+          "presentation_id"
+        ],
+        "course_presentations",
+        [
+          "id"
+        ],
+        "SET NULL"
+      ],
+      [
+        [
+          "student_id"
+        ],
+        "student_profiles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "target_user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "SET NULL"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "student_help_requests_pkey",
+        "CREATE UNIQUE INDEX student_help_requests_pkey ON public.student_help_requests USING btree (id)"
+      ]
+    ]
+  },
+  "student_profiles": {
+    "columns": [
+      [
+        "age_band",
+        "VARCHAR(20)",
+        false,
+        null
+      ],
+      [
+        "disability",
+        "VARCHAR(10)",
+        false,
+        "'N'::character varying"
+      ],
+      [
+        "gender",
+        "VARCHAR(10)",
+        false,
+        null
+      ],
+      [
+        "highest_education",
+        "VARCHAR(100)",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "imd_band",
+        "VARCHAR(50)",
+        true,
+        null
+      ],
+      [
+        "region",
+        "VARCHAR(100)",
+        true,
+        null
+      ],
+      [
+        "student_code",
+        "VARCHAR(50)",
+        false,
+        null
+      ],
+      [
+        "user_id",
+        "UUID",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "student_code"
+      ],
+      [
+        "user_id"
+      ]
+    ],
+    "checks": [
+      "age_band = ANY (ARRAY['0-35', '35-55', '55<='])",
+      "gender = ANY (ARRAY['M', 'F'])"
+    ],
+    "foreign_keys": [
+      [
+        [
+          "user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [
+      [
+        "idx_student_profiles_code",
+        [
+          "student_code"
+        ],
+        false
+      ]
+    ],
+    "index_definitions": [
+      [
+        "idx_student_profiles_code",
+        "CREATE INDEX idx_student_profiles_code ON public.student_profiles USING btree (student_code)"
+      ],
+      [
+        "student_profiles_pkey",
+        "CREATE UNIQUE INDEX student_profiles_pkey ON public.student_profiles USING btree (id)"
+      ],
+      [
+        "student_profiles_student_code_key",
+        "CREATE UNIQUE INDEX student_profiles_student_code_key ON public.student_profiles USING btree (student_code)"
+      ],
+      [
+        "student_profiles_user_id_key",
+        "CREATE UNIQUE INDEX student_profiles_user_id_key ON public.student_profiles USING btree (user_id)"
+      ]
+    ]
+  },
+  "user_roles": {
+    "columns": [
+      [
+        "role_id",
+        "SMALLINT",
+        false,
+        null
+      ],
+      [
+        "user_id",
+        "UUID",
+        false,
+        null
+      ]
+    ],
+    "pk": [
+      "user_id",
+      "role_id"
+    ],
+    "unique": [],
+    "checks": [],
+    "foreign_keys": [
+      [
+        [
+          "role_id"
+        ],
+        "roles",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ],
+      [
+        [
+          "user_id"
+        ],
+        "users",
+        [
+          "id"
+        ],
+        "CASCADE"
+      ]
+    ],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "user_roles_pkey",
+        "CREATE UNIQUE INDEX user_roles_pkey ON public.user_roles USING btree (user_id, role_id)"
+      ]
+    ]
+  },
+  "users": {
+    "columns": [
+      [
+        "avatar_url",
+        "VARCHAR(500)",
+        true,
+        null
+      ],
+      [
+        "created_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ],
+      [
+        "email",
+        "VARCHAR(255)",
+        false,
+        null
+      ],
+      [
+        "full_name",
+        "VARCHAR(150)",
+        false,
+        null
+      ],
+      [
+        "hashed_password",
+        "VARCHAR(255)",
+        false,
+        null
+      ],
+      [
+        "id",
+        "UUID",
+        false,
+        "gen_random_uuid()"
+      ],
+      [
+        "is_active",
+        "BOOLEAN",
+        false,
+        "true"
+      ],
+      [
+        "phone_number",
+        "VARCHAR(20)",
+        true,
+        null
+      ],
+      [
+        "updated_at",
+        "TIMESTAMP WITH TIME ZONE",
+        false,
+        "now()"
+      ]
+    ],
+    "pk": [
+      "id"
+    ],
+    "unique": [
+      [
+        "email"
+      ]
+    ],
+    "checks": [],
+    "foreign_keys": [],
+    "indexes": [],
+    "index_definitions": [
+      [
+        "users_email_key",
+        "CREATE UNIQUE INDEX users_email_key ON public.users USING btree (email)"
+      ],
+      [
+        "users_pkey",
+        "CREATE UNIQUE INDEX users_pkey ON public.users USING btree (id)"
+      ]
+    ]
+  }
+}

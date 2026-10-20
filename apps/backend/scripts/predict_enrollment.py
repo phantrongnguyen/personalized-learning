@@ -47,6 +47,7 @@ async def execute(args):
                 "code_module": args.course_code, "enrollment_id": str(enrollment.id),
                 "snapshot_id": str(run.snapshot_id), "model_id": str(model.id),
                 "model_version": model.version, "threshold": model.threshold,
+                "model_sha256": run.inference_context["model_sha256"],
                 "risk_probability": run.risk_probability,
                 "prediction_label": run.prediction_label,
                 "execution_time_ms": run.execution_time_ms,

@@ -1,5 +1,5 @@
 import { BackendUser, RoleCode } from '@shared/types';
-import { getStoredToken } from './api';
+import { authenticatedFetch, getStoredToken } from './session';
 
 export interface CreateAccountPayload {
   email: string;
@@ -31,7 +31,7 @@ export const resetAccountPassword = (base: string, id: string, newPassword: stri
 async function adminRequest<T>(base: string, path: string, options: RequestInit = {}): Promise<T> {
   const token = getStoredToken();
   if (!token) throw new Error('Vui lòng đăng nhập bằng tài khoản quản trị để tiếp tục.');
-  const response = await fetch(`${base.trim().replace(/\/+$/, '')}/api/v1/admin${path}`, {
+  const response = await authenticatedFetch(base, `${base.trim().replace(/\/+$/, '')}/api/v1/admin${path}`, {
     ...options,
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
     signal: options.signal

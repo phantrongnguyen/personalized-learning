@@ -1,0 +1,13 @@
+{
+  "base_url": "http://127.0.0.1:13000",
+  "passed": 5,
+  "checks": [
+    "frontend HTML served by nginx",
+    "backend lifespan, PostgreSQL and real artifact ready",
+    "CORS/PNA preflight including Authorization",
+    "login, authenticated me, invalid JWT and refresh through nginx",
+    "real artifact inference and exact input/model provenance through nginx"
+  ],
+  "model_sha256": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db",
+  "model_version": "v1.0.0-cutoff75"
+}

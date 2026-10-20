@@ -15,9 +15,9 @@ class StudentFeatureSnapshot(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     enrollment_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_enrollments.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_enrollments.id", ondelete="RESTRICT"), nullable=False
     )
-    cutoff_stage: Mapped[str] = mapped_column(String(50), default="CUTOFF_75", nullable=False)
+    cutoff_stage: Mapped[str] = mapped_column(String(30), default="CUTOFF_75", nullable=False)
 
     # 17 biến đặc trưng hành vi OULAD
     total_clicks_to_t: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

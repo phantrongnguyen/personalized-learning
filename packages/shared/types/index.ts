@@ -1,4 +1,5 @@
 export * from './student';
+export type RiskLevel = 'SAFE' | 'HIGH_RISK' | 'NOT_PREDICTED';
 
 // -------------------------------------------------------------
 // AUTH & USER INTERFACES
@@ -57,6 +58,7 @@ export interface AdvisorClassSummary {
   total_students: number;
   high_risk_count: number;
   safe_count: number;
+  not_predicted_count: number;
 }
 
 export interface AdvisorStudentItem {
@@ -65,8 +67,12 @@ export interface AdvisorStudentItem {
   full_name: string;
   gender: string;
   class_name: string;
-  risk_probability: number;
-  risk_level: 'SAFE' | 'HIGH_RISK';
+  risk_probability: number | null;
+  risk_level: RiskLevel;
+  total_courses: number;
+  predicted_courses: number;
+  high_risk_courses: number;
+  unpredicted_courses: number;
   has_active_plan: boolean;
   uncompleted_tasks_count: number;
 }
@@ -109,7 +115,7 @@ export interface CourseStudentRiskItem {
   late_submissions: number | null;
   submission_rate: number | null;
   risk_probability: number | null;
-  risk_status: 'SAFE' | 'HIGH_RISK' | 'NOT_PREDICTED';
+  risk_status: RiskLevel;
 }
 
 export interface CourseSuggestion {
@@ -187,11 +193,12 @@ export interface StudentRiskPrediction {
   data_source?: string | null;
   enrollment_id: string;
   code_module: string;
-  cutoff_stage: string;
-  risk_probability: number;
-  risk_level: 'SAFE' | 'HIGH_RISK';
-  model_version: string;
-  predicted_at: string;
+  cutoff_stage: string | null;
+  risk_probability: number | null;
+  risk_level: RiskLevel;
+  model_version: string | null;
+  predicted_at: string | null;
+  provenance_status: 'VERIFIED' | 'LEGACY_UNVERIFIED' | 'NOT_PREDICTED';
   pedagogical_recommendations: string[];
 }
 

@@ -20,9 +20,10 @@ export const DashboardPage: React.FC = () => {
   const [result, setResult] = useState<PredictionResponse | null>(null);
 
   const handlePredict = async () => {
+    const requestFeatures = { ...features };
     setLoading(true);
     try {
-      const data = await predictStudentRisk(apiBase, features);
+      const data = await predictStudentRisk(apiBase, requestFeatures);
       setResult(data);
 
       const now = new Date();
@@ -30,13 +31,14 @@ export const DashboardPage: React.FC = () => {
         id: Math.random().toString(36).slice(2, 9),
         time: now.toLocaleTimeString('vi-VN'),
         date: now.toLocaleDateString('vi-VN'),
-        module: features.code_module,
-        age: features.age_band,
-        credits: features.studied_credits,
-        clicks: features.total_clicks_to_t,
+        module: requestFeatures.code_module,
+        age: requestFeatures.age_band,
+        credits: requestFeatures.studied_credits,
+        clicks: requestFeatures.total_clicks_to_t,
         prediction: data.prediction,
         confidence: data.confidence,
-        features: { ...features },
+        features: requestFeatures,
+        provenance: data.provenance,
       });
 
       addToast('Phân tích hoàn tất! Đã cập nhật kết quả và kế hoạch can thiệp.', 'success');
@@ -49,8 +51,9 @@ export const DashboardPage: React.FC = () => {
   };
 
   const atRisk = result ? result.prediction === 1 : false;
-  const probability = result ? result.confidence : 0.42;
-  const strategies = generateInterventions(features, atRisk, probability);
+  const probability = result ? result.confidence : 0;
+  const analyzedFeatures = result?.provenance?.features || features;
+  const strategies = result ? generateInterventions(analyzedFeatures, atRisk, probability) : [];
 
   return (
     <div className="space-y-8 py-4">
@@ -116,7 +119,7 @@ export const DashboardPage: React.FC = () => {
 
       {/* Full-width Section: Radar Competency Chart */}
       <div className="max-w-7xl mx-auto px-4">
-        <RadarCompetencyChart features={features} />
+        <RadarCompetencyChart features={analyzedFeatures} />
       </div>
 
       {/* Full-width Section: Session History */}

@@ -1,3 +1,4 @@
+import { authenticatedFetch, getStoredToken, setStoredTokens, clearStoredTokens, getSessionEpoch } from './session';
 import {
   PredictionRequest,
   PredictionResponse,
@@ -48,6 +49,7 @@ export function mapBackendUser(user: BackendUser): UserProfile {
     .toUpperCase();
 
   return {
+    userId: user.id,
     name: user.full_name,
     email: user.email,
     role: primaryRole?.name || 'Thành viên',
@@ -64,23 +66,7 @@ export function mapBackendUser(user: BackendUser): UserProfile {
   };
 }
 
-export const TOKEN_KEY = 'edurisk_jwt_access_token';
-export const REFRESH_TOKEN_KEY = 'edurisk_jwt_refresh_token';
-
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setStoredTokens(access: string, refresh: string) {
-  localStorage.setItem(TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-}
-
-export function clearStoredTokens() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-
+export { TOKEN_KEY, REFRESH_TOKEN_KEY, getStoredToken, setStoredTokens, clearStoredTokens } from './session';
 function authHeaders(): Record<string, string> {
   const token = getStoredToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -113,10 +99,11 @@ export async function predictStudentRisk(
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const payload: PredictionRequest = { features };
 
-  const res = await fetch(`${cleanUrl}/api/v1/predictions/`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/predictions/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
     },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(20000),
@@ -168,10 +155,11 @@ export async function loginApi(
   setStoredTokens(tokens.access_token, tokens.refresh_token);
 
   // Lấy thông tin user hiện tại
-  const meRes = await fetch(`${cleanUrl}/api/v1/auth/me`, {
+  const meRes = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/me`, {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
   if (!meRes.ok) {
+    clearStoredTokens();
     throw new Error('Không thể tải thông tin tài khoản');
   }
 
@@ -185,13 +173,13 @@ export async function getCurrentUserApi(baseUrl: string): Promise<BackendUser | 
 
   const cleanUrl = cleanBase(baseUrl);
   try {
-    const res = await fetch(`${cleanUrl}/api/v1/auth/me`, {
+    const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       return (await res.json()) as BackendUser;
     }
-    clearStoredTokens();
+    if (res.status === 401 || res.status === 403) clearStoredTokens();
     return null;
   } catch {
     return null;
@@ -209,7 +197,7 @@ export async function updateProfileApi(
   payload: UpdateProfilePayload
 ): Promise<BackendUser> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/auth/profile`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/profile`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -224,7 +212,7 @@ export async function updateProfileApi(
 export async function uploadAvatarApi(baseUrl: string, file: File): Promise<BackendUser> {
   const data = new FormData();
   data.append('file', file);
-  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/auth/profile/avatar`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/auth/profile/avatar`, {
     method: 'POST', headers: authHeaders(), body: data,
   });
   if (!res.ok) {
@@ -239,7 +227,7 @@ export async function uploadAvatarApi(baseUrl: string, file: File): Promise<Back
 // -------------------------------------------------------------
 export async function getAdvisorClassesApi(baseUrl: string): Promise<AdvisorClassSummary[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/classes`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/classes`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách lớp chủ nhiệm');
@@ -255,9 +243,23 @@ export async function getAdvisorStudentsApi(
     ? `${cleanUrl}/api/v1/advisor/students?class_name=${encodeURIComponent(className)}`
     : `${cleanUrl}/api/v1/advisor/students`;
 
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) throw new Error('Không thể tải danh sách sinh viên lớp chủ nhiệm');
-  return res.json();
+  return fetchAllPages<AdvisorStudentItem>(baseUrl, url, 'Không thể tải danh sách sinh viên lớp chủ nhiệm');
+}
+
+async function fetchAllPages<T>(baseUrl: string, url: string, message: string): Promise<T[]> {
+  const result: T[] = [];
+  const epoch = getSessionEpoch();
+  const limit = 100;
+  for (let offset = 0; ; offset += limit) {
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    const res = await authenticatedFetch(baseUrl,
+      `${url}${url.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(message);
+    const page: T[] = await res.json();
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    result.push(...page);
+    if (page.length < limit) return result;
+  }
 }
 
 export async function createInterventionPlanApi(
@@ -265,7 +267,7 @@ export async function createInterventionPlanApi(
   payload: CreateInterventionPlanPayload
 ): Promise<any> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/interventions`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/interventions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -282,7 +284,7 @@ export async function createInterventionPlanApi(
 // -------------------------------------------------------------
 export async function getLecturerCoursesApi(baseUrl: string): Promise<LecturerCourseItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/lecturer/courses`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/lecturer/courses`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách lớp học phần phụ trách');
@@ -294,18 +296,15 @@ export async function getCourseRiskBoardApi(
   presentationId: string
 ): Promise<CourseStudentRiskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Không thể tải bảng cảnh báo nguy cơ học phần');
-  return res.json();
+  return fetchAllPages<CourseStudentRiskItem>(baseUrl,
+    `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, 'Không thể tải bảng cảnh báo nguy cơ học phần');
 }
 
 // -------------------------------------------------------------
 // 5. STUDENT APIS (SINH VIÊN)
 // -------------------------------------------------------------
 export async function getCourseSuggestionsApi(baseUrl: string, presentationId: string, studentId: string): Promise<CourseSuggestionResponse> {
-  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/suggestions`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/suggestions`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải gợi ý cho sinh viên trong học phần');
@@ -313,13 +312,13 @@ export async function getCourseSuggestionsApi(baseUrl: string, presentationId: s
 }
 
 export async function getCourseRemindersApi(baseUrl: string, signal?: AbortSignal): Promise<CourseReminder[]> {
-  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/student/reminders`, { headers: authHeaders(), signal });
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/student/reminders`, { headers: authHeaders(), signal });
   if (!res.ok) throw new Error('Không thể tải thông báo nhắc nhở môn học.');
   return res.json();
 }
 
 export async function getStudentProfileApi(baseUrl: string): Promise<StudentProfileDetail> {
-  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/student/profile`, { headers: authHeaders() });
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/student/profile`, { headers: authHeaders() });
   if (!res.ok) {
     throw new Error(res.status === 404 ? 'Tài khoản chưa có hồ sơ sinh viên.' : 'Không thể tải thông tin sinh viên.');
   }
@@ -328,7 +327,7 @@ export async function getStudentProfileApi(baseUrl: string): Promise<StudentProf
 
 export async function getStudentCoursesApi(baseUrl: string): Promise<StudentCourseItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách môn học của sinh viên');
@@ -340,7 +339,7 @@ export async function getStudentRiskPredictionApi(
   enrollmentId: string
 ): Promise<StudentRiskPrediction | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/risk-prediction`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses/${enrollmentId}/risk-prediction`, {
     headers: authHeaders(),
   });
   if (res.status === 404) return null;
@@ -353,7 +352,7 @@ export async function getStudentRadarApi(
   enrollmentId: string
 ): Promise<StudentRadarData | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/radar`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses/${enrollmentId}/radar`, {
     headers: authHeaders(),
   });
   if (res.status === 404) return null;
@@ -363,7 +362,7 @@ export async function getStudentRadarApi(
 
 export async function getStudentTasksApi(baseUrl: string, enrollmentId?: string): Promise<StudentTaskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/tasks${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/tasks${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách nhiệm vụ cần làm');
@@ -377,7 +376,7 @@ export async function completeStudentTaskApi(
   enrollmentId?: string
 ): Promise<StudentTaskItem> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/tasks/${taskId}/complete`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/tasks/${taskId}/complete`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify({ student_feedback: feedback || '', enrollment_id: enrollmentId }),
@@ -388,7 +387,7 @@ export async function completeStudentTaskApi(
 
 export async function getStudentHelpRequestsApi(baseUrl: string, enrollmentId?: string): Promise<StudentHelpRequestItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/help-requests${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách yêu cầu trợ giúp');
@@ -409,7 +408,7 @@ export async function createHelpRequestApi(
   payload: CreateHelpRequestPayload
 ): Promise<StudentHelpRequestItem> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/help-requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -438,7 +437,7 @@ export async function assignCourseTaskApi(
   payload: AssignCourseTaskPayload
 ): Promise<StudentTaskItem> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(
+  const res = await authenticatedFetch(baseUrl,
     `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/tasks`,
     {
       method: 'POST',
@@ -454,7 +453,7 @@ export async function assignCourseTaskApi(
 }
 
 export interface AlertAdvisorPayload {
-  presentation_id?: string;
+  presentation_id: string;
   subject?: string;
   content: string;
 }
@@ -465,7 +464,7 @@ export async function alertAdvisorApi(
   payload: AlertAdvisorPayload
 ): Promise<{ message: string; alert_id: string }> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(
+  const res = await authenticatedFetch(baseUrl,
     `${cleanUrl}/api/v1/lecturer/students/${studentId}/alert-advisor`,
     {
       method: 'POST',
@@ -496,7 +495,7 @@ export async function createAdvisingNoteApi(
   payload: AdvisingNotePayload
 ): Promise<any> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/advising-notes`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/advising-notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -510,7 +509,7 @@ export async function createAdvisingNoteApi(
 
 
 export async function getAdvisorStudentCoursesApi(baseUrl: string, studentId: string): Promise<StudentCourseItem[]> {
-  const res = await fetch(`${cleanBase(baseUrl)}/api/v1/advisor/students/${encodeURIComponent(studentId)}/overview`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/advisor/students/${encodeURIComponent(studentId)}/overview`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải học phần của sinh viên');
