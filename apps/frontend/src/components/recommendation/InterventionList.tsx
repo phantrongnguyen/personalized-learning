@@ -14,7 +14,7 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
 
   const handleCopyAll = () => {
     const textContent =
-      `[EduRisk AI — Danh sách Khuyến nghị & Can thiệp Cá nhân hóa]\n\n` +
+      `[EduRisk — Gợi ý minh họa tại cutoff, chưa kiểm chứng; cần cố vấn xác minh]\n\n` +
       strategies
         .map(
           (s, idx) =>
@@ -55,8 +55,8 @@ export const InterventionList: React.FC<InterventionListProps> = ({ strategies }
             <Sparkles className="w-5 h-5" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-white">Chiến lược Can thiệp Sư phạm Cá nhân hóa</h3>
-            <p className="text-xs text-slate-400">Được tạo tự động theo nguyên tắc Prescriptive Analytics</p>
+            <h3 className="text-base font-bold text-white">Gợi ý minh họa để cố vấn xem xét</h3>
+            <p className="text-xs text-slate-400">Quy tắc giả định trên dữ liệu nhập tại cutoff; chưa kiểm chứng hiệu quả. Cố vấn xác minh và điều chỉnh trước khi áp dụng.</p>
           </div>
         </div>
 

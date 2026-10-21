@@ -41,7 +41,7 @@ export const DashboardPage: React.FC = () => {
         provenance: data.provenance,
       });
 
-      addToast('Phân tích hoàn tất! Đã cập nhật kết quả và kế hoạch can thiệp.', 'success');
+      addToast('Phân tích hoàn tất. Gợi ý minh họa cần được cố vấn xem xét; chưa tạo kế hoạch can thiệp.', 'success');
     } catch (err: unknown) {
       const error = err as Error;
       addToast(error.message || 'Không thể thực hiện dự đoán.', 'error', 5000);

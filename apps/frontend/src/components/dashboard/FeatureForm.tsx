@@ -47,7 +47,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-slate-800">
         <div>
           <h2 className="text-base font-bold text-white">Hồ sơ 17 Đặc trưng Sinh viên</h2>
-          <p className="text-xs text-slate-400">Chọn mẫu nhanh hoặc nhập thông số thực tế</p>
+          <p className="text-xs text-slate-400">Mẫu là dữ liệu tổng hợp minh họa, không phải hồ sơ HUIT thực. Nhập theo định nghĩa OULAD; chưa có quy đổi tín chỉ/bằng cấp HUIT.</p>
         </div>
 
         <div className="flex items-center gap-2">

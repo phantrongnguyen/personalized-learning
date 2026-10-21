@@ -33,7 +33,7 @@ class StudentFeatures(BehaviorFeatures):
         "No Formal quals", "Post Graduate Qualification",
     ]
     age_band: Literal["0-35", "35-55", "55<="]
-    studied_credits: float = Field(gt=0)
+    studied_credits: float = Field(gt=0, description="Credits of modules currently studied, in OULAD units; no validated HUIT conversion")
     date_registration: int = Field(description="Days relative to course start; may be negative")
 
 
