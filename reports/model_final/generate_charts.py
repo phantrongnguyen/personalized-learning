@@ -35,6 +35,13 @@ def sha256(path):
     return digest.hexdigest()
 
 
+def metadata_hash_matches(path, expected):
+    """Accept only byte-identical metadata or the Git LF/CRLF representation."""
+    raw = path.read_bytes()
+    lf = raw.replace(b'\r\n', b'\n')
+    return expected in {hashlib.sha256(value).hexdigest() for value in (raw, lf, lf.replace(b'\n', b'\r\n'))}
+
+
 def style():
     plt.rcParams.update({
         "font.family": "DejaVu Sans", "font.size": 10, "axes.titlesize": 14,
@@ -54,7 +61,7 @@ def save(fig, name, note):
 def verify_scores(predictions, verification):
     expected = verification["metrics"]
     reported_hash = verification["input_hashes_unchanged"]
-    if sha256(ARTIFACT) != reported_hash["model"] or sha256(METADATA) != reported_hash["metadata"]:
+    if sha256(ARTIFACT) != reported_hash["model"] or not metadata_hash_matches(METADATA, reported_hash["metadata"]):
         raise ValueError("Frozen app model or metadata differs from historical verification")
     metadata = json.loads(METADATA.read_text(encoding="utf-8"))
     if metadata["model_sha256"] != reported_hash["model"] or metadata["data_sha256"] != reported_hash["dataset"]:

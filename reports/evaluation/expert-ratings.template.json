@@ -1,0 +1,13 @@
+{
+  "status": "not_collected",
+  "ratings": [],
+  "rating_fields": {
+    "reviewer_id": "anonymous reviewer code",
+    "case_id": "C01 through C10",
+    "grounding": "integer 1-5",
+    "appropriateness": "integer 1-5",
+    "feasibility": "integer 1-5",
+    "clarity": "integer 1-5",
+    "comment": "explanation and proposed edits; required for any score <= 2"
+  }
+}

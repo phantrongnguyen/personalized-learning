@@ -48,4 +48,8 @@ Hai file `../output/...` không có trong clone Git mới; cần bản gốc đ�
 
 - Chưa có external holdout mới/kỳ học mới chưa từng được xem trong lịch sử nghiên cứu; chưa đánh giá công bằng giữa các nhóm hoặc độ trễ dữ liệu LMS ở môi trường triển khai.
 - Chưa đo tác động của gợi ý/nhiệm vụ đến kết quả học tập; chất lượng dự báo không chứng minh hiệu quả can thiệp sư phạm.
-- Trường `roc_auc` của seed database có giá trị gần với AP validation 0,8968 nhưng sai tên; **không lấy seed DB làm nguồn đánh giá model**. Việc sửa metadata vận hành cần được duyệt riêng, không nằm trong bộ hình này.
+- Seed cũ từng dùng AP validation khoảng 0,8968 dưới tên ROC-AUC. Migration `0002_normalize` ngày 19/10 đã tách AP và đặt ROC-AUC seed về NULL theo nguồn đã xác minh; **không lấy seed DB làm nguồn đánh giá test model**.
+
+## Đối chiếu và tích hợp ngày 21/10/2026
+
+Xem [chương thực nghiệm tích hợp](../evaluation/THESIS_EXPERIMENTS.md), [giao thức can thiệp](../evaluation/INTERVENTION_PROTOCOL.md) và `scripts/audit_model_evidence.py`. Đã đối chiếu source notebook tìm mask/CV/đóng gói, kiểm tra artifact/mask và tính lại metric suy ra từ confusion counts. Tệp đặc trưng và dự đoán test lịch sử chưa có tại đường dẫn tham chiếu nên chưa tái chứng minh split của đúng bộ dữ liệu hoặc tính lại AP/ROC-AUC cấp dòng. Checksum metadata lịch sử là biểu diễn CRLF; verifier chấp nhận riêng biến thể LF/CRLF, vẫn từ chối thay đổi nội dung. Không fit lại hoặc đổi threshold.

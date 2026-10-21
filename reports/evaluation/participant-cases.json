@@ -1,0 +1,396 @@
+{
+  "rule_version": "lecturer-support-1.1",
+  "case_type": "synthetic_protocol_examples",
+  "cases": [
+    {
+      "case_id": "C01",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G02_AGGREGATE",
+          "title": "Kiểm tra số liệu nộp trễ",
+          "observation": "Ghi nhận 1 lần nộp trễ trong số liệu tổng hợp đến cutoff.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "f79a8425-6259-5975-9d1a-0245c7d6d960",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "late_submissions_to_t": 1
+          },
+          "proposed_action": "Đối chiếu với lịch bài và trao đổi với sinh viên trước khi quyết định hỗ trợ.",
+          "limitation": "Không xác định bài nào trễ; không biết hạn cá nhân, miễn bài hoặc nguyên nhân nộp trễ.",
+          "rule_version": "lecturer-support-1.1"
+        },
+        {
+          "rule_id": "G03",
+          "title": "Xác minh hoạt động học tập tại cutoff",
+          "observation": "Không ghi nhận click trong 7 ngày kết thúc tại cutoff; có hoạt động trước đó.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "f79a8425-6259-5975-9d1a-0245c7d6d960",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "window_days": 7,
+            "window_end_day": 75,
+            "total_clicks_to_t": 12,
+            "clicks_recent_7": 0,
+            "clicks_recent_30": 4,
+            "days_since_last_activity": 7
+          },
+          "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.",
+          "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại."
+      ]
+    },
+    {
+      "case_id": "C02",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 30,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 0,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G02_AGGREGATE",
+          "title": "Kiểm tra số liệu nộp trễ",
+          "observation": "Ghi nhận 1 lần nộp trễ trong số liệu tổng hợp đến cutoff.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "adcef6ce-fc43-5ee3-83e7-f972d1484bed",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "late_submissions_to_t": 1
+          },
+          "proposed_action": "Đối chiếu với lịch bài và trao đổi với sinh viên trước khi quyết định hỗ trợ.",
+          "limitation": "Không xác định bài nào trễ; không biết hạn cá nhân, miễn bài hoặc nguyên nhân nộp trễ.",
+          "rule_version": "lecturer-support-1.1"
+        },
+        {
+          "rule_id": "G04",
+          "title": "Xác minh hoạt động học tập tại cutoff",
+          "observation": "Không ghi nhận click trong 30 ngày kết thúc tại cutoff; có hoạt động trước đó.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "adcef6ce-fc43-5ee3-83e7-f972d1484bed",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "window_days": 30,
+            "window_end_day": 75,
+            "total_clicks_to_t": 12,
+            "clicks_recent_7": 0,
+            "clicks_recent_30": 0,
+            "days_since_last_activity": 30
+          },
+          "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.",
+          "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại."
+      ]
+    },
+    {
+      "case_id": "C03",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 1,
+        "clicks_recent_7": 2,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 0,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "abstained",
+      "suggestions": [],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.",
+        "Chưa có tín hiệu phù hợp quy tắc; không đồng nghĩa không cần hỗ trợ."
+      ]
+    },
+    {
+      "case_id": "C04",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": null,
+      "system_status": "insufficient_data",
+      "suggestions": [],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Thiếu ngày cutoff hoặc nguồn/xác nhận dữ liệu; không dùng thời gian ghi snapshot làm ngày quan sát."
+      ]
+    },
+    {
+      "case_id": "C05",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": null,
+      "system_status": "insufficient_data",
+      "suggestions": [],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Mới kiểm tra số liệu tổng hợp; chưa đối chiếu độ đầy đủ của nguồn LMS."
+      ]
+    },
+    {
+      "case_id": "C06",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G02_AGGREGATE",
+          "title": "Kiểm tra số liệu nộp trễ",
+          "observation": "Ghi nhận 1 lần nộp trễ trong số liệu tổng hợp đến cutoff.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "3c642fb0-033b-5a73-a46e-a3d26a0b8745",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "late_submissions_to_t": 1
+          },
+          "proposed_action": "Đối chiếu với lịch bài và trao đổi với sinh viên trước khi quyết định hỗ trợ.",
+          "limitation": "Không xác định bài nào trễ; không biết hạn cá nhân, miễn bài hoặc nguyên nhân nộp trễ.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.",
+        "Chưa xác nhận log hoạt động đầy đủ đến cutoff; không diễn giải 7/30 ngày."
+      ]
+    },
+    {
+      "case_id": "C07",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G03",
+          "title": "Xác minh hoạt động học tập tại cutoff",
+          "observation": "Không ghi nhận click trong 7 ngày kết thúc tại cutoff; có hoạt động trước đó.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "2262664e-6d51-55e6-a87d-37d857ba537c",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "window_days": 7,
+            "window_end_day": 75,
+            "total_clicks_to_t": 12,
+            "clicks_recent_7": 0,
+            "clicks_recent_30": 4,
+            "days_since_last_activity": 7
+          },
+          "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.",
+          "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.",
+        "Chưa xác nhận tính đầy đủ của dữ liệu bài đánh giá; không suy luận bài thiếu/trễ."
+      ]
+    },
+    {
+      "case_id": "C08",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 10,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G02_AGGREGATE",
+          "title": "Kiểm tra số liệu nộp trễ",
+          "observation": "Ghi nhận 1 lần nộp trễ trong số liệu tổng hợp đến cutoff.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "d321bd64-040c-5dce-97bb-52cb4affabe1",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "late_submissions_to_t": 1
+          },
+          "proposed_action": "Đối chiếu với lịch bài và trao đổi với sinh viên trước khi quyết định hỗ trợ.",
+          "limitation": "Không xác định bài nào trễ; không biết hạn cá nhân, miễn bài hoặc nguyên nhân nộp trễ.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.",
+        "Số liệu click/mốc hoạt động mâu thuẫn hoặc không hợp lệ; không diễn giải cửa sổ thời gian."
+      ]
+    },
+    {
+      "case_id": "C09",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 12,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 5,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": "2026-09-14",
+      "system_status": "available",
+      "suggestions": [
+        {
+          "rule_id": "G03",
+          "title": "Xác minh hoạt động học tập tại cutoff",
+          "observation": "Không ghi nhận click trong 7 ngày kết thúc tại cutoff; có hoạt động trước đó.",
+          "evidence": {
+            "source": "Synthetic expert-study case, not real LMS",
+            "confirmed_at": "2026-10-20T00:00:00+00:00",
+            "snapshot_id": "e19e76a5-c41b-50d3-8851-7718fef41411",
+            "snapshot_day": 75,
+            "confirmed_by_user_id": "71bbbe3e-5b84-577e-b4d1-6a09a4416213",
+            "review_scope": "demonstration",
+            "cutoff_date": "2026-09-14",
+            "recorded_at": "2026-10-20T00:00:00+00:00",
+            "window_days": 7,
+            "window_end_day": 75,
+            "total_clicks_to_t": 12,
+            "clicks_recent_7": 0,
+            "clicks_recent_30": 4,
+            "days_since_last_activity": 7
+          },
+          "proposed_action": "Xác minh cách học ngoài hệ thống hoặc khó khăn truy cập với sinh viên.",
+          "limitation": "Không có click không chứng minh ngừng học hay bỏ học; đây không phải log thời gian thực.",
+          "rule_version": "lecturer-support-1.1"
+        }
+      ],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.",
+        "Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.",
+        "Số liệu nộp trễ/tổng bài đã nộp không nhất quán; không gợi ý theo bài đánh giá."
+      ]
+    },
+    {
+      "case_id": "C10",
+      "data_source": "synthetic_demo",
+      "features": {
+        "total_clicks_to_t": 13,
+        "days_since_last_activity": 7,
+        "clicks_recent_7": 0,
+        "clicks_recent_30": 4,
+        "assessments_submitted_to_t": 4,
+        "late_submissions_to_t": 1,
+        "submission_rate": 0.8
+      },
+      "cutoff_date": null,
+      "system_status": "insufficient_data",
+      "suggestions": [],
+      "warnings": [
+        "Không có dữ liệu bài và hạn nộp theo từng bài; không xác định được bài nào thiếu hoặc trễ.",
+        "Chưa có xác nhận gắn với đúng nội dung snapshot và người phụ trách."
+      ]
+    }
+  ]
+}

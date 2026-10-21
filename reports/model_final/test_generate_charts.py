@@ -75,3 +75,15 @@ def test_rejects_changed_metadata(archived_fixture):
     metadata.write_text(metadata.read_text(encoding="utf-8") + " ", encoding="utf-8")
     with pytest.raises(ValueError, match="metadata"):
         generate_charts.verify_scores(predictions, verification)
+
+
+def test_metadata_line_endings_are_portable_but_content_is_still_checked(archived_fixture):
+    import hashlib
+    predictions, verification, metadata = archived_fixture
+    lf = metadata.read_bytes().replace(b'\r\n', b'\n') + b'\n'
+    metadata.write_bytes(lf)
+    verification['input_hashes_unchanged']['metadata'] = hashlib.sha256(lf.replace(b'\n', b'\r\n')).hexdigest()
+    generate_charts.verify_scores(predictions, verification)
+    metadata.write_bytes(lf.replace(b'0.75', b'0.50'))
+    with pytest.raises(ValueError, match='metadata'):
+        generate_charts.verify_scores(predictions, verification)
