@@ -23,3 +23,14 @@ export function calculateRadar(features: Partial<StudentFeatures>): RadarDimensi
     };
   });
 }
+
+/** Illustrative display threshold only; never a model risk classification. */
+export const RADAR_LOW_SCORE = 25;
+export const RADAR_COLOR_NOTE = 'Đỏ: có chỉ số dưới 25% mốc minh họa; ngưỡng hiển thị, không phải phân loại rủi ro.';
+export function radarAppearance(scores: (number | null)[]) {
+  const known = scores.filter((score): score is number => score !== null && Number.isFinite(score) && score >= 0);
+  const low = known.some(score => score < RADAR_LOW_SCORE);
+  return low
+    ? { stroke: '#f87171', fill: 'rgba(248,113,113,0.22)', text: 'text-red-400', svgText: 'fill-red-400', bar: 'bg-red-400', low }
+    : { stroke: '#22d3ee', fill: 'rgba(34,211,238,0.2)', text: 'text-cyan-400', svgText: 'fill-cyan-400', bar: 'bg-cyan-400', low };
+}

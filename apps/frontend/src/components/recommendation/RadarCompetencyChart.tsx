@@ -1,13 +1,16 @@
 import React from 'react';
 import { StudentFeatures } from '@shared/types';
-import { calculateRadar, RADAR_REFERENCE } from '@shared/radar';
+import { calculateRadar, RADAR_REFERENCE, radarAppearance, RADAR_COLOR_NOTE } from '@shared/radar';
 
 interface RadarProps {
   features: StudentFeatures;
 }
 
 export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
-  const dimensions = calculateRadar(features).map(d => ({
+  const radarDimensions = calculateRadar(features);
+  const appearance = radarAppearance(radarDimensions.map(d => d.reference_score));
+  const dimensions = radarDimensions.map(d => ({
+    appearance: radarAppearance([d.reference_score]),
     title: d.metric,
     studentScore: d.reference_score === null ? null : d.reference_score / 100,
     benchmarkScore: 1,
@@ -114,7 +117,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
         {/* Legend */}
         <div className="flex items-center gap-4 text-xs font-medium">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-brand-950/40 border border-brand-500/30 text-brand-300">
-            <span className="w-2.5 h-2.5 rounded-full bg-brand-400" />
+            <span className={`w-2.5 h-2.5 rounded-full ${appearance.bar}`} />
             <span>Dữ liệu tại cutoff</span>
           </div>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-blue-950/40 border border-blue-500/30 text-blue-300">
@@ -124,6 +127,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
         </div>
       </div>
 
+      <p className="text-xs text-slate-400 mb-3">{RADAR_COLOR_NOTE}</p>
       {!hasCompleteRadar && <p className="text-xs text-slate-400 mb-3">Chưa đủ dữ liệu cho mọi chiều; không vẽ đa giác tổng hợp. Chưa nộp bài không có nghĩa đạt chỉ số nộp trễ 100%.</p>}
       {/* Main Container: Radar chart on left, Breakdown table on right */}
       <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-8">
@@ -191,8 +195,8 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
             {/* Student Polygon */}
             {hasCompleteRadar && <polygon
               points={studentPolygon}
-              fill="rgba(8, 117, 188, 0.22)"
-              stroke="#0875bc"
+              fill={appearance.fill}
+              stroke={appearance.stroke}
               strokeWidth="2.5"
             />}
 
@@ -206,7 +210,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                     cx={sx}
                     cy={sy}
                     r="5"
-                    fill="#0875bc"
+                    fill={d.appearance.stroke}
                     stroke="#0f172a"
                     strokeWidth="2"
                   />
@@ -241,7 +245,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                     x={0}
                     y={14}
                     textAnchor={cfg.anchor}
-                    className="text-[10px] font-mono font-medium fill-brand-400"
+                    className={`text-[10px] font-mono font-medium ${d.appearance.svgText}`}
                   >
                     {d.rawStudent} {d.unit}
                     <tspan className="fill-slate-500 font-sans">
@@ -277,7 +281,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
 
                   <div className="flex items-center gap-2 font-mono text-xs">
                     <span
-                      className="font-bold text-brand-400"
+                      className={`font-bold ${dim.appearance.text}`}
                     >
                       {dim.rawStudent} {dim.unit} ({dim.studentScore === null ? '—' : `${Math.round(dim.studentScore * 100)}% mốc`})
                     </span>
@@ -298,7 +302,7 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
                   />
                   {/* Student actual progress */}
                   <div
-                    className="h-full rounded-full transition-all duration-500 bg-brand-500"
+                    className={`h-full rounded-full transition-all duration-500 ${dim.appearance.bar}`}
                     style={{ width: `${progressPercent}%` }}
                   />
                 </div>

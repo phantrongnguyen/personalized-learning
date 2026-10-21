@@ -9,7 +9,7 @@ const { outputFiles } = await build({
     export { generateInterventions } from './src/utils/recommendations';`, resolveDir: process.cwd() },
   bundle: true, write: false, format: 'esm', platform: 'node',
 });
-const { calculateRadar, RADAR_REFERENCE, DEFAULT_FEATURES, generateInterventions } =
+const { calculateRadar, RADAR_REFERENCE, DEFAULT_FEATURES, generateInterventions, radarAppearance } =
   await import(`data:text/javascript;base64,${Buffer.from(outputFiles[0].text).toString('base64')}`);
 const cases = JSON.parse(await readFile('../../packages/shared/constants/radar-cases.json', 'utf8'));
 
@@ -58,4 +58,15 @@ test('below-threshold branch describes model status without claiming good engage
   assert.equal(watch[0].id, 'watch-moderate');
   assert.ok(!watch[0].description.includes('50%'));
   assert.ok(!low[0].description.includes('chuyên cần rất tốt'));
+});
+
+test('radar color uses normalized low scores without treating unknown data as zero', () => {
+  assert.equal(radarAppearance([0, 100]).stroke, '#f87171');
+  assert.equal(radarAppearance([24.9, 100]).low, true);
+  assert.equal(radarAppearance([25, 100]).low, false);
+  assert.equal(radarAppearance([null, NaN, 100]).low, false);
+  assert.equal(radarAppearance([]).low, false);
+  // Zero late submissions is healthy when submissions exist.
+  const punctual = calculateRadar({ late_submissions_to_t: 0, assessments_submitted_to_t: 3 });
+  assert.equal(radarAppearance(punctual.map(d => d.reference_score)).low, false);
 });

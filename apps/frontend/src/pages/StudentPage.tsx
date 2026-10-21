@@ -1,3 +1,4 @@
+import { radarAppearance, RADAR_COLOR_NOTE } from '@shared/radar';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import {
@@ -625,6 +626,7 @@ export const StudentPage: React.FC = () => {
  */
 const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
   const dims = radar.dimensions;
+  const appearance = radarAppearance(dims.map(d => d.reference_score));
 
   const chart = useMemo(() => {
     const n = dims.length;
@@ -655,6 +657,7 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
         {radar.code_module} · {radar.cutoff_stage === 'CUTOFF_75' ? 'mốc 75%' : 'mốc snapshot'}: mốc tham khảo minh họa, chưa kiểm chứng trên OULAD/HUIT. Tỷ lệ giới hạn 100%, không phải phân vị hay đánh giá năng lực; không phản ánh hoạt động hiện tại.
       </p>
 
+      <p className="text-xs text-slate-400 mb-3">{RADAR_COLOR_NOTE}</p>
       {!radar.data_source && <p className="text-xs text-slate-400 mb-3">Chưa xác nhận nguồn dữ liệu; không coi đây là dữ liệu HUIT đã kiểm chứng.</p>}
       {radar.data_source === 'synthetic_demo' && (
         <p className="text-xs text-amber-300 mb-3">Dữ liệu học tập minh họa</p>
@@ -688,14 +691,14 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
             />
             {dims.every(d => d.reference_score !== null) && <polygon
               points={dims.map((_, i) => chart.pt(dims[i].reference_score ?? 0, i).join(',')).join(' ')}
-              fill="rgba(34,211,238,0.2)"
-              stroke="#22d3ee"
+              fill={appearance.fill}
+              stroke={appearance.stroke}
               strokeWidth="2"
             />}
             {dims.map((d, i) => {
               if (d.reference_score === null) return null;
               const [x, y] = chart.pt(d.reference_score, i);
-              return <circle key={i} cx={x} cy={y} r="4" fill="#22d3ee" stroke="#0f172a" strokeWidth="1.5" />;
+              return <circle key={i} cx={x} cy={y} r="4" fill={radarAppearance([d.reference_score]).stroke} stroke="#0f172a" strokeWidth="1.5" />;
             })}
           </g>
         </svg>
@@ -705,13 +708,13 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
             <div key={d.metric} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">{d.metric}</span>
-                <span className="text-slate-400 font-mono">
+                <span className={`font-mono ${d.reference_score === null ? 'text-slate-400' : radarAppearance([d.reference_score]).text}`}>
                   {d.reference_score === null ? 'Chưa đủ dữ liệu' : `${d.reference_score.toFixed(0)}% mốc`}
                 </span>
               </div>
               <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className="h-full rounded-full bg-cyan-400"
+                  className={`h-full rounded-full ${radarAppearance([d.reference_score]).bar}`}
                   style={{ width: `${Math.min(100, d.reference_score ?? 0)}%` }}
                 />
               </div>
@@ -719,7 +722,7 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
           ))}
           <div className="flex items-center gap-4 pt-1 text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Tôi
+              <span className={`w-2.5 h-2.5 rounded-full ${appearance.bar}`} /> Tôi
             </span>
             <span className="flex items-center gap-1.5">
               <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" /> Mốc minh họa
