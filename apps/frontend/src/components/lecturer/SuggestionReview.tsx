@@ -31,7 +31,7 @@ const evidenceLabels: Record<string, string> = {
   assessments_missing: 'Số bài chưa ghi nhận nộp',
   late_submissions_to_t: 'Số lượt nộp trễ đã ghi nhận',
   window_days: 'Khoảng thời gian kiểm tra (ngày)',
-  total_clicks_to_t: 'Tổng lượt hoạt động được ghi nhận',
+  total_clicks_to_t: 'Tổng click',
   clicks_recent_7: 'Lượt hoạt động trong 7 ngày cuối',
   clicks_recent_30: 'Lượt hoạt động trong 30 ngày cuối',
   days_since_last_activity: 'Số ngày từ lần hoạt động cuối',
@@ -70,6 +70,7 @@ export const SuggestionReview: React.FC<SuggestionReviewProps> = ({ detail, onCh
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h4 className="font-bold text-white">1. Điều đáng chú ý</h4>
         {detail.prediction && <span className="rounded-full bg-rose-500/10 px-3 py-1 text-xs font-semibold text-rose-300">
+          {detail.prediction.model_version.toLowerCase().includes('demo') && <strong>Dữ liệu minh họa · </strong>}
           Điểm dự báo {(detail.prediction.risk_probability * 100).toFixed(1)}% · cần kiểm tra
         </span>}
       </div>
@@ -101,8 +102,10 @@ export const SuggestionReview: React.FC<SuggestionReviewProps> = ({ detail, onCh
     <div className="space-y-2 border-t border-slate-700 pt-4">
       <h4 className="font-bold text-white">3. Giáo viên quyết định</h4>
       <p className="text-slate-300">{detail.assignment.can_assign
-        ? 'Chọn gợi ý để tạo nháp, kiểm tra và chỉnh nội dung trước khi chủ động giao bài. Điểm dự báo không tự quyết định nhiệm vụ.'
-        : 'Hiện chỉ xem được gợi ý; cần có kế hoạch hỗ trợ đang hoạt động trong học phần trước khi giao bài.'}</p>
+        ? detail.suggestions.length > 0
+          ? 'Chọn gợi ý để tạo nháp, kiểm tra và chỉnh nội dung trước khi chủ động giao bài. Điểm dự báo không tự quyết định nhiệm vụ.'
+          : 'Chưa có gợi ý đủ căn cứ. Hãy trao đổi với sinh viên, ghi điều đã xác minh và tự soạn nhiệm vụ phù hợp trước khi giao.'
+        : 'Hiện chỉ xem được gợi ý; hãy trao đổi với cố vấn để lập và kích hoạt kế hoạch hỗ trợ cho đúng sinh viên, học phần trước khi giao bài.'}</p>
     </div>
 
     <details className="rounded-xl border border-slate-700 p-3 text-slate-300">
@@ -129,6 +132,7 @@ export const SuggestionReview: React.FC<SuggestionReviewProps> = ({ detail, onCh
           </ul>
           <p className="mt-2 text-amber-300">Chưa có chủ đề/rubric hay hạn cá nhân để kết luận lỗ hổng kiến thức hoặc nguyên nhân chưa nộp.</p>
         </details>}
+        <p>Tổng click là số lượt tương tác được ghi trong dữ liệu gốc đến mốc đánh giá; không đo thời gian học hoặc mức hiểu bài.</p>
         {detail.suggestions.map((suggestion) => <div key={suggestion.rule_id} className="rounded-lg border border-slate-700 p-3">
           <p className="font-semibold text-slate-200">{suggestion.title}</p>
           <p className="mt-1 text-amber-300">Giới hạn: {explainObservation(suggestion.limitation)}</p>

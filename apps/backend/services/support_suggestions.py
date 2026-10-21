@@ -24,22 +24,26 @@ def validated_assessment_details(snapshot, metadata, cutoff_day):
         return None
     seen = set()
     for record in records:
-        if (not isinstance(record, dict) or type(record.get("id")) is not int
+        if (not isinstance(record, dict) or "submitted_day" not in record
+                or type(record.get("id")) is not int
                 or record["id"] in seen or type(record.get("due_day")) is not int
-                or record["due_day"] > cutoff_day or not isinstance(record.get("type"), str)):
+                or not 0 <= record["due_day"] <= cutoff_day
+                or not isinstance(record.get("type"), str) or not record["type"].strip()):
             return None
         seen.add(record["id"])
         submitted_day = record.get("submitted_day")
         score = record.get("score")
-        if submitted_day is not None and (type(submitted_day) is not int or submitted_day > cutoff_day):
+        if submitted_day is not None and (type(submitted_day) is not int or not 0 <= submitted_day <= cutoff_day):
             return None
         if (score is not None and (submitted_day is None or type(score) not in (int, float)
                                    or not isfinite(score) or not 0 <= score <= 100)):
             return None
     submitted = sum(record["submitted_day"] is not None for record in records)
     late = sum(record["submitted_day"] is not None and record["submitted_day"] > record["due_day"] for record in records)
+    rate = snapshot.submission_rate
     if (submitted != snapshot.assessments_submitted_to_t or late != snapshot.late_submissions_to_t
-            or abs(snapshot.submission_rate - submitted / len(records)) > 1e-6):
+            or type(rate) not in (int, float) or not isfinite(rate)
+            or not 0 <= rate <= 1 or abs(rate - submitted / len(records)) > 1e-6):
         return None
     return records
 

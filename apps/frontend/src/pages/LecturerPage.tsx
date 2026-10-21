@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { SuggestionReview } from '../components/lecturer/SuggestionReview';
 import { useApp } from '../state/AppContext';
 import { CourseStudentRiskItem, CourseSuggestionResponse, LecturerCourseItem } from '@shared/types';
@@ -243,6 +243,7 @@ export const LecturerPage: React.FC = () => {
             </span>
           </div>
 
+          <p className="text-xs text-slate-400">Tổng click là số lượt tương tác được ghi trong dữ liệu gốc đến mốc đánh giá; không đo thời gian hay mức hiểu bài.</p>
           <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70">
             <table className="w-full text-xs">
               <thead>
@@ -391,15 +392,18 @@ export const LecturerPage: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Chỉ số mục tiêu:</label>
+                <label className="block font-semibold text-slate-300 mb-1" htmlFor="task-target-metric">Chỉ số mục tiêu:</label>
                 <input
                   type="text"
+                  id="task-target-metric"
                   value={taskForm.target_metric}
                   onChange={(e) => setTaskForm({ ...taskForm, target_metric: e.target.value })}
+                  placeholder="Ví dụ: hoàn thành 2/3 bài ôn tập trước buổi học sau"
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-purple-500 focus:outline-none"
                 />
               </div>
             </div>
+            <p className="text-slate-400">Chỉ số mục tiêu là kết quả có thể kiểm tra sau khi giao (ví dụ: số bài hoàn thành), không phải điểm dự báo hay mức độ nghiêm trọng.</p>
             {showLearningDetail && (
               <section id="learning-detail" aria-label="Chi tiết chọn mức bài tập" className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 space-y-2 text-slate-200">
               <h4 className="font-semibold text-sm">Chọn mức bài tập phù hợp</h4>
@@ -512,11 +516,53 @@ const ModalShell: React.FC<{
   children: React.ReactNode;
   wide?: boolean;
 }> = ({ title, onClose, children, wide = false }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const closeButton = dialog?.querySelector<HTMLButtonElement>('button[aria-label="Đóng"]');
+    closeButton?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className={`bg-slate-900 border border-slate-800 rounded-2xl ${wide ? 'max-w-2xl' : 'max-w-lg'} w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 shadow-2xl`}>
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`bg-slate-900 border border-slate-800 rounded-2xl ${wide ? 'max-w-2xl' : 'max-w-lg'} w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 shadow-2xl`}>
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <h3 id={titleId} className="text-lg font-bold text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-purple-400" />
             {title}
           </h3>

@@ -135,6 +135,38 @@ def test_inconsistent_assessment_detail_never_claims_missing_assignment():
     assert any("đối chiếu" in warning for warning in warnings)
 
 
+def test_assessment_records_require_explicit_submission_state():
+    valid_records = [
+        {"id": 101, "type": "TMA", "due_day": 19, "submitted_day": 18, "score": 70},
+        {"id": 102, "type": "TMA", "due_day": 54, "submitted_day": None, "score": None},
+    ]
+    snapshot, presentation = fixture(metadata={"assessment_records": valid_records},
+        late_submissions_to_t=0, assessments_submitted_to_t=1, submission_rate=.5)
+    state, suggestions, _, _ = evaluate_suggestions(snapshot, presentation)
+    assert state == "available" and any(item["rule_id"] == "G01" for item in suggestions)
+
+    invalid_records = [
+        {"id": 102, "type": "TMA", "due_day": 54, "score": None},
+        {**valid_records[1], "submitted_day": ""},
+        {**valid_records[1], "submitted_day": True},
+        {**valid_records[1], "submitted_day": 76},
+        {**valid_records[1], "score": 50},
+        {**valid_records[1], "id": 101},
+    ]
+    for invalid in invalid_records:
+        snapshot.raw_features_json["support_evidence"]["assessment_records"] = [valid_records[0], invalid]
+        _, suggestions, warnings, _ = evaluate_suggestions(snapshot, presentation)
+        assert all(item["rule_id"] != "G01" for item in suggestions)
+        assert any("không xác định được bài nào" in warning for warning in warnings)
+
+    snapshot.raw_features_json["support_evidence"]["assessment_records"] = valid_records
+    for rate in (None, True, float("nan"), 1.5):
+        snapshot.submission_rate = rate
+        _, suggestions, warnings, _ = evaluate_suggestions(snapshot, presentation)
+        assert all(item["rule_id"] != "G01" for item in suggestions)
+        assert any("không xác định được bài nào" in warning for warning in warnings)
+
+
 def test_unverified_relative_source_cannot_be_labeled_historical():
     snapshot, presentation = fixture(metadata={"timeline": "relative_course_day"})
     presentation.start_date = None

@@ -1,10 +1,10 @@
 # EduRisk AI — Hệ thống gợi ý chiến lược học tập cá nhân hóa
 
-- [Bàn giao giao diện Nguyên + gợi ý giảng viên (ảnh trước/sau và sơ đồ)](docs/README_BAN_GIAO.md)
+- [Bản chốt rà soát app 20/10/2026: kết quả, lỗi còn mở và hướng bàn giao](docs/README_BAN_GIAO.md)
 
 Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT). Hệ thống kết hợp dự báo nguy cơ học tập bằng LightGBM với các không gian làm việc dành cho quản trị viên, cố vấn học tập, giảng viên và sinh viên.
 
-**Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
+**Trạng thái:** đang phát triển và kiểm thử tích hợp. Tổng quan ban đầu được đối chiếu ngày **12/10/2026**. Lần rà ngày **20/10/2026** đã sửa lỗi metadata bài đánh giá thiếu trường, làm rõ nội dung giới thiệu và cải thiện bàn phím cho hộp thoại giảng viên; vẫn giữ giao diện nền của Nguyên và số liệu gốc như “Tổng click”. **HUIT là nhận diện dự án; dữ liệu thử nghiệm vẫn là OULAD lịch sử, chưa được xác nhận là dữ liệu sinh viên HUIT hoặc có thể triển khai thực tế trên HUIT.** Chi tiết kiểm thử, giới hạn và hướng bàn giao nằm trong [README bàn giao](docs/README_BAN_GIAO.md).
 
 **Cập nhật database 19/10/2026:** SQL/ORM đã đồng bộ 19 bảng, có Alembic `0002_normalize`, CHECK/UNIQUE và chính sách giữ lịch sử bằng RESTRICT. Xem [schema hiện hành](database/database_design_plan.md), [hướng dẫn migration/backup/khôi phục](docs/database_migrations.md) và [kết quả kiểm thử](reports/dailys/19-10-2026.md). Các mô tả schema/migration cũ bên dưới được thay thế bởi các tài liệu này.
 

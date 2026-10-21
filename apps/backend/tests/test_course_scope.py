@@ -241,6 +241,31 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
             CourseTaskAssignIn(student_id=self.profile.id, title="New task", description="Scope fixture"), self.admin, self.db)
         self.assertEqual(task.plan_id, self.plans[1].id)
 
+    async def test_lecturer_assignment_reaches_student_and_can_be_completed(self):
+        presentation_id = self.presentations[1].id
+        enrollment_id = self.enrollments[1].id
+        create = await self.request("POST", f"/lecturer/courses/{presentation_id}/tasks", json={
+            "student_id": str(self.profile.id), "title": "Practice review",
+            "description": "Verified basis: review two exercises", "priority": "MEDIUM",
+            "target_metric": "Complete two exercises",
+        })
+        self.assertEqual(create.status_code, 200, create.text)
+        task_id = create.json()["id"]
+        self.assertEqual(create.json()["plan_id"], str(self.plans[1].id))
+
+        tasks = await self.request("GET", f"/student/tasks?enrollment_id={enrollment_id}")
+        self.assertEqual(tasks.status_code, 200, tasks.text)
+        self.assertIn(task_id, [task["id"] for task in tasks.json()])
+        self.assertNotIn(task_id, [task["id"] for task in (
+            await self.request("GET", f"/student/tasks?enrollment_id={self.enrollments[0].id}")
+        ).json()])
+
+        completed = await self.request("PATCH", f"/student/tasks/{task_id}/complete", json={
+            "enrollment_id": str(enrollment_id), "student_feedback": "Reviewed",
+        })
+        self.assertEqual(completed.status_code, 200, completed.text)
+        self.assertTrue(completed.json()["is_completed"])
+
     async def test_alert_is_scoped_and_addresses_assigned_advisor(self):
         result = await lecturer.alert_advisor(self.profile.id, AlertAdvisorIn(
             presentation_id=self.presentations[1].id, content="Scoped alert"), self.admin, self.db)
