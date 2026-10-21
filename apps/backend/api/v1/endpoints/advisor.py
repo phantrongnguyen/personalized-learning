@@ -203,7 +203,7 @@ async def get_student_overview(
 @router.get(
     "/students/{student_id}/radar",
     response_model=RadarDataOut,
-    summary="Biểu đồ Radar năng lực 6D của sinh viên (theo học phần)",
+    summary="Radar hành vi tại snapshot so với mốc tham khảo minh họa",
 )
 async def get_student_radar(
     student_id: uuid.UUID,

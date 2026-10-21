@@ -620,7 +620,7 @@ export const StudentPage: React.FC = () => {
 };
 
 /**
- * Biểu đồ Radar đối sánh năng lực 6D lấy trực tiếp từ dữ liệu
+ * Biểu đồ Radar chỉ số hành vi 6D lấy trực tiếp từ dữ liệu
  * /api/v1/student/courses/{id}/radar của Backend.
  */
 const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
@@ -633,7 +633,7 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
     const cy = 110;
     const pt = (value: number, index: number): [number, number] => {
       const angle = (2 * Math.PI * index) / n - Math.PI / 2;
-      const r = Math.max(4, Math.min(maxR, value));
+      const r = Math.max(0, Math.min(maxR, value));
       return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
     };
     const poly = (values: number[]) =>
@@ -646,18 +646,20 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
   return (
     <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
       <h3 className="text-sm font-bold text-white mb-1">
-        Đối sánh năng lực 6D{' '}
+        Đối sánh chỉ số hành vi 6D{' '}
         <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
           Radar
         </span>
       </h3>
       <p className="text-xs text-slate-400 mb-3">
-        {radar.code_module} so với mức chuẩn của nhóm sinh viên Khá/Giỏi
+        {radar.code_module} · {radar.cutoff_stage === 'CUTOFF_75' ? 'mốc 75%' : 'mốc snapshot'}: mốc tham khảo minh họa, chưa kiểm chứng trên OULAD/HUIT. Tỷ lệ giới hạn 100%, không phải phân vị hay đánh giá năng lực; không phản ánh hoạt động hiện tại.
       </p>
 
+      {!radar.data_source && <p className="text-xs text-slate-400 mb-3">Chưa xác nhận nguồn dữ liệu; không coi đây là dữ liệu HUIT đã kiểm chứng.</p>}
       {radar.data_source === 'synthetic_demo' && (
         <p className="text-xs text-amber-300 mb-3">Dữ liệu học tập minh họa</p>
       )}
+      {dims.some(d => d.reference_score === null) && <p className="text-xs text-slate-400 mb-3">Chưa đủ dữ liệu cho mọi chiều; không vẽ đa giác tổng hợp.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <svg viewBox="0 0 240 220" className="w-full max-w-xs mx-auto">
           <g>
@@ -684,14 +686,15 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
               strokeWidth="2"
               strokeDasharray="5,4"
             />
-            <polygon
-              points={dims.map((_, i) => chart.pt(dims[i].percentile, i).join(',')).join(' ')}
+            {dims.every(d => d.reference_score !== null) && <polygon
+              points={dims.map((_, i) => chart.pt(dims[i].reference_score ?? 0, i).join(',')).join(' ')}
               fill="rgba(34,211,238,0.2)"
               stroke="#22d3ee"
               strokeWidth="2"
-            />
+            />}
             {dims.map((d, i) => {
-              const [x, y] = chart.pt(d.percentile, i);
+              if (d.reference_score === null) return null;
+              const [x, y] = chart.pt(d.reference_score, i);
               return <circle key={i} cx={x} cy={y} r="4" fill="#22d3ee" stroke="#0f172a" strokeWidth="1.5" />;
             })}
           </g>
@@ -703,13 +706,13 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">{d.metric}</span>
                 <span className="text-slate-400 font-mono">
-                  {d.percentile.toFixed(0)}%
+                  {d.reference_score === null ? 'Chưa đủ dữ liệu' : `${d.reference_score.toFixed(0)}% mốc`}
                 </span>
               </div>
               <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${d.percentile < 50 ? 'bg-rose-500' : 'bg-cyan-400'}`}
-                  style={{ width: `${Math.min(100, d.percentile)}%` }}
+                  className="h-full rounded-full bg-cyan-400"
+                  style={{ width: `${Math.min(100, d.reference_score ?? 0)}%` }}
                 />
               </div>
             </div>
@@ -719,7 +722,7 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
               <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Tôi
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" /> Chuẩn giỏi
+              <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" /> Mốc minh họa
             </span>
           </div>
         </div>

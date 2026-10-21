@@ -204,12 +204,18 @@ export interface StudentRiskPrediction {
 
 export interface RadarDimensionItem {
   metric: string;
-  student_value: number;
+  student_value: number | null;
   benchmark_value: number;
-  percentile: number;
+  reference_score: number | null;
+  unit: string;
 }
 
 export interface StudentRadarData {
+  reference_version: string;
+  reference_status: 'illustrative_unvalidated';
+  snapshot_id: string;
+  cutoff_stage: string;
+  recorded_at: string;
   data_source?: string | null;
   enrollment_id: string;
   code_module: string;

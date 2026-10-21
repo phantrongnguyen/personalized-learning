@@ -152,7 +152,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-brand-400 transition-colors flex items-center gap-1.5"
                 >
                   <ArrowRight className="w-3 h-3 text-brand-500" />
-                  <span>Biểu Đồ Radar Đối Sánh Năng Lực</span>
+                  <span>Biểu Đồ Radar Chỉ Số Hành Vi</span>
                 </button>
               </li>
               <li>

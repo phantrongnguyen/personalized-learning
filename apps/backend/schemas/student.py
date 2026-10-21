@@ -67,15 +67,22 @@ class RiskPredictionOut(BaseModel):
 
 class RadarDimension(BaseModel):
     metric: str
-    student_value: float
+    student_value: float | None
     benchmark_value: float
-    percentile: float
+    reference_score: float | None = Field(ge=0, le=100, allow_inf_nan=False,
+        description="Tỷ lệ so với mốc tham khảo, giới hạn 0–100; không phải phân vị thống kê")
+    unit: str
 
 
 class RadarDataOut(BaseModel):
     enrollment_id: uuid.UUID
     code_module: str
     dimensions: List[RadarDimension]
+    reference_version: str
+    reference_status: Literal["illustrative_unvalidated"]
+    snapshot_id: uuid.UUID
+    cutoff_stage: str
+    recorded_at: datetime
     data_source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)

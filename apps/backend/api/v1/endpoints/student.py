@@ -31,7 +31,7 @@ from repositories.student_repo import (
     get_student_intervention_plans,
     get_owned_enrollment,
 )
-from services.radar_service import calculate_radar_6d
+from services.radar_service import snapshot_radar
 from services.reminder_service import get_student_course_reminders
 from services.help_request_service import resolve_help_recipient
 
@@ -108,7 +108,7 @@ async def get_my_course_risk(
     return pred
 
 
-@router.get("/courses/{enrollment_id}/radar", response_model=RadarDataOut, summary="Biểu đồ Radar Năng lực 6D đối sánh Benchmark Top 25%")
+@router.get("/courses/{enrollment_id}/radar", response_model=RadarDataOut, summary="Radar hành vi tại snapshot so với mốc tham khảo minh họa")
 async def get_my_course_radar(
     enrollment_id: uuid.UUID,
     current_user: User = Depends(require_student),
@@ -147,22 +147,7 @@ async def get_my_course_radar(
     if snap is None:
         raise HTTPException(404, "Học phần chưa có dữ liệu radar")
 
-    snap_dict = {
-        "total_clicks_to_t": snap.total_clicks_to_t if snap else 0,
-        "active_days_to_t": snap.active_days_to_t if snap else 0,
-        "active_day_ratio": snap.active_day_ratio if snap else 0.0,
-        "clicks_recent_7": snap.clicks_recent_7 if snap else 0,
-        "submission_rate": snap.submission_rate if snap else 0.0,
-        "late_submissions_to_t": snap.late_submissions_to_t if snap else 0,
-    }
-
-    dimensions = calculate_radar_6d(snap_dict)
-    return {
-        "enrollment_id": enr.id,
-        "code_module": course.code_module,
-        "dimensions": dimensions,
-        "data_source": (snap.raw_features_json or {}).get("data_source"),
-    }
+    return snapshot_radar(snap, enr.id, course.code_module)
 
 
 @router.get("/tasks", response_model=List[StudentTaskItemOut], summary="Danh sách nhiệm vụ can thiệp sư phạm cần làm")

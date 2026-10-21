@@ -15,7 +15,7 @@ from models.assignment import AdvisorStudent, CourseLecturer
 from models.feature import StudentFeatureSnapshot
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
 from models.help_request import StudentHelpRequest
-from services.radar_service import calculate_radar_6d
+from services.radar_service import snapshot_radar
 from services.risk_service import current_prediction, latest_snapshot, risk_fields, student_risk_summary, student_risk_summaries, current_predictions
 from services.prediction_service import BEHAVIOR_FIELDS
 from schemas.prediction import BehaviorFeatures
@@ -520,20 +520,9 @@ async def get_student_radar_for_advisor(
     snap_res = await db.execute(snap_query)
     snap = snap_res.scalars().first()
 
-    snap_dict = {
-        "total_clicks_to_t": snap.total_clicks_to_t if snap else 0,
-        "active_days_to_t": snap.active_days_to_t if snap else 0,
-        "active_day_ratio": snap.active_day_ratio if snap else 0.0,
-        "clicks_recent_7": snap.clicks_recent_7 if snap else 0,
-        "submission_rate": snap.submission_rate if snap else 0.0,
-        "late_submissions_to_t": snap.late_submissions_to_t if snap else 0,
-    }
-
-    return {
-        "enrollment_id": enr.id,
-        "code_module": course.code_module,
-        "dimensions": calculate_radar_6d(snap_dict),
-    }
+    if snap is None:
+        return None
+    return snapshot_radar(snap, enr.id, course.code_module)
 
 
 async def get_advisor_intervention_plans(
