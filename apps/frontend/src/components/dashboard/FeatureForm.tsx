@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { StudentFeatures, FeatureGroup } from '@shared/types';
 import { FIELDS, PRESETS, DEFAULT_FEATURES } from '@shared/constants';
 import { UserX, UserCheck, RotateCcw, Search, Loader2 } from 'lucide-react';
+import { DashboardGuide } from './DashboardGuide';
 
 interface FeatureFormProps {
   features: StudentFeatures;
@@ -164,11 +165,8 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
         </div>
 
         {/* Submit Button */}
-        <div className="flex items-center justify-between pt-4 border-t border-slate-800">
-          <span className="text-xs text-slate-400 hidden sm:inline">
-            Tổng cộng: 17 đặc trưng chuẩn OULAD
-          </span>
-
+        <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
+          <DashboardGuide />
           <button
             type="submit"
             disabled={loading}
