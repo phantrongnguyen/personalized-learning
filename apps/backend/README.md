@@ -176,9 +176,9 @@ Mỗi worker có bản model riêng. `/admin/ml/reload` chỉ thay model của p
 
 ### 3.4. Radar và khuyến nghị
 
-Radar gồm tổng click, ngày hoạt động, tỷ lệ ngày hoạt động, click 7 ngày, tỷ lệ nộp bài và kỷ luật đúng hạn. Benchmark cố định trong `radar_service.py`: 350 click, 40 ngày, 0.45 tỷ lệ ngày, 30 click/7 ngày, 0.95 tỷ lệ nộp bài. Điểm phần lớn là `min(100, value/benchmark*100)`; kỷ luật là `max(0, 1-late_submissions*0.25)*100`.
+Radar gồm sáu chỉ số hành vi tại snapshot, dùng chung cấu hình minh họa `packages/shared/constants/radar-reference.json` giữa frontend và backend. Mốc kế thừa là 350 click, 40 ngày, tỷ lệ ngày 0,45, 30 click/7 ngày và tỷ lệ nộp bài 0,95; chưa xác minh bằng tập tham chiếu OULAD/HUIT nên không mang nhãn Top 25% hay nhóm Giỏi.
 
-Trường tên `percentile` thực tế là tỷ lệ đối sánh benchmark, **không phải percentile thống kê từ phân phối sinh viên**. Chưa có tính toán xác nhận benchmark thuộc top 25% trong runtime. Không có chặn dưới 0 cho tất cả chiều, nên dữ liệu âm có thể cho điểm âm. Khi không có snapshot, API radar dùng 0 cho các chỉ số; riêng kỷ luật có thể thành 100 vì số bài trễ bằng 0.
+API dùng `reference_score` (tỷ lệ so với mốc, giới hạn 0–100), không dùng `percentile`. Chỉ số nộp trễ quy ước trừ 0,25/bài và trả null khi chưa nộp bài hoặc dữ liệu không hợp lệ; thiếu snapshot trả 404. Hai API radar sinh viên/cố vấn cùng trả phiên bản mốc, snapshot, cutoff và thời điểm ghi DB. Thời điểm ghi không phải ngày quan sát. Xem [hợp đồng dữ liệu và toàn bộ quy tắc](../../docs/priority1-data-and-rules.md); triển khai frontend/backend cùng phiên bản do đổi tên trường API.
 
 Khuyến nghị sinh viên là quy tắc trong `student_repo.get_enrollment_prediction`: nguy cơ >=0.5, số ngày hoạt động <20, bài trễ >0, click 7 ngày <15. Không phải recommendation model được huấn luyện; nhiều màn hình dùng ngưỡng 0.5 cố định thay vì ngưỡng của model record/artifact.
 
@@ -589,7 +589,7 @@ Tham số dưới đây bỏ các dependency nội bộ (`db`, `current_user`, `
 | **GET** `/api/v1/student/profile` | STUDENT / ADMIN | Không | `StudentProfileDetailOut` — Hồ sơ cá nhân sinh viên | status.HTTP_404_NOT_FOUND: 'Không tìm thấy hồ sơ sinh viên' | `apps/backend/api/v1/endpoints/student.py:41` |
 | **GET** `/api/v1/student/courses` | STUDENT / ADMIN | Không | `List[StudentCourseItemOut]` — Danh sách môn học đang theo học | Theo dependency/validation/nghiệp vụ | `apps/backend/api/v1/endpoints/student.py:69` |
 | **GET** `/api/v1/student/courses/{enrollment_id}/risk-prediction` | STUDENT / ADMIN | `enrollment_id: uuid.UUID` (bắt buộc) | `RiskPredictionOut` — Dự báo rủi ro học tập môn học tại Cutoff 75% | status.HTTP_404_NOT_FOUND: 'Không tìm thấy hồ sơ sinh viên'<br>status.HTTP_404_NOT_FOUND: 'Chưa có dữ liệu dự báo cho học phần này hoặc bạn không có quyền xem' | `apps/backend/api/v1/endpoints/student.py:80` |
-| **GET** `/api/v1/student/courses/{enrollment_id}/radar` | STUDENT / ADMIN | `enrollment_id: uuid.UUID` (bắt buộc) | `RadarDataOut` — Biểu đồ Radar Năng lực 6D đối sánh Benchmark Top 25% | status.HTTP_404_NOT_FOUND: 'Không tìm thấy hồ sơ sinh viên'<br>status.HTTP_404_NOT_FOUND: 'Không tìm thấy học phần này' | `apps/backend/api/v1/endpoints/student.py:99` |
+| **GET** `/api/v1/student/courses/{enrollment_id}/radar` | STUDENT / ADMIN | `enrollment_id: uuid.UUID` (bắt buộc) | `RadarDataOut` — Radar hành vi theo mốc tham khảo minh họa | status.HTTP_404_NOT_FOUND: 'Không tìm thấy hồ sơ sinh viên'<br>status.HTTP_404_NOT_FOUND: 'Không tìm thấy học phần này' | `apps/backend/api/v1/endpoints/student.py:99` |
 | **GET** `/api/v1/student/tasks` | STUDENT / ADMIN | Không | `List[StudentTaskItemOut]` — Danh sách nhiệm vụ can thiệp sư phạm cần làm | Theo dependency/validation/nghiệp vụ | `apps/backend/api/v1/endpoints/student.py:153` |
 | **GET** `/api/v1/student/intervention-plans` | STUDENT / ADMIN | `status_filter: Optional[str]` = `None` | `List[PlanOut]` — Danh sách kế hoạch can thiệp sư phạm của bản thân | Theo dependency/validation/nghiệp vụ | `apps/backend/api/v1/endpoints/student.py:164` |
 | **PATCH** `/api/v1/student/tasks/{task_id}/complete` | STUDENT / ADMIN | `task_id: uuid.UUID` (bắt buộc)<br>`payload: TaskCompleteIn` (bắt buộc) | `StudentTaskItemOut` — Đánh dấu hoàn thành nhiệm vụ can thiệp | status.HTTP_404_NOT_FOUND: 'Không tìm thấy hồ sơ sinh viên'<br>status.HTTP_404_NOT_FOUND: 'Không tìm thấy nhiệm vụ can thiệp của bạn' | `apps/backend/api/v1/endpoints/student.py:176` |
@@ -1202,9 +1202,10 @@ Cấu hình: `ConfigDict(from_attributes=True)`.
 | Field | Kiểu | Default / constraint |
 | --- | --- | --- |
 | `metric` | `str` | `—` — bắt buộc |
-| `student_value` | `float` | `—` — bắt buộc |
+| `student_value` | `float hoặc null` | `—` — bắt buộc |
 | `benchmark_value` | `float` | `—` — bắt buộc |
-| `percentile` | `float` | `—` — bắt buộc |
+| `reference_score` | `float hoặc null` | Tỷ lệ 0–100 so với mốc tham khảo; không phải phân vị |
+| `unit` | `str` | Đơn vị của giá trị và mốc |
 
 #### `RadarDataOut`
 

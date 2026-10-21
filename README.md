@@ -391,3 +391,7 @@ Mã nguồn sử dụng [giấy phép MIT](LICENSE). Bản quyền trong LICENSE
 Từ gốc repository chạy `.venv/Scripts/python.exe scripts/run_backend_tests.py -q`. Runner tạo database riêng có hậu tố `_test`, chạy toàn bộ suite và kiểm tra dữ liệu 19 bảng không đổi sau rollback. Không bật RUN_COURSE_SCOPE_DB trên database ứng dụng. Frontend: `npm --prefix apps/frontend test` và `npm --prefix apps/frontend run build`.
 
 Dockerfile backend/frontend, nginx proxy và healthcheck đã có. `docker compose up --build -d` dùng cấu hình .env; archive model/avatar được giữ trong volume. Để kiểm thử độc lập, dùng `docker-compose.verify.yml` với project `edurisk-verification`, hai biến VERIFY_DB_PASSWORD/VERIFY_SECRET_KEY và frontend port 13000; xem hướng dẫn đầy đủ trong apps/backend/README.md. Kết quả và giới hạn nằm trong reports/dailys/18-10-2026.md, mục 6.
+
+### Chuẩn hóa radar và quy tắc gợi ý — 21/10/2026
+
+Radar dùng mốc tham khảo minh họa chưa kiểm chứng, không phải Top 25% hay điểm năng lực. API đổi `percentile` thành `reference_score` và có giá trị null khi thiếu dữ liệu. Quy tắc Dashboard chỉ minh họa; luồng gợi ý giảng viên kiểm tra metadata bằng chứng trước khi đề xuất. Chưa có quy đổi tín chỉ/bằng cấp OULAD sang HUIT; đã bỏ suy luận quá tải từ 90 tín chỉ. Xem [định nghĩa dữ liệu, công thức và bảng quy tắc](docs/priority1-data-and-rules.md). Backend/frontend cần triển khai cùng phiên bản.

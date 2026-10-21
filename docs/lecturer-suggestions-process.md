@@ -40,3 +40,7 @@
 - Frontend/contracts: `apps/frontend/src/pages/LecturerPage.tsx`, `apps/frontend/src/services/api.ts`, `packages/shared/types/index.ts`.
 - Tài liệu: `README.md`, `apps/backend/README.md`, `docs/lecturer-suggestions-process.md`. Hai README còn lại giữ nguyên. Không chạm `notebooks/`, `outputs/`.
 - Không có schema/migration. Cam kết: commit rõ nghĩa, không push.
+
+## Định nghĩa và giới hạn cập nhật ngày 21/10/2026
+
+Xem [hợp đồng dữ liệu, radar và bảng quy tắc](priority1-data-and-rules.md). Phân biệt Dashboard nhập tay với luồng giảng viên có metadata; cả hai chưa có đánh giá hiệu quả can thiệp. Radar dùng mốc minh họa chưa kiểm chứng, không phải phân vị hay phép đo năng lực. Lần chuẩn hóa này không thay đổi điều kiện G02_AGGREGATE/G03/G04 hoặc artifact/ngưỡng model.
