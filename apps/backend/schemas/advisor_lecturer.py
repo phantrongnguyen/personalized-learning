@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any, Literal
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from schemas.prediction import RiskLevel, Ratio
 
 
@@ -179,6 +179,15 @@ class CourseTaskAssignIn(BaseModel):
     description: str
     priority: Literal['LOW', 'MEDIUM', 'HIGH'] = 'HIGH'
     target_metric: str = "Hoàn thành bài tập ôn tập môn học"
+    suggestion_snapshot_id: uuid.UUID | None = None
+    suggestion_rule_id: str | None = Field(None, min_length=1, max_length=50)
+    verified_basis: str | None = Field(None, max_length=2000)
+
+    @model_validator(mode='after')
+    def paired_suggestion(self):
+        if (self.suggestion_snapshot_id is None) != (self.suggestion_rule_id is None):
+            raise ValueError('Cần cả snapshot và mã quy tắc khi giao từ gợi ý')
+        return self
 
 
 class CourseStudentOut(BaseModel):

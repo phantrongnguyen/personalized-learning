@@ -2,7 +2,9 @@
 from datetime import date, datetime, timedelta, timezone
 from math import floor, isfinite
 
-RULE_VERSION = "lecturer-support-1.0"
+from services.support_evidence import REVIEW_VERSION, snapshot_digest
+
+RULE_VERSION = "lecturer-support-1.1"
 
 
 def evaluate_suggestions(snapshot, presentation, today=None):
@@ -22,6 +24,15 @@ def evaluate_suggestions(snapshot, presentation, today=None):
             or not isinstance(metadata.get("confirmed_at"), str) or not metadata["confirmed_at"].strip()):
         return "insufficient_data", suggestions, warnings + ["Thiếu ngày cutoff hoặc nguồn/xác nhận dữ liệu; không dùng thời gian ghi snapshot làm ngày quan sát."], None
 
+    if (metadata.get("review_version") != REVIEW_VERSION
+            or not metadata.get("confirmed_by_user_id")
+            or metadata.get("review_scope") not in ("aggregate_only", "source_verified", "demonstration")
+            or metadata.get("snapshot_sha256") != snapshot_digest(snapshot, presentation)):
+        return "insufficient_data", suggestions, warnings + ["Chưa có xác nhận gắn với đúng nội dung snapshot và người phụ trách."], None
+    if metadata["review_scope"] == "aggregate_only":
+        return "insufficient_data", suggestions, warnings + ["Mới kiểm tra số liệu tổng hợp; chưa đối chiếu độ đầy đủ của nguồn LMS."], None
+    if metadata["review_scope"] == "demonstration" or raw_features.get("data_source") == "synthetic_demo":
+        warnings.append("Dữ liệu minh họa; gợi ý không phải bằng chứng từ LMS thực.")
     try:
         confirmed_at = datetime.fromisoformat(metadata["confirmed_at"])
     except ValueError:
@@ -37,6 +48,7 @@ def evaluate_suggestions(snapshot, presentation, today=None):
         warnings.append("Dữ liệu chỉ phản ánh thời điểm cutoff; không phản ánh hoạt động hiện tại.")
     evidence = {"source": metadata["source"], "confirmed_at": metadata["confirmed_at"],
                 "snapshot_id": str(snapshot.id), "snapshot_day": cutoff_day,
+                "confirmed_by_user_id": metadata["confirmed_by_user_id"], "review_scope": metadata["review_scope"],
                 "cutoff_date": cutoff_date.isoformat(), "recorded_at": snapshot.created_at.isoformat()}
 
     if metadata.get("assessments_complete") is True:

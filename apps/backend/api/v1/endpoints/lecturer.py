@@ -1,4 +1,5 @@
 import uuid
+import json
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -13,6 +14,7 @@ from models.ml import PredictionRun, MLModel
 from models.feature import StudentFeatureSnapshot
 from models.academic import StudentEnrollment, CoursePresentation
 from models.help_request import StudentHelpRequest
+from services.audit_service import write_audit_log
 from services.help_request_service import resolve_help_recipient
 from schemas.advisor_lecturer import (
     LecturerCourseOut,
@@ -23,6 +25,8 @@ from schemas.advisor_lecturer import (
     AlertAdvisorIn,
     TaskOut,
 )
+from schemas.support_evidence import SnapshotReviewIn
+from services.support_evidence import inspection, review_snapshot
 from services.support_suggestions import evaluate_suggestions, RULE_VERSION
 from repositories.academic_repo import (
     get_lecturer_profile_by_user_id,
@@ -82,6 +86,42 @@ async def get_course_risk(
     return await get_course_risk_board(db, presentation_id, limit=limit, offset=offset)
 
 
+async def _review_context(db, user, presentation_id, student_id, snapshot_id, lock=False):
+    await _ensure_course_ownership(db, user, presentation_id)
+    query = select(StudentEnrollment).where(StudentEnrollment.student_id == student_id,
+        StudentEnrollment.presentation_id == presentation_id)
+    if lock:
+        query = query.with_for_update()
+    enrollment = (await db.execute(query)).scalars().first()
+    if enrollment is None:
+        raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
+    snapshot = (await db.execute(select(StudentFeatureSnapshot).where(
+        StudentFeatureSnapshot.enrollment_id == enrollment.id).order_by(
+        StudentFeatureSnapshot.created_at.desc(), StudentFeatureSnapshot.id.desc()).limit(1))).scalars().first()
+    if snapshot is None:
+        raise HTTPException(404, "Chưa có snapshot để rà soát")
+    if snapshot.id != snapshot_id:
+        raise HTTPException(409, "Chỉ rà soát snapshot mới nhất; tải lại danh sách")
+    return snapshot, await db.get(CoursePresentation, presentation_id)
+
+
+@router.get("/courses/{presentation_id}/students/{student_id}/snapshots/{snapshot_id}/review",
+    summary="Đọc và kiểm tra snapshot database trước khi xác nhận nguồn")
+async def inspect_support_snapshot(presentation_id: uuid.UUID, student_id: uuid.UUID,
+    snapshot_id: uuid.UUID, current_user: User = Depends(require_lecturer), db: AsyncSession = Depends(get_db)):
+    snapshot, presentation = await _review_context(db, current_user, presentation_id, student_id, snapshot_id)
+    return inspection(snapshot, presentation)
+
+
+@router.post("/courses/{presentation_id}/students/{student_id}/snapshots/{snapshot_id}/review",
+    summary="Giảng viên xác nhận căn cứ, lưu bản snapshot mới và audit")
+async def confirm_support_snapshot(presentation_id: uuid.UUID, student_id: uuid.UUID,
+    snapshot_id: uuid.UUID, payload: SnapshotReviewIn,
+    current_user: User = Depends(require_lecturer), db: AsyncSession = Depends(get_db)):
+    snapshot, presentation = await _review_context(db, current_user, presentation_id, student_id, snapshot_id, lock=True)
+    return await review_snapshot(db, snapshot, presentation, payload, current_user.id)
+
+
 @router.get("/courses/{presentation_id}/students/{student_id}/suggestions", summary="Gợi ý có căn cứ để giảng viên xem xét")
 async def get_course_student_suggestions(
     presentation_id: uuid.UUID,
@@ -131,6 +171,8 @@ async def get_course_student_suggestions(
         warnings.append("Chưa có PredictionRun cho snapshot mới nhất; không phân loại SAFE.")
     return {
         "status": state, "rule_version": RULE_VERSION, "enrollment_id": enrollment.id,
+        "snapshot_id": snapshot.id if snapshot else None,
+        "data_source": (snapshot.raw_features_json or {}).get("data_source") if snapshot and isinstance(snapshot.raw_features_json, dict) else None,
         "prediction": prediction, "cutoff_date": cutoff_date,
         "suggestions": suggestions, "warnings": warnings,
         "assignment": {"can_assign": plan is not None, "plan_id": plan,
@@ -189,6 +231,22 @@ async def assign_course_task(
     db: AsyncSession = Depends(get_db),
 ):
     await _ensure_course_ownership(db, current_user, presentation_id)
+    # Serialize review/assessment edits with assignment against the selected enrollment.
+    enrollment = (await db.execute(select(StudentEnrollment).where(
+        StudentEnrollment.student_id == payload.student_id,
+        StudentEnrollment.presentation_id == presentation_id).with_for_update())).scalars().first()
+    if enrollment is None:
+        raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
+    if payload.suggestion_snapshot_id is not None:
+        snapshot = (await db.execute(select(StudentFeatureSnapshot).where(
+            StudentFeatureSnapshot.enrollment_id == enrollment.id).order_by(
+            StudentFeatureSnapshot.created_at.desc(), StudentFeatureSnapshot.id.desc()).limit(1))).scalars().first()
+        presentation = await db.get(CoursePresentation, presentation_id)
+        if snapshot is None or snapshot.id != payload.suggestion_snapshot_id:
+            raise HTTPException(409, "Snapshot đã thay đổi; tải lại gợi ý trước khi giao")
+        state, suggestions, _, _ = evaluate_suggestions(snapshot, presentation)
+        if state != "available" or payload.suggestion_rule_id not in {item["rule_id"] for item in suggestions}:
+            raise HTTPException(409, "Gợi ý không còn đủ căn cứ; tải lại và xem xét dữ liệu")
     # Select a plan linked to this student's enrollment in this presentation.
     plan_query = (
         select(InterventionPlan)
@@ -202,7 +260,7 @@ async def assign_course_task(
         .order_by(InterventionPlan.created_at.desc(), InterventionPlan.id.desc())
         .limit(1)
     )
-    plan_res = await db.execute(plan_query)
+    plan_res = await db.execute(plan_query.with_for_update(of=InterventionPlan))
     plan = plan_res.scalars().first()
 
     if not plan:
@@ -220,6 +278,13 @@ async def assign_course_task(
         target_metric=payload.target_metric,
     )
     db.add(task)
+    await db.flush()
+    await write_audit_log(db, user_id=current_user.id, action="ASSIGN_COURSE_TASK",
+        target_type="intervention_task", target_id=task.id,
+        detail=json.dumps({"plan_id": str(plan.id), "enrollment_id": str(enrollment.id),
+            "suggestion_snapshot_id": str(payload.suggestion_snapshot_id) if payload.suggestion_snapshot_id else None,
+            "suggestion_rule_id": payload.suggestion_rule_id,
+            "verified_basis": payload.verified_basis, "rule_version": RULE_VERSION}, ensure_ascii=False))
     await db.commit()
     await db.refresh(task)
     return task

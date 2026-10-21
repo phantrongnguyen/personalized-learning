@@ -1634,3 +1634,7 @@ Truy cập http://127.0.0.1:13000. Stack riêng đặt access token 1 phút đ�
 Frontend dùng chung authenticatedFetch cho toàn bộ request có xác thực, refresh một lần khi 401 và gom request đồng thời; không refresh khi chỉ bị 403 trên bản ghi. Refresh bị 401/403 sẽ kết thúc phiên; lỗi mạng/5xx giữ token để thử lại. Request cũ bị hủy khi đổi tài khoản, refresh đến muộn không khôi phục phiên đã logout. Lịch sử lưu theo API base và UUID user, không nhập lịch sử dùng chung v2 vào tài khoản mới. Logout xóa dữ liệu đang hiển thị nhưng giữ lịch sử riêng của từng tài khoản trên trình duyệt.
 
 Bằng chứng và giới hạn chi tiết: reports/dailys/18-10-2026.md, mục 6. Không coi test workflow này là bằng chứng đánh giá hiệu quả cá nhân hóa hoặc migration đã hoàn thành.
+
+### Rà soát snapshot từ database — 21/10/2026
+
+Luồng giảng viên bổ sung GET/POST `courses/{presentation_id}/students/{student_id}/snapshots/{snapshot_id}/review`: đọc dữ liệu, xác nhận phạm vi, tạo snapshot mới và audit theo người được phân công. Không tự coi số tổng hợp là log đầy đủ; không nâng dữ liệu minh họa thành nguồn thực. Thay đổi số liệu làm mất hiệu lực xác nhận cũ; khi giao từ gợi ý, server kiểm tra lại snapshot/rule và lưu audit. Xem [quy trình, API và giới hạn](../../docs/database-snapshot-review.md). Rule version `lecturer-support-1.1` yêu cầu metadata review mới; không cần migration DB.

@@ -4,18 +4,21 @@ from types import SimpleNamespace
 from uuid import uuid4
 
 from services.support_suggestions import evaluate_suggestions
+from services.support_evidence import REVIEW_VERSION, snapshot_digest
 
 
 def fixture(**overrides):
-    metadata = {"snapshot_day": 75, "source": "verified-import", "confirmed_at": "2026-01-01T00:00:00+00:00",
+    metadata = {"review_version": REVIEW_VERSION, "review_scope": "source_verified",
+                "confirmed_by_user_id": str(uuid4()), "snapshot_day": 75, "source": "verified-import", "confirmed_at": "2026-01-01T00:00:00+00:00",
                 "activity_complete": True, "assessments_complete": True}
     metadata.update(overrides.pop("metadata", {}))
-    snapshot = SimpleNamespace(id=uuid4(), cutoff_stage="CUTOFF_75", raw_features_json={"support_evidence": metadata},
+    snapshot = SimpleNamespace(id=uuid4(), enrollment_id=uuid4(), clicks_resource_to_t=4, clicks_url_to_t=2, active_days_to_t=3, active_day_ratio=.04, cutoff_stage="CUTOFF_75", raw_features_json={"support_evidence": metadata},
         created_at=datetime(2026, 1, 1, tzinfo=timezone.utc), total_clicks_to_t=12, clicks_recent_7=0,
         clicks_recent_30=4, days_since_last_activity=7, late_submissions_to_t=1, assessments_submitted_to_t=4, submission_rate=.8)
     for key, value in overrides.items():
         setattr(snapshot, key, value)
-    presentation = SimpleNamespace(start_date=date(2025, 1, 1), module_presentation_length=100)
+    presentation = SimpleNamespace(id=uuid4(), start_date=date(2025, 1, 1), module_presentation_length=100)
+    metadata["snapshot_sha256"] = snapshot_digest(snapshot, presentation)
     return snapshot, presentation
 
 

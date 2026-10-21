@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
+import { SnapshotEvidenceReview } from '../components/lecturer/SnapshotEvidenceReview';
 import { SuggestionReview } from '../components/lecturer/SuggestionReview';
 import { useApp } from '../state/AppContext';
 import { CourseStudentRiskItem, CourseSuggestionResponse, LecturerCourseItem } from '@shared/types';
@@ -44,7 +45,7 @@ export const LecturerPage: React.FC = () => {
   const suggestionRequest = useRef(0);
   const [suggestionError, setSuggestionError] = useState('');
   const [verifiedBasis, setVerifiedBasis] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState(false);
+  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
 
   // Cảnh báo GVCN
   const [alertTarget, setAlertTarget] = useState<CourseStudentRiskItem | null>(null);
@@ -100,8 +101,7 @@ export const LecturerPage: React.FC = () => {
     setSuggestionDetail(null);
     setSuggestionError('');
     setVerifiedBasis('');
-    setSelectedSuggestion(false);
-    setSelectedSuggestion(false);
+    setSelectedSuggestion(null);
     setTaskForm({ student_id: student.student_id, title: '', description: '', priority: 'MEDIUM', target_metric: '' });
     setLoadingSuggestions(true);
     try {
@@ -125,6 +125,9 @@ export const LecturerPage: React.FC = () => {
     try {
       await assignCourseTaskApi(apiBase, selectedPresentation, {
         ...taskForm,
+        suggestion_snapshot_id: selectedSuggestion && suggestionDetail.snapshot_id ? suggestionDetail.snapshot_id : undefined,
+        suggestion_rule_id: selectedSuggestion || undefined,
+        verified_basis: verifiedBasis.trim() || undefined,
         description: verifiedBasis.trim()
           ? `${taskForm.description.trim()}\n\nCăn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}`
           : taskForm.description,
@@ -334,12 +337,16 @@ export const LecturerPage: React.FC = () => {
           {loadingSuggestions && <p className="text-xs text-slate-400 mb-3">Đang tải căn cứ…</p>}
           {suggestionError && <p className="text-xs text-rose-300 mb-3">{suggestionError}</p>}
           {suggestionDetail && <SuggestionReview detail={suggestionDetail} onChoose={(suggestion) => {
-            setSelectedSuggestion(true);
+            setSelectedSuggestion(suggestion.rule_id);
             setTaskForm({
               ...taskForm, title: suggestion.title, description: suggestion.proposed_action,
               target_metric: 'Xác minh tiến độ cùng sinh viên',
             });
           }} />}
+          {suggestionDetail?.snapshot_id && <SnapshotEvidenceReview
+            key={`${selectedPresentation}:${assignTarget.student_id}:${suggestionDetail.snapshot_id}`}
+            apiBase={apiBase} presentationId={selectedPresentation} studentId={assignTarget.student_id}
+            snapshotId={suggestionDetail.snapshot_id} onReviewed={() => { void openAssignment(assignTarget); }} />}
           {suggestionDetail?.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
             {(suggestionDetail.status !== 'available' || !selectedSuggestion) && <div>
               <label className="block font-semibold text-slate-300 mb-1" htmlFor="verified-basis">Điều giảng viên đã tự xác minh (bắt buộc):</label>

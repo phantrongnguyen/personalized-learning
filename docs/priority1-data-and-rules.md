@@ -72,7 +72,7 @@ Thiếu/không hợp lệ các đầu vào dùng bởi quy tắc, xác suất ng
 
 ## 6. Bảng quy tắc giảng viên có bằng chứng
 
-Giữ version `lecturer-support-1.0` và điều kiện nghiệp vụ hiện có; lần thay đổi này không điều chỉnh thuật toán các quy tắc sau.
+Ở mốc ưu tiên 1 dùng `lecturer-support-1.0`. Ưu tiên 2 nâng lên `lecturer-support-1.1` để yêu cầu xác nhận có người phụ trách và hash gắn với đúng snapshot; xem [quy trình rà soát database](database-snapshot-review.md). Các điều kiện tín hiệu trong bảng dưới vẫn giữ nguyên.
 
 Điều kiện chung: snapshot `CUTOFF_75`; thời lượng học phần dương; `snapshot_day=floor(length*0.75)`; ngày bắt đầu; nguồn không rỗng; `confirmed_at` hợp lệ có múi giờ, không tương lai; bản ghi/xác nhận không trước cutoff. Cutoff tương lai trả `abstained`; metadata thiếu trả `insufficient_data`. API không tự kiểm toán log gốc.
 

@@ -129,6 +129,8 @@ export interface CourseSuggestion {
 }
 
 export interface CourseSuggestionResponse {
+  snapshot_id: string | null;
+  data_source: string | null;
   status: 'available' | 'abstained' | 'insufficient_data';
   rule_version: string;
   enrollment_id: string;
@@ -146,6 +148,28 @@ export interface CourseSuggestionResponse {
   suggestions: CourseSuggestion[];
   warnings: string[];
   assignment: { can_assign: boolean; plan_id: string | null; message: string };
+}
+
+export interface SnapshotInspection {
+  snapshot_id: string;
+  snapshot_sha256: string;
+  recorded_at: string;
+  cutoff_date: string | null;
+  snapshot_day: number | null;
+  data_source: string | null;
+  features: Record<string, number>;
+  issues: string[];
+  limitations: string[];
+}
+
+export interface SnapshotReviewPayload {
+  snapshot_sha256: string;
+  review_scope: 'aggregate_only' | 'source_verified' | 'demonstration';
+  source_reference: string;
+  review_note: string;
+  activity_complete: boolean;
+  assessments_complete: boolean;
+  acknowledged_limitations: true;
 }
 
 // -------------------------------------------------------------

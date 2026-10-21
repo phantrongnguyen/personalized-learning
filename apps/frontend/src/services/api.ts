@@ -424,6 +424,9 @@ export async function createHelpRequestApi(
 // 6. LECTURER EXTRA APIS
 // -------------------------------------------------------------
 export interface AssignCourseTaskPayload {
+  suggestion_snapshot_id?: string;
+  suggestion_rule_id?: string;
+  verified_basis?: string;
   student_id: string;
   title: string;
   description: string;
@@ -515,4 +518,25 @@ export async function getAdvisorStudentCoursesApi(baseUrl: string, studentId: st
   if (!res.ok) throw new Error('Không thể tải học phần của sinh viên');
   const overview = await res.json();
   return overview.courses;
+}
+
+
+export async function inspectSnapshotApi(baseUrl: string, presentationId: string, studentId: string, snapshotId: string): Promise<import('@shared/types').SnapshotInspection> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/snapshots/${snapshotId}/review`, { headers: authHeaders() });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Không thể đọc snapshot; tải lại trước khi xác nhận');
+  }
+  return res.json();
+}
+
+export async function reviewSnapshotApi(baseUrl: string, presentationId: string, studentId: string, snapshotId: string, payload: import('@shared/types').SnapshotReviewPayload): Promise<{ snapshot_id: string; message: string }> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/snapshots/${snapshotId}/review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Chưa đủ điều kiện xác nhận; kiểm tra phạm vi và dữ liệu');
+  }
+  return res.json();
 }

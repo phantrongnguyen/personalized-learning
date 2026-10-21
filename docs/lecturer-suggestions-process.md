@@ -44,3 +44,7 @@
 ## Định nghĩa và giới hạn cập nhật ngày 21/10/2026
 
 Xem [hợp đồng dữ liệu, radar và bảng quy tắc](priority1-data-and-rules.md). Phân biệt Dashboard nhập tay với luồng giảng viên có metadata; cả hai chưa có đánh giá hiệu quả can thiệp. Radar dùng mốc minh họa chưa kiểm chứng, không phải phân vị hay phép đo năng lực. Lần chuẩn hóa này không thay đổi điều kiện G02_AGGREGATE/G03/G04 hoặc artifact/ngưỡng model.
+
+## Rà soát nguồn từ database — ưu tiên 2
+
+Đã bổ sung màn hình/API đọc snapshot, xác nhận có trách nhiệm, tạo bản mới và audit. Xem [quy trình và giới hạn nguồn database](database-snapshot-review.md). Rule version hiện tại là `lecturer-support-1.1`; metadata cũ không tự được tin cậy nếu thiếu người xác nhận/hash nội dung. Hai snapshot local hiện vẫn chưa xác minh nguồn; không tự bật cờ đầy đủ.

@@ -311,6 +311,7 @@ async def update_course_student_assessment(
         except ValidationError as exc:
             raise HTTPException(422, "Chỉ số snapshot không hợp lệ") from exc
         metadata = deepcopy(snap.raw_features_json or {})
+        metadata.pop("support_evidence", None)  # Edited metrics require a new review.
         metadata["snapshot_metadata"] = {
             "source": "lecturer_assessment", "previous_snapshot_id": str(snap.id),
             "observed_at": datetime.now(timezone.utc).isoformat(),

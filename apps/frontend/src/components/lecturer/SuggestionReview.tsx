@@ -2,6 +2,9 @@ import React from 'react';
 import { CourseSuggestion, CourseSuggestionResponse } from '@shared/types';
 
 const explainWarning = (warning: string): string => {
+  if (warning.includes('người phụ trách')) return 'Chưa có người phụ trách xác nhận đúng nội dung snapshot; mở phần rà soát nguồn bên dưới.';
+  if (warning.includes('Mới kiểm tra số liệu')) return 'Mới kiểm tra số tổng hợp; chưa xác nhận log hoặc bài đánh giá đầy đủ.';
+  if (warning.includes('Dữ liệu minh họa')) return 'Đây là dữ liệu minh họa, chưa phải bằng chứng từ LMS thực.';
   if (warning.includes('bài và hạn nộp')) return 'Chưa có thông tin từng bài và hạn nộp; không thể biết bài nào thiếu hoặc trễ.';
   if (warning.includes('snapshot hợp lệ')) return 'Chưa có dữ liệu học tập được ghi nhận ở mốc 75% thời lượng học phần.';
   if (warning.includes('độ dài học phần')) return 'Chưa biết thời lượng học phần nên không thể xác định mốc đánh giá.';
@@ -22,6 +25,8 @@ const explainWarning = (warning: string): string => {
 
 const evidenceLabels: Record<string, string> = {
   source: 'Nguồn dữ liệu',
+  confirmed_by_user_id: 'Mã người xác nhận',
+  review_scope: 'Phạm vi xác nhận',
   confirmed_at: 'Được xác nhận lúc',
   cutoff_date: 'Dữ liệu tính đến',
   late_submissions_to_t: 'Số lượt nộp trễ đã ghi nhận',
@@ -61,6 +66,7 @@ export const SuggestionReview: React.FC<SuggestionReviewProps> = ({ detail, onCh
         detail.status === 'insufficient_data' ? 'Chưa đủ dữ liệu đã xác nhận để gợi ý nhiệm vụ cụ thể.' :
           'Chưa có gợi ý phù hợp từ dữ liệu hiện có.'}
     </p>
+    {detail.data_source === 'synthetic_demo' && <p className="text-amber-300 font-semibold">Dữ liệu minh họa, không phải bằng chứng LMS thực.</p>}
     {detail.prediction ? (
       <p className="text-slate-300">
         {detail.prediction.model_version.toLowerCase().includes('demo') && <strong>Dữ liệu minh họa. </strong>}
