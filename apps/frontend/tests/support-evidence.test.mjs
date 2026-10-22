@@ -53,7 +53,7 @@ test('missing plan, unknown source and demonstration remain explicit in the revi
   for (const data_source of [null, 'synthetic_demo']) {
     const html = api.renderReview({ detail: { status: 'insufficient_data', data_source, prediction: null,
       cutoff_date: null, suggestions: [], warnings: ['Chưa có xác nhận gắn với đúng nội dung snapshot và người phụ trách.'],
-      assignment: { can_assign: false } }, onChoose() {} });
+      assignment: { can_assign: false } }, student: { total_clicks: null, late_submissions: null, submission_rate: null }, selectedRuleId: null, onChoose() {} });
     assert.match(html, /Chưa đủ dữ liệu/);
     assert.match(html, /Chưa thể giao nhiệm vụ/);
     assert.match(html, /rà soát nguồn/);

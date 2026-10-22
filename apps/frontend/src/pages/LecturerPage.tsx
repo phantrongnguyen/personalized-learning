@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useId, useRef, useState } from 'react';
 import { SnapshotEvidenceReview } from '../components/lecturer/SnapshotEvidenceReview';
 import { SuggestionReview } from '../components/lecturer/SuggestionReview';
 import { useApp } from '../state/AppContext';
@@ -45,7 +45,8 @@ export const LecturerPage: React.FC = () => {
   const suggestionRequest = useRef(0);
   const [suggestionError, setSuggestionError] = useState('');
   const [verifiedBasis, setVerifiedBasis] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState<string | null>(null);
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
+  const [learningLevel, setLearningLevel] = useState<'FOUNDATION' | 'GUIDED' | 'APPLICATION' | ''>('');
 
   // Cảnh báo GVCN
   const [alertTarget, setAlertTarget] = useState<CourseStudentRiskItem | null>(null);
@@ -57,7 +58,9 @@ export const LecturerPage: React.FC = () => {
       const data = await getLecturerCoursesApi(apiBase);
       setCourses(data);
       if (data.length > 0) {
-        setSelectedPresentation(data[0].presentation_id);
+        const largestCourse = data.reduce((largest, course) =>
+          course.total_students > largest.total_students ? course : largest, data[0]);
+        setSelectedPresentation(largestCourse.presentation_id);
       }
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
@@ -71,7 +74,12 @@ export const LecturerPage: React.FC = () => {
       setLoadingBoard(true);
       try {
         const data = await getCourseRiskBoardApi(apiBase, presentationId);
-        setRiskBoard(data);
+        setRiskBoard([...data].sort((left, right) => {
+          const leftRisk = left.risk_status === 'HIGH_RISK' ? 1 : 0;
+          const rightRisk = right.risk_status === 'HIGH_RISK' ? 1 : 0;
+          return rightRisk - leftRisk ||
+            (right.risk_probability ?? -1) - (left.risk_probability ?? -1);
+        }));
       } catch (err) {
         addToast((err as Error).message, 'error', 5000);
       } finally {
@@ -101,7 +109,8 @@ export const LecturerPage: React.FC = () => {
     setSuggestionDetail(null);
     setSuggestionError('');
     setVerifiedBasis('');
-    setSelectedSuggestion(null);
+    setSelectedRuleId(null);
+    setLearningLevel('');
     setTaskForm({ student_id: student.student_id, title: '', description: '', priority: 'MEDIUM', target_metric: '' });
     setLoadingSuggestions(true);
     try {
@@ -117,20 +126,25 @@ export const LecturerPage: React.FC = () => {
   const handleAssignTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignTarget || !selectedPresentation || !suggestionDetail?.assignment.can_assign) return;
-    if ((suggestionDetail.status !== 'available' || !selectedSuggestion) && !verifiedBasis.trim()) {
+    if ((suggestionDetail.status !== 'available' || !selectedRuleId) && !verifiedBasis.trim()) {
       addToast('Hãy ghi căn cứ đã tự xác minh trước khi giao nhiệm vụ.', 'error');
       return;
     }
     setSavingTask(true);
     try {
+      const learningLabel = learningLevel === 'FOUNDATION' ? 'Củng cố nền tảng'
+        : learningLevel === 'GUIDED' ? 'Luyện tập có hướng dẫn'
+          : learningLevel === 'APPLICATION' ? 'Vận dụng mở rộng' : '';
+      const description = [taskForm.description.trim(),
+        learningLabel ? `Mức bài tập do giảng viên chọn: ${learningLabel}` : '',
+        verifiedBasis.trim() ? `Căn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}` : '',
+      ].filter(Boolean).join('\n\n');
       await assignCourseTaskApi(apiBase, selectedPresentation, {
         ...taskForm,
-        suggestion_snapshot_id: selectedSuggestion && suggestionDetail.snapshot_id ? suggestionDetail.snapshot_id : undefined,
-        suggestion_rule_id: selectedSuggestion || undefined,
+        suggestion_snapshot_id: selectedRuleId && suggestionDetail.snapshot_id ? suggestionDetail.snapshot_id : undefined,
+        suggestion_rule_id: selectedRuleId || undefined,
         verified_basis: verifiedBasis.trim() || undefined,
-        description: verifiedBasis.trim()
-          ? `${taskForm.description.trim()}\n\nCăn cứ giảng viên đã xác minh: ${verifiedBasis.trim()}`
-          : taskForm.description,
+        description,
         student_id: assignTarget.student_id,
       });
       addToast(`Đã giao bài tập bổ trợ cho ${assignTarget.full_name}.`, 'success');
@@ -238,6 +252,7 @@ export const LecturerPage: React.FC = () => {
             </span>
           </div>
 
+          <p className="text-xs text-slate-400">Tổng click là số lượt tương tác được ghi trong dữ liệu gốc đến mốc đánh giá; không đo thời gian hay mức hiểu bài.</p>
           <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/70">
             <table className="w-full text-xs">
               <thead>
@@ -328,27 +343,26 @@ export const LecturerPage: React.FC = () => {
 
       {/* Assign Task Modal */}
       {assignTarget && (
-        <ModalShell title="Giao bài tập bổ trợ môn học" onClose={() => { suggestionRequest.current++; setAssignTarget(null); }}>
-          <p className="text-xs text-slate-400 mb-4">
-            {assignTarget.full_name} ({assignTarget.student_code}) — môn{' '}
-            {selectedCourse?.code_module}. Nhiệm vụ sẽ thuộc nhóm{' '}
-            <strong className="text-slate-200">hỗ trợ học tập</strong> của kế hoạch đang hoạt động.
+        <ModalShell title="Gợi ý hỗ trợ sinh viên" wide onClose={() => { suggestionRequest.current++; setAssignTarget(null); }}>
+          <p className="text-sm text-slate-400 mb-4">
+            {assignTarget.full_name} ({assignTarget.student_code}) — môn {selectedCourse?.code_module}
           </p>
           {loadingSuggestions && <p className="text-xs text-slate-400 mb-3">Đang tải căn cứ…</p>}
           {suggestionError && <p className="text-xs text-rose-300 mb-3">{suggestionError}</p>}
-          {suggestionDetail && <SuggestionReview detail={suggestionDetail} onChoose={(suggestion) => {
-            setSelectedSuggestion(suggestion.rule_id);
-            setTaskForm({
-              ...taskForm, title: suggestion.title, description: suggestion.proposed_action,
-              target_metric: 'Xác minh tiến độ cùng sinh viên',
-            });
-          }} />}
           {suggestionDetail?.snapshot_id && <SnapshotEvidenceReview
             key={`${selectedPresentation}:${assignTarget.student_id}:${suggestionDetail.snapshot_id}`}
             apiBase={apiBase} presentationId={selectedPresentation} studentId={assignTarget.student_id}
             snapshotId={suggestionDetail.snapshot_id} onReviewed={() => { void openAssignment(assignTarget); }} />}
-          {suggestionDetail?.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
-            {(suggestionDetail.status !== 'available' || !selectedSuggestion) && <div>
+          {suggestionDetail && <SuggestionReview key={`${selectedPresentation}-${assignTarget.student_id}`} detail={suggestionDetail}
+            student={assignTarget} selectedRuleId={selectedRuleId} onChoose={(suggestion) => {
+            setSelectedRuleId(suggestion.rule_id);
+            setTaskForm({
+              ...taskForm, title: suggestion.title, description: suggestion.proposed_action,
+              target_metric: 'Xác minh tiến độ cùng sinh viên',
+            });
+          }}>
+          {suggestionDetail.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
+            {(suggestionDetail.status !== 'available' || !selectedRuleId) && <div>
               <label className="block font-semibold text-slate-300 mb-1" htmlFor="verified-basis">Điều giảng viên đã tự xác minh (bắt buộc):</label>
               <textarea id="verified-basis" required value={verifiedBasis} onChange={(e) => setVerifiedBasis(e.target.value)}
                 placeholder="VD: Đã trao đổi với sinh viên về phần kiến thức cần ôn. Không suy đoán từ tỷ lệ dự báo."
@@ -392,16 +406,48 @@ export const LecturerPage: React.FC = () => {
                 </select>
               </div>
               <div>
-                <label className="block font-semibold text-slate-300 mb-1">Chỉ số mục tiêu:</label>
+                <label className="block font-semibold text-slate-300 mb-1" htmlFor="task-target-metric">Chỉ số mục tiêu:</label>
                 <input
                   type="text"
+                  id="task-target-metric"
                   value={taskForm.target_metric}
                   onChange={(e) => setTaskForm({ ...taskForm, target_metric: e.target.value })}
+                  placeholder="Ví dụ: hoàn thành 2/3 bài ôn tập trước buổi học sau"
                   className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-700 text-slate-100 focus:border-purple-500 focus:outline-none"
                 />
               </div>
             </div>
-            <div className="flex items-center justify-end gap-3 pt-2">
+            <p className="text-slate-400">Chỉ số mục tiêu là kết quả có thể kiểm tra sau khi giao (ví dụ: số bài hoàn thành), không phải điểm dự báo hay mức độ nghiêm trọng.</p>
+            <details className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 text-slate-200">
+              <summary className="cursor-pointer font-semibold text-sm">Chọn mức bài tập phù hợp (tùy chọn)</summary>
+              <section className="mt-3 space-y-2">
+              <p>Đây là độ khó của nhiệm vụ giảng viên dự định giao, không phải xếp hạng năng lực sinh viên hay mức nghiêm trọng do mô hình quyết định.</p>
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" aria-label="Các chỉ số tổng hợp cần đối chiếu">
+                <p>Lượt hoạt động: <strong>{assignTarget.total_clicks ?? 'Chưa có'}</strong></p>
+                <p>Lượt nộp trễ: <strong>{assignTarget.late_submissions ?? 'Chưa có'}</strong></p>
+                <p>Tỷ lệ nộp: <strong>{assignTarget.submission_rate == null ? 'Chưa có' : `${(assignTarget.submission_rate * 100).toFixed(0)}%`}</strong></p>
+              </div>
+              <p className="text-slate-400">Các số liệu này cần được đối chiếu với nguồn học tập; chúng không cho biết điểm số, bài nào trễ hay kiến thức nào còn thiếu.</p>
+              <p>{suggestionDetail?.status === 'available'
+                ? 'Có gợi ý hỗ trợ dựa trên căn cứ hiện có; vẫn cần đối chiếu kết quả học và trao đổi với sinh viên.'
+                : 'Dữ liệu hiện chưa đủ để hệ thống đưa ra gợi ý hỗ trợ. Hãy xác minh kiến thức và nhu cầu hỗ trợ với sinh viên trước khi chọn.'}</p>
+              <label className="block font-semibold" htmlFor="learning-level">Mức bài tập (giảng viên tự chọn, không bắt buộc):</label>
+              <select id="learning-level" value={learningLevel} onChange={(e) => setLearningLevel(e.target.value as typeof learningLevel)}
+                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-700 text-slate-100">
+                <option value="">Chưa xác định</option>
+                <option value="FOUNDATION">Củng cố nền tảng</option>
+                <option value="GUIDED">Luyện tập có hướng dẫn</option>
+                <option value="APPLICATION">Vận dụng mở rộng</option>
+              </select>
+              {learningLevel && <p className="text-slate-300">{learningLevel === 'FOUNDATION'
+                ? 'Nên bắt đầu bằng bài ngắn kiểm tra kiến thức nền và hướng dẫn từng bước.'
+                : learningLevel === 'GUIDED'
+                  ? 'Nên dùng ví dụ mẫu, bài luyện tập tương tự và phản hồi sau mỗi bước.'
+                  : 'Nên dùng bài vận dụng tình huống và yêu cầu giải thích cách làm.'}</p>}
+              <p className="text-slate-400">Mức đã chọn sẽ được ghi trong mô tả nhiệm vụ và sinh viên có thể xem. Nó không thay đổi độ ưu tiên hoặc dự báo model.</p>
+              </section>
+            </details>
+            <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
                 type="button"
                 onClick={() => { suggestionRequest.current++; setAssignTarget(null); }}
@@ -420,6 +466,7 @@ export const LecturerPage: React.FC = () => {
               </button>
             </div>
           </form>}
+          </SuggestionReview>}
         </ModalShell>
       )}
 
@@ -470,18 +517,62 @@ const ModalShell: React.FC<{
   title: string;
   onClose: () => void;
   children: React.ReactNode;
-}> = ({ title, onClose, children }) => {
+  wide?: boolean;
+}> = ({ title, onClose, children, wide = false }) => {
+  const dialogRef = useRef<HTMLDivElement>(null);
+  const titleId = useId();
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+
+  useEffect(() => {
+    const previousFocus = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    const dialog = dialogRef.current;
+    const closeButton = dialog?.querySelector<HTMLButtonElement>('button[aria-label="Đóng"]');
+    closeButton?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        closeRef.current();
+      }
+      if (event.key !== 'Tab' || !dialog) return;
+      const focusable = Array.from(dialog.querySelectorAll<HTMLElement>(
+        'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      )).filter((element) => element.getClientRects().length > 0);
+      if (!focusable.length) {
+        event.preventDefault();
+        dialog.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && (document.activeElement === first || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && (document.activeElement === last || !dialog.contains(document.activeElement))) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      previousFocus?.focus();
+    };
+  }, []);
+
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-sm">
-      <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 shadow-2xl">
+      <div ref={dialogRef} role="dialog" aria-modal="true" aria-labelledby={titleId} tabIndex={-1} className={`bg-slate-900 border border-slate-800 rounded-2xl ${wide ? 'max-w-2xl' : 'max-w-lg'} w-full max-h-[calc(100dvh-2rem)] overflow-y-auto p-6 shadow-2xl`}>
         <div className="flex items-center justify-between mb-1">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+          <h3 id={titleId} className="text-lg font-bold text-white flex items-center gap-2">
             <AlertTriangle className="w-5 h-5 text-purple-400" />
             {title}
           </h3>
           <button
             type="button"
             onClick={onClose}
+            aria-label="Đóng"
             className="p-1.5 rounded-lg text-slate-400 hover:text-white"
           >
             <X className="w-5 h-5" />

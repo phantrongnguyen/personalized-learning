@@ -103,6 +103,7 @@
 
 :root:not(.dark) .bg-slate-950,
 :root:not(.dark) .bg-slate-950\/40,
+:root:not(.dark) .bg-slate-950\/50,
 :root:not(.dark) .bg-slate-950\/60,
 :root:not(.dark) .bg-slate-950\/70,
 :root:not(.dark) .bg-slate-950\/80,
@@ -135,6 +136,7 @@
 
 :root:not(.dark) .group:hover .group-hover\:text-amber-300,
 :root:not(.dark) .group:hover .group-hover\:text-amber-400,
+:root:not(.dark) .text-amber-100,
 :root:not(.dark) .text-amber-200,
 :root:not(.dark) .text-amber-300,
 :root:not(.dark) .text-amber-400 {
@@ -204,6 +206,10 @@
 :root:not(.dark) .text-slate-400,
 :root:not(.dark) .text-slate-500 {
   color: #64748b;
+}
+
+:root:not(.dark) .suggestion-review [role="tab"][aria-selected="true"] {
+  color: #ffffff;
 }
 
 :root:not(.dark) .placeholder\:text-slate-600::placeholder,

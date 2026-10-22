@@ -27,7 +27,7 @@ from schemas.advisor_lecturer import (
 )
 from schemas.support_evidence import SnapshotReviewIn
 from services.support_evidence import inspection, review_snapshot
-from services.support_suggestions import evaluate_suggestions, RULE_VERSION
+from services.support_suggestions import evaluate_suggestions, validated_assessment_details, is_historical_oulad, RULE_VERSION
 from repositories.academic_repo import (
     get_lecturer_profile_by_user_id,
     get_lecturer_assigned_courses,
@@ -169,11 +169,21 @@ async def get_course_student_suggestions(
     state, suggestions, warnings, cutoff_date = evaluate_suggestions(snapshot, presentation)
     if prediction is None:
         warnings.append("Chưa có PredictionRun cho snapshot mới nhất; không phân loại SAFE.")
+    metadata = (snapshot.raw_features_json.get("support_evidence")
+                if snapshot and isinstance(snapshot.raw_features_json, dict) else None)
+    details = None
+    if (state != "insufficient_data" and isinstance(metadata, dict)
+            and type(metadata.get("snapshot_day")) is int
+            and metadata.get("assessments_complete") is True and presentation):
+        details = validated_assessment_details(snapshot, metadata, metadata["snapshot_day"])
     return {
         "status": state, "rule_version": RULE_VERSION, "enrollment_id": enrollment.id,
         "snapshot_id": snapshot.id if snapshot else None,
         "data_source": (snapshot.raw_features_json or {}).get("data_source") if snapshot and isinstance(snapshot.raw_features_json, dict) else None,
         "prediction": prediction, "cutoff_date": cutoff_date,
+        "source_kind": "historical_oulad" if state != "insufficient_data" and is_historical_oulad(metadata) else "course",
+        "cutoff_day": metadata.get("snapshot_day") if isinstance(metadata, dict) and type(metadata.get("snapshot_day")) is int else None,
+        "assessment_details": details or [],
         "suggestions": suggestions, "warnings": warnings,
         "assignment": {"can_assign": plan is not None, "plan_id": plan,
                        "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."
