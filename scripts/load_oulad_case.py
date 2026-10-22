@@ -26,7 +26,7 @@ from services.prediction_service import BEHAVIOR_FIELDS, infer_record
 from services.support_suggestions import validated_assessment_details
 
 
-def verify(case, directory):
+def verify(case, directory, source_hashes=None):
     features = StudentFeatures(**case["features"])
     if features.code_module != case["module"] or case["cutoff_day"] != int(case["module_length"] * .75):
         raise ValueError("Course or cutoff does not match the features")
@@ -35,12 +35,16 @@ def verify(case, directory):
             "studentAssessment", "studentVle", "vle"}:
         raise ValueError("All seven OULAD source checksums are required")
     for name, expected in case["source_sha256"].items():
-        path = directory / f"{name}.parquet"
-        digest = hashlib.sha256()
-        with path.open("rb") as handle:
-            for chunk in iter(lambda: handle.read(1024 * 1024), b""):
-                digest.update(chunk)
-        if digest.hexdigest() != expected:
+        if source_hashes is None:
+            path = directory / f"{name}.parquet"
+            digest = hashlib.sha256()
+            with path.open("rb") as handle:
+                for chunk in iter(lambda: handle.read(1024 * 1024), b""):
+                    digest.update(chunk)
+            actual = digest.hexdigest()
+        else:
+            actual = source_hashes[name]
+        if actual != expected:
             raise ValueError(f"Source changed since export: {name}")
     details = case["assessment_records"]
     snapshot = type("Snapshot", (), {name: getattr(features, name) for name in BEHAVIOR_FIELDS})()
@@ -62,16 +66,17 @@ async def load(case, features, url, lecturer_code):
             existing = (await db.execute(select(CoursePresentation).where(
                 CoursePresentation.course_id == course.id,
                 CoursePresentation.code_presentation == presentation_code))).scalar_one_or_none()
-            if existing is not None:
-                raise ValueError("OULAD course already exists; import is not repeatable")
+            if existing is not None and existing.module_presentation_length != case["module_length"]:
+                raise ValueError("Existing OULAD presentation has a different duration")
             student_code = f"OULAD-{case['student_id']}"
             existing_student = (await db.execute(select(StudentProfile).where(
                 StudentProfile.student_code == student_code))).scalar_one_or_none()
             if existing_student is not None:
                 raise ValueError("OULAD student already exists; import is not repeatable")
             model, artifact = await model_registry.active(db)
-            presentation = CoursePresentation(course_id=course.id, code_presentation=presentation_code,
-                                              start_date=None, module_presentation_length=case["module_length"])
+            presentation = existing or CoursePresentation(
+                course_id=course.id, code_presentation=presentation_code,
+                start_date=None, module_presentation_length=case["module_length"])
             user = User(email=f"oulad-{case['student_id']}@example.invalid",
                         hashed_password=get_password_hash(secrets.token_urlsafe(32)),
                         full_name=f"OULAD #{case['student_id']} (dữ liệu lịch sử)", roles=[role])
@@ -79,7 +84,12 @@ async def load(case, features, url, lecturer_code):
             await db.flush()
             profile = StudentProfile(user_id=user.id, student_code=student_code, gender=features.gender,
                                      highest_education=features.highest_education, age_band=features.age_band)
-            db.add_all([profile, CourseLecturer(presentation_id=presentation.id, lecturer_id=lecturer.id)])
+            db.add(profile)
+            assignment = (await db.execute(select(CourseLecturer).where(
+                CourseLecturer.presentation_id == presentation.id,
+                CourseLecturer.lecturer_id == lecturer.id))).scalar_one_or_none()
+            if assignment is None:
+                db.add(CourseLecturer(presentation_id=presentation.id, lecturer_id=lecturer.id))
             await db.flush()
             enrollment = StudentEnrollment(student_id=profile.id, presentation_id=presentation.id,
                                             studied_credits=int(features.studied_credits),

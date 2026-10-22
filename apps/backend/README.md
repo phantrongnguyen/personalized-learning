@@ -1644,7 +1644,18 @@ python scripts/prepare_oulad_case.py --parquet-dir ../data/processed --module AA
 # Khi đã kiểm tra đúng database và nguồn, thêm --apply để ghi bản thử.
 ```
 
-Importer từ chối URL không có hậu tố `_oulad`, từ chối nhập lặp, so SHA-256 của cả bảy nguồn và đối chiếu từng bài với số liệu snapshot trước khi ghi. Database `_oulad` phải được tạo riêng, có schema/migration hiện hành, một model active tương thích và hồ sơ giảng viên được chỉ định. Không chạy vào database app thường. Phần `--apply` chỉ thêm một học phần OULAD, hồ sơ ẩn danh, snapshot và PredictionRun; không tạo plan/task. Trên máy đang thử, URL database nằm trong `.cache/oulad-db-url.txt` (Git ignore); giảng viên thử dùng thông tin trong `.cache/oulad-login.txt`. Không đưa hai file này vào tài liệu công khai.
+Importer một ca từ chối URL không có hậu tố `_oulad`, từ chối nhập lặp cùng sinh viên, so SHA-256 của cả bảy nguồn và đối chiếu từng bài với số liệu snapshot trước khi ghi. Database `_oulad` phải được tạo riêng, có schema/migration hiện hành, một model active tương thích và hồ sơ giảng viên được chỉ định. Không chạy vào database app thường. Phần `--apply` chỉ thêm một học phần OULAD, hồ sơ ẩn danh, snapshot và PredictionRun; không tạo plan/task. Trên máy đang thử, URL database nằm trong `.cache/oulad-db-url.txt` (Git ignore); giảng viên thử dùng thông tin trong `.cache/oulad-login.txt`. Không đưa hai file này vào tài liệu công khai.
+
+Để tái tạo một **nhóm hồ sơ minh họa** trong database riêng, cài engine đọc Parquet tương thích NumPy 1.26 (`pyarrow>=15,<20`) vào cùng môi trường backend, tạo database `_oulad`, chạy migration và chuẩn bị tài khoản giảng viên có mã `GVDEMO01` trước. Lệnh dưới đây mặc định dry run; sau khi xem đúng số lượng và URL database, thêm `--apply` để ghi. Mỗi hồ sơ dùng cùng mốc 75%, mã OULAD ẩn danh và artifact model active; đã có mã thì bỏ qua. Mẫu ngẫu nhiên có seed cố định, chỉ chọn người còn ghi danh tại mốc, không dùng nhãn cuối kỳ hay xác suất để chọn. Không chạy với database ứng dụng gốc.
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install "pyarrow>=15,<20"
+$env:OULAD_DATABASE_URL = 'postgresql://postgres:<local-password>@127.0.0.1:5433/personalized_learning_oulad'
+.\.venv\Scripts\python.exe scripts/load_oulad_cohort.py --parquet-dir ..\data\processed --database-url $env:OULAD_DATABASE_URL --lecturer-code GVDEMO01 --limit 45 --selection random --seed 42
+# Chỉ sau khi kiểm tra dry run và sao lưu database thử mới thêm --apply.
+```
+
+Importer không đóng gói bảy Parquet hoặc database trong Git. Một máy mới sẽ không tự có danh sách 70 hồ sơ; kết quả trên máy thử gồm ca nhập trước, mẫu 30 mã đầu và mẫu 45 mã giả ngẫu nhiên có trùng. Xem [hướng dẫn giảng viên](../../docs/lecturer-guide.md) để cấu hình frontend/backend trỏ vào database riêng và đọc bốn tab.
 
 API `GET /api/v1/lecturer/courses/{presentation_id}/students/{student_id}/suggestions` vẫn chỉ đọc và kiểm tra quyền sở hữu học phần. Khi snapshot chứa `support_evidence.timeline=relative_course_day`, nguồn OULAD và đủ SHA-256 của bảy tệp, response thêm `source_kind=historical_oulad`, `cutoff_day` và `assessment_details` (loại bài, hạn tương đối, ngày nộp, điểm có ghi nhận). Không dựng `cutoff_date` tuyệt đối vì OULAD không có ngày bắt đầu theo lịch. Quy tắc `G01` gợi ý kiểm tra bài đến hạn chưa ghi nhận nộp; `G04` nêu cửa sổ hoạt động 30 ngày, không suy diễn nguyên nhân. Trường hợp thiếu metadata (kể cả thiếu khóa `submitted_day`), sai kiểu hoặc số liệu bài không nhất quán vẫn abstain khỏi kết luận theo từng bài; không diễn giải trường thiếu là chưa nộp và không làm lỗi API. Số liệu tổng hợp đã xác nhận vẫn được đánh giá riêng. Test mới kiểm tra ca thiếu/sai/đủ metadata và chuỗi giao nhiệm vụ → sinh viên xem/hoàn thành trên database `_test` có rollback. Giao diện giữ cấu trúc của Nguyên, hiển thị nhãn OULAD lịch sử và giảng viên không thể giao nếu chưa có plan ACTIVE đúng enrollment.
 
