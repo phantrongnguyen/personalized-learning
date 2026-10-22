@@ -44,8 +44,7 @@ export const LecturerPage: React.FC = () => {
   const suggestionRequest = useRef(0);
   const [suggestionError, setSuggestionError] = useState('');
   const [verifiedBasis, setVerifiedBasis] = useState('');
-  const [selectedSuggestion, setSelectedSuggestion] = useState(false);
-  const [showLearningDetail, setShowLearningDetail] = useState(false);
+  const [selectedRuleId, setSelectedRuleId] = useState<string | null>(null);
   const [learningLevel, setLearningLevel] = useState<'FOUNDATION' | 'GUIDED' | 'APPLICATION' | ''>('');
 
   // Cảnh báo GVCN
@@ -58,7 +57,9 @@ export const LecturerPage: React.FC = () => {
       const data = await getLecturerCoursesApi(apiBase);
       setCourses(data);
       if (data.length > 0) {
-        setSelectedPresentation(data[0].presentation_id);
+        const largestCourse = data.reduce((largest, course) =>
+          course.total_students > largest.total_students ? course : largest, data[0]);
+        setSelectedPresentation(largestCourse.presentation_id);
       }
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
@@ -72,7 +73,12 @@ export const LecturerPage: React.FC = () => {
       setLoadingBoard(true);
       try {
         const data = await getCourseRiskBoardApi(apiBase, presentationId);
-        setRiskBoard(data);
+        setRiskBoard([...data].sort((left, right) => {
+          const leftRisk = left.risk_status === 'HIGH_RISK' ? 1 : 0;
+          const rightRisk = right.risk_status === 'HIGH_RISK' ? 1 : 0;
+          return rightRisk - leftRisk ||
+            (right.risk_probability ?? -1) - (left.risk_probability ?? -1);
+        }));
       } catch (err) {
         addToast((err as Error).message, 'error', 5000);
       } finally {
@@ -102,8 +108,7 @@ export const LecturerPage: React.FC = () => {
     setSuggestionDetail(null);
     setSuggestionError('');
     setVerifiedBasis('');
-    setSelectedSuggestion(false);
-    setShowLearningDetail(false);
+    setSelectedRuleId(null);
     setLearningLevel('');
     setTaskForm({ student_id: student.student_id, title: '', description: '', priority: 'MEDIUM', target_metric: '' });
     setLoadingSuggestions(true);
@@ -120,7 +125,7 @@ export const LecturerPage: React.FC = () => {
   const handleAssignTask = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!assignTarget || !selectedPresentation || !suggestionDetail?.assignment.can_assign) return;
-    if ((suggestionDetail.status !== 'available' || !selectedSuggestion) && !verifiedBasis.trim()) {
+    if ((suggestionDetail.status !== 'available' || !selectedRuleId) && !verifiedBasis.trim()) {
       addToast('Hãy ghi căn cứ đã tự xác minh trước khi giao nhiệm vụ.', 'error');
       return;
     }
@@ -340,15 +345,16 @@ export const LecturerPage: React.FC = () => {
           </p>
           {loadingSuggestions && <p className="text-xs text-slate-400 mb-3">Đang tải căn cứ…</p>}
           {suggestionError && <p className="text-xs text-rose-300 mb-3">{suggestionError}</p>}
-          {suggestionDetail && <SuggestionReview detail={suggestionDetail} onChoose={(suggestion) => {
-            setSelectedSuggestion(true);
+          {suggestionDetail && <SuggestionReview key={`${selectedPresentation}-${assignTarget.student_id}`} detail={suggestionDetail}
+            student={assignTarget} selectedRuleId={selectedRuleId} onChoose={(suggestion) => {
+            setSelectedRuleId(suggestion.rule_id);
             setTaskForm({
               ...taskForm, title: suggestion.title, description: suggestion.proposed_action,
               target_metric: 'Xác minh tiến độ cùng sinh viên',
             });
-          }} />}
-          {suggestionDetail?.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
-            {(suggestionDetail.status !== 'available' || !selectedSuggestion) && <div>
+          }}>
+          {suggestionDetail.assignment.can_assign && <form onSubmit={handleAssignTask} className="space-y-3.5 text-xs">
+            {(suggestionDetail.status !== 'available' || !selectedRuleId) && <div>
               <label className="block font-semibold text-slate-300 mb-1" htmlFor="verified-basis">Điều giảng viên đã tự xác minh (bắt buộc):</label>
               <textarea id="verified-basis" required value={verifiedBasis} onChange={(e) => setVerifiedBasis(e.target.value)}
                 placeholder="VD: Đã trao đổi với sinh viên về phần kiến thức cần ôn. Không suy đoán từ tỷ lệ dự báo."
@@ -404,9 +410,9 @@ export const LecturerPage: React.FC = () => {
               </div>
             </div>
             <p className="text-slate-400">Chỉ số mục tiêu là kết quả có thể kiểm tra sau khi giao (ví dụ: số bài hoàn thành), không phải điểm dự báo hay mức độ nghiêm trọng.</p>
-            {showLearningDetail && (
-              <section id="learning-detail" aria-label="Chi tiết chọn mức bài tập" className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 space-y-2 text-slate-200">
-              <h4 className="font-semibold text-sm">Chọn mức bài tập phù hợp</h4>
+            <details className="rounded-xl border border-slate-700 bg-slate-950/60 p-3 text-slate-200">
+              <summary className="cursor-pointer font-semibold text-sm">Chọn mức bài tập phù hợp (tùy chọn)</summary>
+              <section className="mt-3 space-y-2">
               <p>Đây là độ khó của nhiệm vụ giảng viên dự định giao, không phải xếp hạng năng lực sinh viên hay mức nghiêm trọng do mô hình quyết định.</p>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2" aria-label="Các chỉ số tổng hợp cần đối chiếu">
                 <p>Lượt hoạt động: <strong>{assignTarget.total_clicks ?? 'Chưa có'}</strong></p>
@@ -432,7 +438,7 @@ export const LecturerPage: React.FC = () => {
                   : 'Nên dùng bài vận dụng tình huống và yêu cầu giải thích cách làm.'}</p>}
               <p className="text-slate-400">Mức đã chọn sẽ được ghi trong mô tả nhiệm vụ và sinh viên có thể xem. Nó không thay đổi độ ưu tiên hoặc dự báo model.</p>
               </section>
-            )}
+            </details>
             <div className="flex flex-wrap items-center justify-end gap-3 pt-2">
               <button
                 type="button"
@@ -440,18 +446,6 @@ export const LecturerPage: React.FC = () => {
                 className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 font-semibold"
               >
                 Hủy
-              </button>
-              <button
-                type="button"
-                aria-expanded={showLearningDetail}
-                aria-controls="learning-detail"
-                onClick={() => {
-                  setShowLearningDetail((visible) => !visible);
-                  if (!showLearningDetail) requestAnimationFrame(() => document.getElementById('learning-detail')?.scrollIntoView({ block: 'nearest' }));
-                }}
-                className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-semibold"
-              >
-                {showLearningDetail ? 'Ẩn chi tiết' : 'Xem chi tiết'}
               </button>
               <button
                 type="submit"
@@ -464,6 +458,7 @@ export const LecturerPage: React.FC = () => {
               </button>
             </div>
           </form>}
+          </SuggestionReview>}
         </ModalShell>
       )}
 

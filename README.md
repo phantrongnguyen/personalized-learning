@@ -1,6 +1,7 @@
 # EduRisk AI — Hệ thống gợi ý chiến lược học tập cá nhân hóa
 
 - [Bản chốt rà soát app 20/10/2026: kết quả, lỗi còn mở và hướng bàn giao](docs/README_BAN_GIAO.md)
+- [Hướng dẫn danh sách giảng viên và môi trường OULAD nhiều hồ sơ](docs/lecturer-guide.md#danh-sách-nhiều-sinh-viên-oulad-trên-máy-thử)
 
 Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT). Hệ thống kết hợp dự báo nguy cơ học tập bằng LightGBM với các không gian làm việc dành cho quản trị viên, cố vấn học tập, giảng viên và sinh viên.
 
@@ -392,7 +393,7 @@ Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py
 - [Hướng dẫn database local](docs/database_setup_guide.md) — đối chiếu thông số với `.env` đang dùng.
 - [Quy định commit](.agents/commit_github.md).
 
-Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrongnguyen/personalized-learning). Nhánh cá nhân đang sử dụng: `phantrongnguyen`.
+Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrongnguyen/personalized-learning). Nhánh của Nguyên: `phantrongnguyen`; nhánh tích hợp để Nguyên rà soát: `nguyengiabao`.
 
 Commit theo Conventional Commits, ví dụ `feat(admin): add account management APIs`, `test(auth): cover student code login`, `docs(readme): document current project implementation`. Mỗi commit có một mục đích chính; không commit `.env`, thông tin bí mật, file build, môi trường ảo hoặc dữ liệu lớn. Rà soát diff và chạy kiểm tra phù hợp trước khi push; review qua PR trước khi merge nhánh chính.
 
@@ -421,8 +422,17 @@ flowchart LR
     G --> H[Giảng viên đối chiếu, chỉnh nháp và chủ động giao nếu có plan hợp lệ]
 ```
 
-Đã kiểm chứng một hồ sơ lịch sử ẩn danh `OULAD-2164705`: model trả khoảng **98,9%**, 1/4 bài đến hạn có bản nộp đến mốc, ba bài chưa ghi nhận nộp, không ghi nhận hoạt động trên hệ thống trong 30 ngày cuối. Đây là quan sát theo nguồn OULAD, **không** kết luận sinh viên HUIT yếu một chủ đề, bỏ học hoặc không làm bài: dữ liệu thiếu ánh xạ bài–chủ đề/rubric, hạn cá nhân và cách học ngoài hệ thống. Các giới hạn và điều chưa thể chứng minh nằm trong mục mở rộng “Xem căn cứ và giới hạn dữ liệu”. Đây là kiểm thử tích hợp từ nguồn lịch sử, chưa có kiểm chứng parity từng đặc trưng với pipeline nghiên cứu ban đầu hay hiệu lực dự báo trên HUIT. Trong bản thử, không có plan ACTIVE nên không thể bấm giao bài; điều này tránh giao nhiệm vụ cho hồ sơ nghiên cứu lịch sử.
+Đã kiểm chứng một hồ sơ lịch sử ẩn danh `OULAD-2164705`: model trả khoảng **98,9%**, 1/4 bài đến hạn có bản nộp đến mốc, ba bài chưa ghi nhận nộp, không ghi nhận hoạt động trên hệ thống trong 30 ngày cuối. Đây là quan sát theo nguồn OULAD, **không** kết luận sinh viên HUIT yếu một chủ đề, bỏ học hoặc không làm bài: dữ liệu thiếu ánh xạ bài–chủ đề/rubric, hạn cá nhân và cách học ngoài hệ thống. Các giới hạn và điều chưa thể chứng minh nằm trong tab **Căn cứ** của hộp Xem gợi ý. Đây là kiểm thử tích hợp từ nguồn lịch sử, chưa có kiểm chứng parity từng đặc trưng với pipeline nghiên cứu ban đầu hay hiệu lực dự báo trên HUIT. Trong bản thử, không có plan ACTIVE nên không thể bấm giao bài; điều này tránh giao nhiệm vụ cho hồ sơ nghiên cứu lịch sử.
 
-Cách xuất và nạp lại, cùng thay đổi hợp đồng API, ở [README backend](apps/backend/README.md). Bản thử cục bộ dùng frontend `http://127.0.0.1:5174/#lecturer` trỏ tới API `http://127.0.0.1:8001`, tách khỏi app thường ở `5173/8000`. Chỉ sử dụng trên máy này; không push Parquet, JSON xuất, mật khẩu hoặc database nghiên cứu lên GitHub.
+### Bàn giao giao diện giảng viên cho Nguyên
+
+- Giữ bảng lớp, danh sách sinh viên và Dashboard phân tích 17 đặc trưng theo giao diện của Nguyên. Dashboard là biểu mẫu nhập chỉ số để thử mô hình, **không phải** dashboard tự động của sinh viên đang chọn.
+- Nút **Xem gợi ý** mở bốn tab: **Tổng quan** (xác suất và chỉ số của đúng hồ sơ), **Dấu hiệu** (cần đối chiếu), **Gợi ý & giao** (phương án và nháp nhiệm vụ) và **Căn cứ** (nguồn, từng bài và giới hạn). Nhãn “xác suất nguy cơ” nằm dưới vòng đồ thị để không chồng chữ khi khung hình hẹp.
+- Dự báo LightGBM chỉ ước tính xác suất nguy cơ ở mốc 75%; quy tắc gợi ý đọc dữ liệu đã xác nhận, không khẳng định điểm yếu kiến thức hay tự chọn mức bài. Giảng viên đối chiếu bài/rubric, trao đổi với sinh viên, tự sửa nháp và bấm giao. Nếu không chọn gợi ý hoặc thiếu căn cứ, phải ghi điều đã tự xác minh; backend vẫn yêu cầu kế hoạch hỗ trợ `ACTIVE` đúng học phần. Ca OULAD hiện chỉ xem, **không giao bài**.
+- Không thay đổi hợp đồng API hoặc Dashboard trong lần chia tab. Mã nạp cohort dùng database thử riêng hậu tố `_oulad`, bỏ qua mã đã nhập, giới hạn mẫu và không dùng kết quả cuối kỳ để chọn mẫu. Không có dữ liệu OULAD, database hay mật khẩu trong Git; máy khác muốn xem 70 hồ sơ phải chuẩn bị bảy Parquet và chạy importer theo [hướng dẫn giảng viên](docs/lecturer-guide.md#danh-sách-nhiều-sinh-viên-oulad-trên-máy-thử). Con số 70 hồ sơ/7 nhãn nguy cơ cao chỉ là trạng thái máy thử ngày 22/10/2026, không phải dữ liệu mặc định sau khi clone.
+
+Nguyên có thể đăng nhập giảng viên trên máy đã nạp dữ liệu, mở `http://127.0.0.1:5173/#lecturer`, chọn `AAA / OULAD_2013J`, rồi bấm **Xem gợi ý** của một hồ sơ. Đối chiếu bốn tab với [hướng dẫn và ảnh](docs/lecturer-guide.md); bộ ảnh hiện ghi giao diện cũ trước khi chia tab và cần chụp lại trước khi dùng để trình bày. Ví dụ `OULAD-185439` trên máy thử: 98,9% xác suất lớp nguy cơ, tổng click 427, 1/4 bài đến hạn ghi nhận nộp và 1 lượt nộp trễ. Đây là số liệu lịch sử, không phải bằng chứng sinh viên HUIT yếu một môn hay chủ đề. Ca demo `2045230068` thiếu căn cứ sẽ hiển thị “Chưa đủ dữ liệu”; xác suất 82% của ca đó là số minh họa, không phải kết quả LightGBM.
+
+Cách xuất và nạp một ca, cùng hợp đồng API, ở [README backend](apps/backend/README.md). Cấu hình thử riêng trước đây dùng frontend `http://127.0.0.1:5174/#lecturer` trỏ tới API `http://127.0.0.1:8001`; nếu cấu hình Docker `5173/8000` trỏ tới database `_oulad` thì có thể xem ngay trên cổng thường. Kiểm tra `DOCKER_DATABASE_URL` trong `.env` trước khi chạy hoặc đổi database; không đưa Parquet, JSON xuất, mật khẩu hay database nghiên cứu lên GitHub.
 
 [Hướng dẫn bằng ảnh cho giảng viên](docs/lecturer-guide.md) minh họa từng thao tác và giới hạn của ca thử lịch sử.
