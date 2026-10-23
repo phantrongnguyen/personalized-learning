@@ -19,6 +19,7 @@ from models.academic import Course, CoursePresentation, StudentEnrollment
 from models.feature import StudentFeatureSnapshot
 from models.ml import MLModel, PredictionRun
 from models.intervention import InterventionPlan, InterventionTask, AdvisingNote
+from models.audit import AuditLog
 from models.help_request import StudentHelpRequest
 from api.v1.endpoints import student, advisor, lecturer
 from repositories.student_repo import get_student_tasks_list
@@ -126,6 +127,12 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
             self.presentations[0].id, self.profile.id, self.admin, self.db)
         assert response["status"] == "insufficient_data"
         assert response["prediction"] is not None
+        assert response["student_details"]["previous_attempts"] == 0
+        assert response["student_details"]["model_inputs"] is None
+        inputs = response["student_details"]["observed_features"]
+        assert len(inputs) == 17
+        assert inputs["total_clicks_to_t"] == 0
+        assert inputs["highest_education"] == self.profile.highest_education
         assert response["assignment"]["can_assign"] is True
         assert len((await self.db.execute(select(InterventionTask.id))).all()) == before
         with self.assertRaises(HTTPException) as error:
@@ -137,6 +144,9 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
             await lecturer.get_course_student_suggestions(
                 self.presentations[1].id, self.profile.id, actor, self.db)
         assert error.exception.status_code == 403
+        empty = await lecturer.get_course_student_suggestions(
+            self.presentations[0].id, self.other_profile.id, self.admin, self.db)
+        assert empty["student_details"]["observed_features"] is None
         assert len((await self.db.execute(select(InterventionTask.id))).all()) == before
 
     async def test_risk_board_without_snapshot_has_no_fake_zero_metrics(self):
@@ -265,6 +275,66 @@ class CourseScopeTests(unittest.IsolatedAsyncioTestCase):
         })
         self.assertEqual(completed.status_code, 200, completed.text)
         self.assertTrue(completed.json()["is_completed"])
+        history = await self.request("GET", f"/lecturer/courses/{presentation_id}/students/{self.profile.id}/suggestions")
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(len(history.json()["history"]), 1)
+        self.assertEqual(history.json()["history"][0]["task_id"], task_id)
+        self.assertTrue(history.json()["history"][0]["is_completed"])
+        audit = (await self.db.execute(select(AuditLog).where(AuditLog.target_id == uuid.UUID(task_id)))).scalar_one()
+        self.assertEqual(audit.action, "ASSIGN_COURSE_TASK")
+
+    async def test_verified_suggestion_assignment_keeps_rule_history(self):
+        from datetime import date
+        presentation = self.presentations[1]
+        presentation.start_date = date(2025, 1, 1)
+        snapshot = StudentFeatureSnapshot(
+            enrollment_id=self.enrollments[1].id,
+            assessments_submitted_to_t=1, submission_rate=.5,
+            raw_features_json={"support_evidence": {
+            "source": "verified fixture", "snapshot_day": 201,
+            "confirmed_at": "2026-01-01T00:00:00+00:00",
+            "assessments_complete": True, "activity_complete": False,
+            "assessment_records": [
+                {"id": 1, "type": "TMA", "due_day": 40, "submitted_day": 39, "score": 75},
+                {"id": 2, "type": "TMA", "due_day": 100, "submitted_day": None, "score": None},
+            ],
+        }})
+        self.db.add(snapshot)
+        await self.db.flush()
+        from services.support_evidence import REVIEW_VERSION, snapshot_digest
+        snapshot.raw_features_json = {"support_evidence": {
+            **snapshot.raw_features_json["support_evidence"],
+            "review_version": REVIEW_VERSION, "review_scope": "source_verified",
+            "confirmed_by_user_id": str(self.admin.id),
+            "snapshot_sha256": snapshot_digest(snapshot, presentation),
+        }}
+        await self.db.flush()
+        path = f"/lecturer/courses/{presentation.id}/students/{self.profile.id}/suggestions"
+        suggestions = await self.request("GET", path)
+        self.assertEqual(suggestions.status_code, 200, suggestions.text)
+        self.assertEqual([item["rule_id"] for item in suggestions.json()["suggestions"]], ["G01"])
+        create = await self.request("POST", f"/lecturer/courses/{presentation.id}/tasks", json={
+            "student_id": str(self.profile.id), "title": "Check missed assignment",
+            "description": "Discuss with student", "target_metric": "Complete review",
+            "suggestion_snapshot_id": str(snapshot.id), "suggestion_rule_id": "G01",
+            "verified_basis": "Reviewed course schedule",
+        })
+        self.assertEqual(create.status_code, 200, create.text)
+        history = await self.request("GET", path)
+        self.assertEqual(history.status_code, 200, history.text)
+        self.assertEqual(history.json()["history"][0]["task_id"], create.json()["id"])
+        self.assertEqual(history.json()["history"][0]["rule_id"], "G01")
+        self.assertEqual(history.json()["history"][0]["snapshot_id"], str(snapshot.id))
+
+    async def test_forged_suggestion_reference_cannot_create_task(self):
+        before = len((await self.db.execute(select(InterventionTask.id))).all())
+        response = await self.request("POST", f"/lecturer/courses/{self.presentations[1].id}/tasks", json={
+            "student_id": str(self.profile.id), "title": "Invalid suggestion",
+            "description": "Do not create", "suggestion_snapshot_id": str(uuid.uuid4()),
+            "suggestion_rule_id": "G01",
+        })
+        self.assertEqual(response.status_code, 409, response.text)
+        self.assertEqual(len((await self.db.execute(select(InterventionTask.id))).all()), before)
 
     async def test_alert_is_scoped_and_addresses_assigned_advisor(self):
         result = await lecturer.alert_advisor(self.profile.id, AlertAdvisorIn(

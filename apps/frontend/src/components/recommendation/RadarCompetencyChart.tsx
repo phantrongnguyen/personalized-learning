@@ -1,12 +1,13 @@
 import React from 'react';
 import { StudentFeatures } from '@shared/types';
-import { calculateRadar, RADAR_REFERENCE, radarAppearance, RADAR_COLOR_NOTE } from '@shared/radar';
+import { calculateRadar, radarAppearance, RADAR_COLOR_NOTE } from '@shared/radar';
 
 interface RadarProps {
   features: StudentFeatures;
+  compact?: boolean;
 }
 
-export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
+export const RadarCompetencyChart: React.FC<RadarProps> = ({ features, compact = false }) => {
   const radarDimensions = calculateRadar(features);
   const appearance = radarAppearance(radarDimensions.map(d => d.reference_score));
   const dimensions = radarDimensions.map(d => ({
@@ -14,9 +15,10 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
     title: d.metric,
     studentScore: d.reference_score === null ? null : d.reference_score / 100,
     benchmarkScore: 1,
-    rawStudent: d.student_value === null ? '—' : `${d.student_value}`,
-    rawBenchmark: `${d.benchmark_value}`,
-    unit: d.unit,
+    rawStudent: d.student_value === null ? '—' : d.unit === 'tỷ lệ'
+      ? `${(d.student_value * 100).toFixed(1)}` : d.student_value.toLocaleString('vi-VN'),
+    rawBenchmark: d.unit === 'tỷ lệ' ? `${(d.benchmark_value * 100).toFixed(0)}` : d.benchmark_value.toLocaleString('vi-VN'),
+    unit: d.unit === 'tỷ lệ' ? '%' : d.unit,
   }));
   const hasCompleteRadar = dimensions.every(d => d.studentScore !== null);
   const totalPoints = dimensions.length;
@@ -99,18 +101,18 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
   };
 
   return (
-    <div className="bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl p-5 sm:p-6">
+    <div className={`bg-slate-900/90 rounded-2xl border border-slate-800 shadow-xl ${compact ? 'p-4' : 'p-5 sm:p-6'}`}>
       {/* Header & Legend */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6 pb-4 border-b border-slate-800">
         <div>
           <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <span>Đối sánh chỉ số hành vi tại cutoff</span>
-            <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 font-semibold">
+            <span>{compact ? 'Đối sánh sáu dấu hiệu học tập' : 'Đối sánh chỉ số hành vi tại cutoff'}</span>
+            {!compact && <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-brand-500/10 border border-brand-500/30 text-brand-400 font-semibold">
               Radar 6D
-            </span>
+            </span>}
           </h3>
           <p className="text-xs text-slate-400 mt-0.5">
-            {RADAR_REFERENCE.description}
+            Đối chiếu sáu chỉ số hành vi với mốc tham khảo tại thời điểm đánh giá.
           </p>
         </div>
 
@@ -118,11 +120,11 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
         <div className="flex items-center gap-4 text-xs font-medium">
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-brand-950/40 border border-brand-500/30 text-brand-300">
             <span className={`w-2.5 h-2.5 rounded-full ${appearance.bar}`} />
-            <span>Dữ liệu tại cutoff</span>
+            <span>{compact ? 'Dữ liệu sinh viên' : 'Dữ liệu tại cutoff'}</span>
           </div>
           <div className="flex items-center gap-2 px-2.5 py-1 rounded-lg bg-blue-950/40 border border-blue-500/30 text-blue-300">
             <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" />
-            <span>Mốc minh họa</span>
+            <span>Mốc tham khảo</span>
           </div>
         </div>
       </div>
@@ -130,10 +132,10 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
       <p className="text-xs text-slate-400 mb-3">{RADAR_COLOR_NOTE}</p>
       {!hasCompleteRadar && <p className="text-xs text-slate-400 mb-3">Chưa đủ dữ liệu cho mọi chiều; không vẽ đa giác tổng hợp. Chưa nộp bài không có nghĩa đạt chỉ số nộp trễ 100%.</p>}
       {/* Main Container: Radar chart on left, Breakdown table on right */}
-      <div className="flex flex-col lg:flex-row items-center lg:items-stretch justify-between gap-8">
+      <div className={`flex items-center justify-between gap-6 ${compact ? 'flex-col' : 'flex-col lg:flex-row lg:items-stretch'}`}>
         
         {/* SVG Radar Container: dedicated width with full viewBox room */}
-        <div className="w-full lg:w-[480px] xl:w-[500px] shrink-0 flex items-center justify-center p-2 rounded-2xl bg-slate-950/40 border border-slate-800/60">
+        <div className={`${compact ? 'hidden sm:flex w-full max-w-[520px]' : 'w-full lg:w-[480px] xl:w-[500px] flex'} shrink-0 items-center justify-center p-2 rounded-2xl bg-slate-950/40 border border-slate-800/60`}>
           <svg
             viewBox={`0 0 ${viewWidth} ${viewHeight}`}
             className="w-full h-auto select-none"
@@ -259,8 +261,8 @@ export const RadarCompetencyChart: React.FC<RadarProps> = ({ features }) => {
         </div>
 
         {/* Dimension Breakdown Table on Right */}
-        <div className="w-full lg:flex-1 flex flex-col justify-between space-y-2.5">
-          <div className="text-xs font-semibold text-slate-300 pb-1 flex items-center justify-between">
+        <div className={`w-full lg:flex-1 ${compact ? 'grid gap-3 sm:grid-cols-2' : 'flex flex-col justify-between space-y-2.5'}`}>
+          <div className={`text-xs font-semibold text-slate-300 pb-1 flex items-center justify-between ${compact ? 'sm:col-span-2' : ''}`}>
             <span>Chi tiết từng tiêu chí quan trắc:</span>
             <span className="text-[11px] text-slate-400">Giá trị / Mốc tham khảo</span>
           </div>

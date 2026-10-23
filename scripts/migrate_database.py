@@ -84,6 +84,9 @@ async def main(args):
                             current = sync.exec_driver_sql(f'''SELECT count(*)::text || ':' || md5(COALESCE(
                                 string_agg(to_jsonb(t)::text, '' ORDER BY to_jsonb(t)::text), '')) FROM "{table.name}" t''').scalar_one()
                             assert current == original[table.name], 'Rows changed since backup: ' + table.name
+                        had_inference_context = sync.exec_driver_sql("""SELECT EXISTS (
+                            SELECT 1 FROM information_schema.columns
+                            WHERE table_name = 'prediction_runs' AND column_name = 'inference_context')""").scalar_one()
                         before_models = [dict(r) for r in sync.exec_driver_sql('SELECT * FROM ml_models').mappings()]
                         config = Config(str(ROOT / 'alembic.ini'))
                         config.attributes['connection'] = sync
@@ -95,8 +98,14 @@ async def main(args):
                         for table in Base.metadata.sorted_tables:
                             if table.name == 'ml_models':
                                 continue
+                            row_json = 'to_jsonb(t)'
+                            if table.name == 'prediction_runs' and not had_inference_context:
+                                assert sync.exec_driver_sql(
+                                    'SELECT count(*) FROM prediction_runs WHERE inference_context IS NOT NULL'
+                                ).scalar_one() == 0, 'Migration populated inference context for existing predictions'
+                                row_json = "to_jsonb(t) - 'inference_context'"
                             after = sync.exec_driver_sql(f'''SELECT count(*)::text || ':' || md5(COALESCE(
-                                string_agg(to_jsonb(t)::text, '' ORDER BY to_jsonb(t)::text), '')) FROM "{table.name}" t''').scalar_one()
+                                string_agg(({row_json})::text, '' ORDER BY ({row_json})::text), '')) FROM "{table.name}" t''').scalar_one()
                             assert after == original[table.name], 'Unexpected row changes: ' + table.name
                         for row in before_models:
                             row.setdefault('average_precision', None)

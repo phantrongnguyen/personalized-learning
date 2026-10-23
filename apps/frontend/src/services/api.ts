@@ -424,10 +424,10 @@ export async function createHelpRequestApi(
 // 6. LECTURER EXTRA APIS
 // -------------------------------------------------------------
 export interface AssignCourseTaskPayload {
+  student_id: string;
   suggestion_snapshot_id?: string;
   suggestion_rule_id?: string;
   verified_basis?: string;
-  student_id: string;
   title: string;
   description: string;
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';

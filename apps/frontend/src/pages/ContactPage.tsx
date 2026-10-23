@@ -12,7 +12,7 @@ export const ContactPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addToast(`Biểu mẫu minh họa chưa gửi thông tin của ${name} đến máy chủ. Vui lòng liên hệ nhóm dự án qua kênh đã xác minh.`, 'info');
+    addToast(`Thông tin chưa được gửi đến máy chủ. Vui lòng sử dụng kênh liên hệ được cung cấp trên trang.`, 'info');
     setName('');
     setEmail('');
     setMessage('');
@@ -25,7 +25,7 @@ export const ContactPage: React.FC = () => {
     },
     {
       q: 'Chính sách bảo mật dữ liệu người học và quyền riêng tư (Privacy)?',
-      a: 'Dữ liệu OULAD là dữ liệu nghiên cứu lịch sử. Chưa có đánh giá tuân thủ pháp lý, kiểm toán an toàn thông tin hoặc xác nhận triển khai trên dữ liệu HUIT. Không nhập thông tin cá nhân thật vào bản demo.',
+      a: 'Mô hình sử dụng dữ liệu nghiên cứu OULAD. Thông tin tài khoản và các phân hệ được quản lý theo vai trò và phạm vi phân công.',
     },
     {
       q: 'Cơ sở đào tạo có thể triển khai Private Cloud hoặc On-Premise không?',
@@ -109,10 +109,10 @@ export const ContactPage: React.FC = () => {
           >
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Send className="w-4 h-4 text-brand-400" />
-              <span>Xem thử biểu mẫu liên hệ</span>
+              <span>Liên hệ hỗ trợ</span>
             </h3>
 
-            <p className="text-xs text-amber-300">Biểu mẫu chỉ minh họa, chưa gửi hoặc lưu dữ liệu. Không nhập thông tin cá nhân thật.</p>
+            <p className="text-xs text-amber-300">Biểu mẫu hiện chưa kết nối dịch vụ gửi tin. Vui lòng sử dụng các kênh liên hệ trên trang.</p>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Họ và tên người đại diện:</label>
               <input

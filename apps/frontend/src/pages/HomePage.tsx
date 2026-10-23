@@ -450,7 +450,7 @@ export const HomePage: React.FC = () => {
                 <span>Bước 1: Nạp Dữ Liệu</span>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Chuẩn bị 17 đặc trưng từ dữ liệu đã có tại cutoff 75%. Mẫu thử chỉ dùng để minh họa.
+                Chuẩn bị 17 đặc trưng từ dữ liệu đã có tại mốc 75% thời lượng học phần.
               </p>
             </div>
 

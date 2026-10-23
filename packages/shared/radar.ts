@@ -26,7 +26,7 @@ export function calculateRadar(features: Partial<StudentFeatures>): RadarDimensi
 
 /** Illustrative display threshold only; never a model risk classification. */
 export const RADAR_LOW_SCORE = 25;
-export const RADAR_COLOR_NOTE = 'Đỏ: có chỉ số dưới 25% mốc minh họa; ngưỡng hiển thị, không phải phân loại rủi ro.';
+export const RADAR_COLOR_NOTE = 'Đỏ: có chỉ số dưới 25% mốc tham khảo; ngưỡng hiển thị, không phải phân loại rủi ro.';
 export function radarAppearance(scores: (number | null)[]) {
   const known = scores.filter((score): score is number => score !== null && Number.isFinite(score) && score >= 0);
   const low = known.some(score => score < RADAR_LOW_SCORE);

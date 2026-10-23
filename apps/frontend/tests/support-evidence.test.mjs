@@ -49,15 +49,15 @@ test('a stale snapshot requires reload instead of retrying with a forged digest'
   assert.equal(requests, 1);
 });
 
-test('missing plan, unknown source and demonstration remain explicit in the review interface', () => {
+test('review keeps missing data explicit without demonstration banners', () => {
   for (const data_source of [null, 'synthetic_demo']) {
     const html = api.renderReview({ detail: { status: 'insufficient_data', data_source, prediction: null,
       cutoff_date: null, suggestions: [], warnings: ['Chưa có xác nhận gắn với đúng nội dung snapshot và người phụ trách.'],
       assignment: { can_assign: false } }, student: { total_clicks: null, late_submissions: null, submission_rate: null }, selectedRuleId: null, onChoose() {} });
-    assert.match(html, /Chưa đủ dữ liệu/);
-    assert.match(html, /Chưa thể giao nhiệm vụ/);
-    assert.match(html, /rà soát nguồn/);
-    if (data_source) assert.match(html, /Dữ liệu minh họa/);
+    assert.match(html, /Chưa đủ căn cứ/);
+    assert.match(html, /Chưa xác minh đủ nguồn dữ liệu/);
+    assert.match(html, /Gợi ý &amp; giao bài/);
+    assert.ok(!html.includes("Dữ liệu minh họa"));
   }
   const html = api.renderSnapshot({ apiBase: 'http://api', presentationId: 'course', studentId: 'student', snapshotId: 'snapshot', onReviewed() {} });
   assert.match(html, /Đọc snapshot từ database/);

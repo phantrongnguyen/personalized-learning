@@ -50,7 +50,7 @@ export const DashboardGuide: React.FC = () => {
     </header>
     <div className="min-h-0 overflow-y-auto overscroll-contain px-5 pb-5 text-xs leading-relaxed sm:text-sm">
     <ol className="mt-3 list-decimal space-y-2 pl-5">
-      <li>Chọn mẫu SV để thử hoặc nhập hồ sơ qua cả ba tab. Mẫu là dữ liệu minh họa; chỉ nhập thông tin đã có tại mốc 75% thời lượng học phần.</li>
+      <li>Chọn mẫu SV hoặc nhập hồ sơ qua cả ba tab. Sử dụng thông tin đã có tại mốc 75% thời lượng học phần.</li>
       <li>Nhấn <strong className="text-white">Phân tích nguy cơ học tập</strong>. Kết quả bên phải và Radar sử dụng hồ sơ của lần phân tích đó; sửa đầu vào thì cần nhấn phân tích lại.</li>
       <li>Đọc xác suất nguy cơ, đối chiếu các chiều Radar và xem gợi ý. Lịch sử bên dưới giúp xem lại các lần phân tích; gợi ý cần người phụ trách xem xét trước khi áp dụng.</li>
     </ol>
@@ -61,7 +61,7 @@ export const DashboardGuide: React.FC = () => {
         <div><dt className="font-semibold text-slate-100">LightGBM · Xác suất nguy cơ</dt><dd>Model ước lượng nguy cơ trượt hoặc bỏ học từ hồ sơ OULAD. Ví dụ 70% là xác suất nguy cơ model trả về, không phải độ chính xác 70% và không bảo đảm kết quả của sinh viên.</dd></div>
         <div><dt className="font-semibold text-slate-100">Accuracy · Precision · Recall · F1</dt><dd>Accuracy là tỷ lệ dự đoán đúng trên tập đánh giá. Precision cho biết trong các hồ sơ bị cảnh báo có bao nhiêu hồ sơ thực sự thuộc nhóm nguy cơ. Recall cho biết model phát hiện được bao nhiêu trong số hồ sơ nguy cơ thực tế. F1 cân bằng Precision và Recall.</dd></div>
         <div><dt className="font-semibold text-slate-100">ROC-AUC · AP (Average Precision)</dt><dd>ROC-AUC đánh giá khả năng phân biệt hai nhóm qua nhiều ngưỡng; AP tổng hợp quan hệ Precision–Recall cho nhóm nguy cơ. Đây là chỉ số trên một tập đánh giá, không phải điểm của hồ sơ đang nhập.</dd></div>
-        <div><dt className="font-semibold text-slate-100">Radar · % mốc tham khảo</dt><dd>Radar so sánh 6 chỉ số hành vi với mốc minh họa, giới hạn hiển thị 100%. Chỉ số dưới 25% mốc có màu đỏ; đây là quy ước hiển thị, không phải phân loại rủi ro của model. Thiếu dữ liệu không đồng nghĩa với điểm 0.</dd></div>
+        <div><dt className="font-semibold text-slate-100">Radar · % mốc tham khảo</dt><dd>Radar so sánh 6 chỉ số hành vi với mốc tham khảo, giới hạn hiển thị 100%. Chỉ số dưới 25% mốc có màu đỏ; đây là quy ước hiển thị, không phải phân loại rủi ro của model. Thiếu dữ liệu không đồng nghĩa với điểm 0.</dd></div>
       </dl>
       <p className="mt-3 text-slate-400">Kết quả đánh giá trên OULAD chưa chứng minh độ chính xác trên dữ liệu HUIT. Nhãn dưới ngưỡng cảnh báo không bảo đảm sinh viên không cần hỗ trợ.</p>
     </details>

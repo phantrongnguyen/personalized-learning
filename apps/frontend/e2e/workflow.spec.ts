@@ -48,9 +48,10 @@ test('account, import, reviewed suggestion, real inference, plan, task and compl
   const row = teacher.getByRole('row').filter({ hasText: 'E2E Student' });
   await row.getByRole('button', { name: 'Xem gợi ý', exact: true }).click();
   await test.step('missing metadata and missing active plan remain explicit', async () => {
-    await expect(teacher.getByText('Chưa đủ dữ liệu đã xác nhận để gợi ý nhiệm vụ cụ thể.', { exact: true })).toBeVisible();
-    await expect(teacher.getByText('Chưa thể giao nhiệm vụ:', { exact: false })).toBeVisible();
-    await expect(teacher.getByRole('button', { name: 'Giao bài tập', exact: true })).toHaveCount(0);
+    await expect(teacher.getByText('Chưa đủ căn cứ đã xác nhận để nêu dấu hiệu cụ thể.', { exact: true })).toBeVisible();
+    await teacher.getByRole('tab', { name: 'Gợi ý & giao bài', exact: true }).click();
+    await expect(teacher.getByText('Cần kế hoạch hỗ trợ đang hoạt động', { exact: false })).toBeVisible();
+    await expect(teacher.getByRole('button', { name: 'Giao bài tập', exact: true })).toBeDisabled();
     await teacher.screenshot({ path: '../../reports/test-results/browser/missing-evidence.png', fullPage: true });
   });
   await test.step('review demonstration explicitly; no flags preselected', async () => {
@@ -63,9 +64,10 @@ test('account, import, reviewed suggestion, real inference, plan, task and compl
     await panel.locator('input[type=text], input:not([type])').fill('Isolated E2E database fixture');
     await panel.locator('textarea').fill('Reviewed a synthetic fixture solely to test the workflow; not real LMS evidence.');
     for (let i = 0; i < 3; i++) await checks.nth(i).check();
+    const reviewResponse = teacher.waitForResponse(response => response.request().method() === 'POST' && response.url().endsWith('/review'));
     await panel.getByRole('button', { name: 'Lưu xác nhận', exact: true }).click();
-    await expect(teacher.getByText('Có gợi ý để giảng viên tham khảo.', { exact: true })).toBeVisible();
-    await expect(teacher.getByText('Dữ liệu minh họa, không phải bằng chứng LMS thực.', { exact: true })).toBeVisible();
+    expect((await reviewResponse).ok()).toBeTruthy();
+    await expect(teacher.getByRole('tab', { name: 'Thông tin & căn cứ', exact: true })).toBeVisible();
   });
   await test.step('batch real artifact inference via existing administrator API', async () => {
     const response = await request.post(`/api/v1/admin/ml/batch-predict?enrollment_id=${imported.enrollment_id}`, { headers: headers(adminToken) });
@@ -87,14 +89,15 @@ test('account, import, reviewed suggestion, real inference, plan, task and compl
     await teacher.reload();
     await teacher.getByRole('button', { name: /Lớp học phần/ }).click();
     await teacher.getByRole('row').filter({ hasText: 'E2E Student' }).getByRole('button', { name: 'Xem gợi ý', exact: true }).click();
-    await teacher.getByRole('button', { name: 'Chọn để điền nháp (có thể chỉnh sửa)', exact: true }).first().click();
+    await teacher.getByRole('tab', { name: 'Gợi ý & giao bài', exact: true }).click();
+    await teacher.getByRole('button', { name: 'Xem và soạn', exact: true }).first().click();
     const form = teacher.locator('form').filter({ has: teacher.getByRole('button', { name: 'Giao bài tập', exact: true }) });
     await form.locator('input[type=text]').nth(0).fill('E2E lecturer edited task');
     await form.locator('textarea').fill('Lecturer edited the proposed action for this synthetic fixture.');
     await form.getByRole('combobox').selectOption('LOW');
     await form.locator('input[type=text]').nth(1).fill('Review the timetable together');
     await form.getByRole('button', { name: 'Giao bài tập', exact: true }).click();
-    await expect(form).not.toBeVisible();
+    await expect(teacher.getByText('Đã giao bài tập bổ trợ cho E2E Student.', { exact: true })).toBeVisible();
   });
   const student = await actor();
   const studentToken = await login(student, f.student_code, f.password, false);

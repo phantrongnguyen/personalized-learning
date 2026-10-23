@@ -48,7 +48,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
       <div className="flex flex-wrap items-center justify-between gap-3 pb-5 border-b border-slate-800">
         <div>
           <h2 className="text-base font-bold text-white">Hồ sơ 17 Đặc trưng Sinh viên</h2>
-          <p className="text-xs text-slate-400">Mẫu là dữ liệu tổng hợp minh họa, không phải hồ sơ HUIT thực. Nhập theo định nghĩa OULAD; chưa có quy đổi tín chỉ/bằng cấp HUIT.</p>
+          <p className="text-xs text-slate-400">Nhập đầy đủ chỉ số học tập tại mốc đánh giá để phân tích nguy cơ.</p>
         </div>
 
         <div className="flex items-center gap-2">
@@ -167,6 +167,7 @@ export const FeatureForm: React.FC<FeatureFormProps> = ({
         {/* Submit Button */}
         <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-slate-800">
           <DashboardGuide />
+
           <button
             type="submit"
             disabled={loading}

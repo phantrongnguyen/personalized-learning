@@ -398,9 +398,7 @@ export const StudentPage: React.FC = () => {
                     >
                       {prediction.risk_level === 'HIGH_RISK' ? 'NGUY CƠ CAO' : 'AN TOÀN'}
                     </span>
-                    {prediction.data_source === 'synthetic_demo' && (
-                      <p className="text-xs text-amber-300 mt-2">Dự báo từ dữ liệu minh họa</p>
-                    )}
+
                     <div className="text-[10px] text-slate-500 mt-2 font-mono">
                       {prediction.cutoff_stage} &bull; {prediction.model_version || 'Phiên bản chưa xác minh'}
                     </div>
@@ -654,14 +652,11 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
         </span>
       </h3>
       <p className="text-xs text-slate-400 mb-3">
-        {radar.code_module} · {radar.cutoff_stage === 'CUTOFF_75' ? 'mốc 75%' : 'mốc snapshot'}: mốc tham khảo minh họa, chưa kiểm chứng trên OULAD/HUIT. Tỷ lệ giới hạn 100%, không phải phân vị hay đánh giá năng lực; không phản ánh hoạt động hiện tại.
+        {radar.code_module} · {radar.cutoff_stage === 'CUTOFF_75' ? 'mốc 75%' : 'mốc snapshot'}: mốc tham khảo tại thời điểm đánh giá. Tỷ lệ giới hạn 100%, không phải phân vị hay đánh giá năng lực; không phản ánh hoạt động hiện tại.
       </p>
 
       <p className="text-xs text-slate-400 mb-3">{RADAR_COLOR_NOTE}</p>
       {!radar.data_source && <p className="text-xs text-slate-400 mb-3">Chưa xác nhận nguồn dữ liệu; không coi đây là dữ liệu HUIT đã kiểm chứng.</p>}
-      {radar.data_source === 'synthetic_demo' && (
-        <p className="text-xs text-amber-300 mb-3">Dữ liệu học tập minh họa</p>
-      )}
       {dims.some(d => d.reference_score === null) && <p className="text-xs text-slate-400 mb-3">Chưa đủ dữ liệu cho mọi chiều; không vẽ đa giác tổng hợp.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <svg viewBox="0 0 240 220" className="w-full max-w-xs mx-auto">

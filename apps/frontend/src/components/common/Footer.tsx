@@ -29,7 +29,7 @@ export const Footer: React.FC = () => {
     e.preventDefault();
     if (!newsletterEmail.trim()) return;
     addToast(
-      `Biểu mẫu minh họa chưa kết nối dịch vụ gửi tin; chưa có email nào được gửi`,
+      `Chưa gửi được yêu cầu: dịch vụ gửi tin chưa được kết nối.`,
       'info'
     );
     setNewsletterEmail('');
@@ -286,7 +286,7 @@ export const Footer: React.FC = () => {
                   onClick={() => handleNav('contact')}
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-semibold transition-colors"
                 >
-                  <span>Gửi yêu cầu Demo</span>
+                  <span>Liên hệ hỗ trợ</span>
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
