@@ -425,6 +425,9 @@ export async function createHelpRequestApi(
 // -------------------------------------------------------------
 export interface AssignCourseTaskPayload {
   student_id: string;
+  suggestion_snapshot_id?: string;
+  suggestion_rule_id?: string;
+  verified_basis?: string;
   title: string;
   description: string;
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';

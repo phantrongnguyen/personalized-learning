@@ -1,3 +1,4 @@
+import type { StudentFeatures } from './student';
 export * from './student';
 export type RiskLevel = 'SAFE' | 'HIGH_RISK' | 'NOT_PREDICTED';
 
@@ -128,13 +129,33 @@ export interface CourseSuggestion {
   rule_version: string;
 }
 
+export interface AssignedSuggestionTask {
+  task_id: string;
+  rule_id: string | null;
+  snapshot_id: string | null;
+  observation: string | null;
+  title: string;
+  description: string;
+  target_metric: string;
+  assigned_at: string;
+  is_completed: boolean;
+  completed_at: string | null;
+}
+
 export interface CourseSuggestionResponse {
   status: 'available' | 'abstained' | 'insufficient_data';
+  snapshot_id: string | null;
+  history: AssignedSuggestionTask[];
   rule_version: string;
   enrollment_id: string;
   cutoff_date: string | null;
   cutoff_day?: number | null;
   source_kind?: 'historical_oulad' | 'course';
+  student_details?: {
+    previous_attempts: number;
+    model_inputs: StudentFeatures | null;
+    observed_features: StudentFeatures | null;
+  };
   assessment_details?: Array<{
     id: number;
     type: string;
@@ -142,6 +163,12 @@ export interface CourseSuggestionResponse {
     submitted_day: number | null;
     score: number | null;
   }>;
+  prediction_explanation?: null | {
+    method: 'lightgbm_tree_contrib_log_odds';
+    base_margin: number;
+    base_probability: number;
+    contributions: Record<keyof StudentFeatures, number>;
+  };
   prediction: null | {
     run_id: string;
     risk_probability: number;

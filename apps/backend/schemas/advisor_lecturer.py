@@ -175,6 +175,9 @@ class StudentRiskInCourseOut(BaseModel):
 
 class CourseTaskAssignIn(BaseModel):
     student_id: uuid.UUID
+    suggestion_snapshot_id: Optional[uuid.UUID] = None
+    suggestion_rule_id: Optional[str] = None
+    verified_basis: Optional[str] = None
     title: str
     description: str
     priority: Literal['LOW', 'MEDIUM', 'HIGH'] = 'HIGH'

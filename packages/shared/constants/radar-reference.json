@@ -1,0 +1,14 @@
+{
+  "version": "illustrative-cutoff75-v1",
+  "status": "illustrative_unvalidated",
+  "description": "Mốc tham khảo minh họa tại cutoff 75%; chưa xác minh từ phân phối OULAD hoặc HUIT. Không phải phân vị hay thước đo năng lực.",
+  "late_submission_penalty": 0.25,
+  "dimensions": [
+    { "key": "total_clicks_to_t", "metric": "Tổng tương tác VLE", "reference": 350, "unit": "click" },
+    { "key": "active_days_to_t", "metric": "Số ngày có hoạt động", "reference": 40, "unit": "ngày" },
+    { "key": "active_day_ratio", "metric": "Tỷ lệ ngày hoạt động", "reference": 0.45, "unit": "tỷ lệ" },
+    { "key": "clicks_recent_7", "metric": "Click 7 ngày đến cutoff", "reference": 30, "unit": "click" },
+    { "key": "submission_rate", "metric": "Tỷ lệ nộp bài", "reference": 0.95, "unit": "tỷ lệ" },
+    { "key": "late_submissions_to_t", "metric": "Chỉ số nộp trễ quy ước", "reference": 100, "unit": "%" }
+  ]
+}

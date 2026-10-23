@@ -208,6 +208,25 @@
   color: #64748b;
 }
 
+:root:not(.dark) .suggestion-review .bg-slate-800\/50,
+:root:not(.dark) .suggestion-review .bg-slate-800\/60 { background-color: #e9eff6; }
+:root:not(.dark) .suggestion-review .bg-brand-500\/10,
+:root:not(.dark) .suggestion-review .bg-brand-500\/15 { background-color: #e8f4fc; }
+:root:not(.dark) .suggestion-review .bg-amber-500\/5,
+:root:not(.dark) .suggestion-review .bg-amber-500\/10 { background-color: #fffbeb; }
+:root:not(.dark) .suggestion-review .bg-sky-500\/10 { background-color: #eaf6fd; }
+:root:not(.dark) .suggestion-review .bg-rose-500\/15 { background-color: #fff1f2; }
+:root:not(.dark) .suggestion-review .text-sky-200 { color: #075985; }
+:root:not(.dark) .suggestion-review .text-rose-300 { color: #be123c; }
+:root:not(.dark) .suggestion-review .border-amber-500\/30 { border-color: #d97706; }
+:root:not(.dark) .suggestion-review .border-sky-500\/30 { border-color: #0284c7; }
+:root:not(.dark) .suggestion-review .border-brand-500\/40 { border-color: #0875bc; }
+:root:not(.dark) .suggestion-review .border-rose-500\/30 { border-color: #e11d48; }
+:root:not(.dark) .suggestion-review .bg-slate-800\/50 .text-slate-200,
+:root:not(.dark) .suggestion-review .bg-slate-800\/60 .text-slate-200 { color: #1e293b; }
+
+:root:not(.dark) .suggestion-review [aria-label="Lọc nhóm dữ liệu"] [aria-pressed="true"] { color: #ffffff; }
+
 :root:not(.dark) .suggestion-review [role="tab"][aria-selected="true"] {
   color: #ffffff;
 }
@@ -498,4 +517,36 @@
   outline: 2px solid var(--accent);
   outline-offset: 4px;
   border-radius: 1rem;
+}
+
+:root:not(.dark) .suggestion-review .contribution-track { background-color: #e2e8f0; }
+:root:not(.dark) .suggestion-review .contribution-track .bg-slate-500 { background-color: #64748b; }
+
+.contribution-tooltip {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 0.55rem);
+  z-index: 30;
+  display: grid;
+  gap: 0.35rem;
+  width: min(20rem, calc(100vw - 5rem));
+  padding: 0.8rem;
+  border: 1px solid #475569;
+  border-radius: 0.75rem;
+  background: #0f172a;
+  color: #f8fafc;
+  box-shadow: 0 12px 24px rgb(0 0 0 / 0.25);
+  font-size: 0.75rem;
+  line-height: 1.45;
+  text-align: left;
+  pointer-events: none;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 120ms ease;
+}
+.contribution-tooltip-note { color: #cbd5e1; }
+.contribution-track:hover .contribution-tooltip,
+.contribution-track:focus-visible .contribution-tooltip {
+  visibility: visible;
+  opacity: 1;
 }

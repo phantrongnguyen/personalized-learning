@@ -1,6 +1,11 @@
+import json
+import logging
+
+from anyio import to_thread
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, Depends, HTTPException, status, Query
+from pydantic import ValidationError
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -9,9 +14,14 @@ from core.permissions import RequireRoles
 from models.user import User
 from models.assignment import CourseLecturer
 from models.intervention import InterventionPlan, InterventionTask
+from models.audit import AuditLog
 from models.ml import PredictionRun, MLModel
+from ml.explanation import explain_prediction
+from services.model_registry import model_registry, RUNTIME_KEY
 from models.feature import StudentFeatureSnapshot
-from models.academic import StudentEnrollment, CoursePresentation
+from models.academic import StudentEnrollment, CoursePresentation, Course
+from models.profile import StudentProfile
+from schemas.prediction import PredictionProvenance
 from models.help_request import StudentHelpRequest
 from services.help_request_service import resolve_help_recipient
 from schemas.advisor_lecturer import (
@@ -33,6 +43,7 @@ from repositories.academic_repo import (
 )
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
 
 # Yêu cầu vai trò LECTURER (hoặc ADMIN)
 require_lecturer = RequireRoles(["LECTURER"])
@@ -97,10 +108,13 @@ async def get_course_student_suggestions(
     if enrollment is None:
         raise HTTPException(404, "Sinh viên không thuộc học phần đã chọn")
     presentation = await db.get(CoursePresentation, presentation_id)
+    profile = await db.get(StudentProfile, student_id)
     snapshot = (await db.execute(select(StudentFeatureSnapshot).where(
         StudentFeatureSnapshot.enrollment_id == enrollment.id,
     ).order_by(StudentFeatureSnapshot.created_at.desc(), StudentFeatureSnapshot.id.desc()).limit(1))).scalars().first()
     prediction = None
+    recorded_inputs = None
+    prediction_explanation = None
     if snapshot is not None:
         row = (await db.execute(select(PredictionRun, MLModel)
             .join(MLModel, MLModel.id == PredictionRun.model_id)
@@ -109,6 +123,25 @@ async def get_course_student_suggestions(
             .limit(1))).first()
         if row:
             run, model = row
+            if isinstance(run.inference_context, dict):
+                try:
+                    provenance = PredictionProvenance.model_validate(run.inference_context)
+                    recorded_inputs = provenance.features.model_dump()
+                    runtime = (getattr(model, "metadata_json", None) or {}).get(RUNTIME_KEY)
+                    if (isinstance(runtime, dict) and provenance.model_id == model.id
+                            and provenance.model_version == model.version
+                            and provenance.model_sha256 == runtime.get("model_sha256")
+                            and provenance.threshold == model.threshold
+                            and provenance.cutoff_fraction == model.cutoff_fraction
+                            and provenance.positive_label == 1):
+                        try:
+                            artifact = await model_registry._pinned(model)
+                            prediction_explanation = await to_thread.run_sync(
+                                explain_prediction, artifact, recorded_inputs, run.risk_probability)
+                        except Exception:
+                            logger.warning("Cannot verify explanation for prediction %s", run.id, exc_info=True)
+                except ValidationError:
+                    pass
             prediction = {
                 "run_id": run.id, "snapshot_id": snapshot.id,
                 "risk_probability": run.risk_probability,
@@ -127,6 +160,33 @@ async def get_course_student_suggestions(
         .order_by(InterventionPlan.created_at.desc(), InterventionPlan.id.desc())
         .limit(1))).scalar_one_or_none()
     state, suggestions, warnings, cutoff_date = evaluate_suggestions(snapshot, presentation)
+    history_query = (
+        select(InterventionTask, AuditLog)
+        .join(InterventionPlan, InterventionPlan.id == InterventionTask.plan_id)
+        .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+        .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+        .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+        .join(AuditLog, AuditLog.target_id == InterventionTask.id)
+        .where(StudentEnrollment.student_id == student_id,
+               StudentEnrollment.presentation_id == presentation_id,
+               AuditLog.action == "LECTURER_COURSE_TASK_ASSIGNED",
+               AuditLog.target_type == "InterventionTask")
+        .order_by(AuditLog.created_at.desc(), AuditLog.id.desc())
+    )
+    history = []
+    for task, event in (await db.execute(history_query)).all():
+        try:
+            provenance = json.loads(event.detail or "{}")
+        except (ValueError, TypeError):
+            provenance = {}
+        history.append({
+            "task_id": task.id, "rule_id": provenance.get("rule_id"),
+            "snapshot_id": provenance.get("snapshot_id"),
+            "observation": provenance.get("observation"),
+            "title": task.title, "description": task.description,
+            "target_metric": task.target_metric, "assigned_at": event.created_at,
+            "is_completed": task.is_completed, "completed_at": task.completed_at,
+        })
     if prediction is None:
         warnings.append("Chưa có PredictionRun cho snapshot mới nhất; không phân loại SAFE.")
     metadata = (snapshot.raw_features_json.get("support_evidence")
@@ -136,13 +196,37 @@ async def get_course_student_suggestions(
             and type(metadata.get("snapshot_day")) is int
             and metadata.get("assessments_complete") is True and presentation):
         details = validated_assessment_details(snapshot, metadata, metadata["snapshot_day"])
+    observed_features = None
+    if snapshot is not None and profile is not None and presentation is not None:
+        course = await db.get(Course, presentation.course_id)
+        if course is not None:
+            observed_features = {
+                "code_module": course.code_module,
+                "gender": profile.gender,
+                "highest_education": profile.highest_education,
+                "age_band": profile.age_band,
+                "studied_credits": enrollment.studied_credits,
+                "date_registration": enrollment.date_registration,
+                **{field: getattr(snapshot, field) for field in (
+                    "total_clicks_to_t", "clicks_resource_to_t", "clicks_url_to_t",
+                    "active_days_to_t", "active_day_ratio", "days_since_last_activity",
+                    "clicks_recent_7", "clicks_recent_30", "assessments_submitted_to_t",
+                    "late_submissions_to_t", "submission_rate",
+                )},
+            }
     return {
         "status": state, "rule_version": RULE_VERSION, "enrollment_id": enrollment.id,
-        "prediction": prediction, "cutoff_date": cutoff_date,
+        "snapshot_id": snapshot.id if snapshot else None,
+        "prediction": prediction, "prediction_explanation": prediction_explanation, "cutoff_date": cutoff_date,
         "source_kind": "historical_oulad" if state != "insufficient_data" and is_historical_oulad(metadata) else "course",
         "cutoff_day": metadata.get("snapshot_day") if isinstance(metadata, dict) and type(metadata.get("snapshot_day")) is int else None,
         "assessment_details": details or [],
-        "suggestions": suggestions, "warnings": warnings,
+        "student_details": {
+            "previous_attempts": enrollment.num_of_prev_attempts,
+            "model_inputs": recorded_inputs,
+            "observed_features": observed_features,
+        },
+        "suggestions": suggestions, "history": history, "warnings": warnings,
         "assignment": {"can_assign": plan is not None, "plan_id": plan,
                        "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."
                        if plan else "Chưa có plan ACTIVE đúng học phần. Cố vấn hoặc admin cần lập plan dựa trên PredictionRun thật trước khi giảng viên giao task."},
@@ -200,6 +284,23 @@ async def assign_course_task(
 ):
     await _ensure_course_ownership(db, current_user, presentation_id)
     # Select a plan linked to this student's enrollment in this presentation.
+    if bool(payload.suggestion_rule_id) != bool(payload.suggestion_snapshot_id):
+        raise HTTPException(422, "Gợi ý phải có cả quy tắc và bản dữ liệu tương ứng")
+    chosen_suggestion = None
+    if payload.suggestion_rule_id:
+        latest = (await db.execute(select(StudentFeatureSnapshot, CoursePresentation)
+            .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+            .join(CoursePresentation, CoursePresentation.id == StudentEnrollment.presentation_id)
+            .where(StudentEnrollment.student_id == payload.student_id,
+                   StudentEnrollment.presentation_id == presentation_id)
+            .order_by(StudentFeatureSnapshot.created_at.desc(), StudentFeatureSnapshot.id.desc())
+            .limit(1))).first()
+        if latest is None or latest[0].id != payload.suggestion_snapshot_id:
+            raise HTTPException(409, "Dữ liệu học tập đã thay đổi; hãy tải lại gợi ý")
+        state, suggestions, _, _ = evaluate_suggestions(latest[0], latest[1])
+        chosen_suggestion = next((item for item in suggestions if item["rule_id"] == payload.suggestion_rule_id), None)
+        if state != "available" or chosen_suggestion is None:
+            raise HTTPException(409, "Gợi ý không còn hợp lệ; hãy tải lại hồ sơ")
     plan_query = (
         select(InterventionPlan)
         .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
@@ -230,6 +331,19 @@ async def assign_course_task(
         target_metric=payload.target_metric,
     )
     db.add(task)
+    await db.flush()
+    db.add(AuditLog(
+        user_id=current_user.id, action="LECTURER_COURSE_TASK_ASSIGNED",
+        target_type="InterventionTask", target_id=task.id,
+        detail=json.dumps({
+            "snapshot_id": str(payload.suggestion_snapshot_id) if chosen_suggestion else None,
+            "rule_id": chosen_suggestion["rule_id"] if chosen_suggestion else None,
+            "rule_version": chosen_suggestion["rule_version"] if chosen_suggestion else None,
+            "observation": chosen_suggestion["observation"] if chosen_suggestion else None,
+            "evidence": chosen_suggestion["evidence"] if chosen_suggestion else None,
+            "verified_basis": payload.verified_basis.strip() if payload.verified_basis else None,
+        }, ensure_ascii=False),
+    ))
     await db.commit()
     await db.refresh(task)
     return task

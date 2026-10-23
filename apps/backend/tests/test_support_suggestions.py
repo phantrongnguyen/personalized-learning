@@ -84,9 +84,9 @@ async def test_read_endpoint_never_mutates(monkeypatch):
     student_id, presentation_id, enrollment_id = uuid4(), uuid4(), uuid4()
     scalar = lambda value: SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: value),
                                            scalar_one_or_none=lambda: value)
-    db = SimpleNamespace(execute=AsyncMock(side_effect=[scalar(SimpleNamespace(id=enrollment_id)),
-                                                      scalar(None), scalar(None)]),
-                         get=AsyncMock(return_value=SimpleNamespace(module_presentation_length=100)),
+    db = SimpleNamespace(execute=AsyncMock(side_effect=[scalar(SimpleNamespace(id=enrollment_id, num_of_prev_attempts=0)),
+                                                      scalar(None), scalar(None), SimpleNamespace(all=lambda: [])]),
+                         get=AsyncMock(side_effect=[SimpleNamespace(module_presentation_length=100), None]),
                          add=MagicMock(), commit=AsyncMock(), flush=AsyncMock())
     owner = AsyncMock()
     monkeypatch.setattr(lecturer, "_ensure_course_ownership", owner)
@@ -192,15 +192,35 @@ async def test_historical_endpoint_returns_verified_details_and_plan_without_wri
         "assessment_records": records,
     }, late_submissions_to_t=0, assessments_submitted_to_t=1, submission_rate=.25)
     presentation.start_date = None
-    enrollment = SimpleNamespace(id=enrollment_id)
-    run = SimpleNamespace(id=uuid4(), risk_probability=.989, prediction_label=1,
+    presentation.course_id = uuid4()
+    enrollment = SimpleNamespace(id=enrollment_id, studied_credits=60, date_registration=-10, num_of_prev_attempts=0)
+    profile = SimpleNamespace(gender="M", highest_education="HE Qualification", age_band="0-35")
+    course = SimpleNamespace(code_module="AAA")
+    for field, value in (("clicks_resource_to_t", 2), ("clicks_url_to_t", 1), ("active_days_to_t", 2), ("active_day_ratio", .02)):
+        setattr(snapshot, field, value)
+    run = SimpleNamespace(id=uuid4(), risk_probability=.989, prediction_label=1, inference_context=None,
                           created_at=snapshot.created_at)
     model = SimpleNamespace(id=uuid4(), threshold=.5, version="test", cutoff_fraction=.75)
+    run.inference_context = {
+        "features": {
+            "code_module": "AAA", "gender": profile.gender, "highest_education": profile.highest_education,
+            "age_band": profile.age_band, "studied_credits": enrollment.studied_credits,
+            "date_registration": enrollment.date_registration,
+            **{field: getattr(snapshot, field) for field in (
+                "total_clicks_to_t", "clicks_resource_to_t", "clicks_url_to_t",
+                "active_days_to_t", "active_day_ratio", "days_since_last_activity",
+                "clicks_recent_7", "clicks_recent_30", "assessments_submitted_to_t",
+                "late_submissions_to_t", "submission_rate",
+            )},
+        },
+        "model_version": "test", "threshold": .5, "model_sha256": "a" * 64,
+    }
+    run.inference_context["features"]["total_clicks_to_t"] = 999
     scalar = lambda value: SimpleNamespace(scalars=lambda: SimpleNamespace(first=lambda: value),
                                            scalar_one_or_none=lambda: value)
     db = SimpleNamespace(execute=AsyncMock(side_effect=[scalar(enrollment), scalar(snapshot),
-                                                         SimpleNamespace(first=lambda: (run, model)), scalar(plan_id)]),
-                         get=AsyncMock(return_value=presentation), add=MagicMock(),
+                                                         SimpleNamespace(first=lambda: (run, model)), scalar(plan_id), SimpleNamespace(all=lambda: [])]),
+                         get=AsyncMock(side_effect=[presentation, profile, course]), add=MagicMock(),
                          commit=AsyncMock(), flush=AsyncMock())
     owner = AsyncMock()
     monkeypatch.setattr(lecturer, "_ensure_course_ownership", owner)
@@ -209,6 +229,10 @@ async def test_historical_endpoint_returns_verified_details_and_plan_without_wri
     assert response["status"] == "available"
     assert response["source_kind"] == "historical_oulad" and response["cutoff_date"] is None
     assert response["assessment_details"] == records and response["cutoff_day"] == 75
+    assert len(response["student_details"]["model_inputs"]) == 17
+    assert response["student_details"]["model_inputs"]["total_clicks_to_t"] == 999
+    assert response["student_details"]["observed_features"]["total_clicks_to_t"] == 12
+    assert response["student_details"]["observed_features"]["submission_rate"] == .25
     assert response["assignment"] == {"can_assign": True, "plan_id": plan_id,
         "message": "Có plan ACTIVE đúng học phần; giảng viên quyết định và bấm giao."}
     db.add.assert_not_called()
