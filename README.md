@@ -422,7 +422,7 @@ flowchart LR
     G --> H[Giảng viên đối chiếu, chỉnh nháp và chủ động giao nếu có plan hợp lệ]
 ```
 
-Đã kiểm chứng một hồ sơ lịch sử ẩn danh `OULAD-2164705`: model trả khoảng **98,9%**, 1/4 bài đến hạn có bản nộp đến mốc, ba bài chưa ghi nhận nộp, không ghi nhận hoạt động trên hệ thống trong 30 ngày cuối. Đây là quan sát theo nguồn OULAD, **không** kết luận sinh viên HUIT yếu một chủ đề, bỏ học hoặc không làm bài: dữ liệu thiếu ánh xạ bài–chủ đề/rubric, hạn cá nhân và cách học ngoài hệ thống. Các giới hạn và điều chưa thể chứng minh nằm trong phần mở rộng **Nguồn và giới hạn dữ liệu** và ngay dưới từng gợi ý. Đây là kiểm thử tích hợp từ nguồn lịch sử, chưa có kiểm chứng parity từng đặc trưng với pipeline nghiên cứu ban đầu hay hiệu lực dự báo trên HUIT. Trong bản thử, không có plan ACTIVE nên không thể bấm giao bài; điều này tránh giao nhiệm vụ cho hồ sơ nghiên cứu lịch sử.
+Đã kiểm chứng một hồ sơ lịch sử ẩn danh `OULAD-2164705`: model trả khoảng **98,9%**, 1/4 bài đến hạn có bản nộp đến mốc, ba bài chưa ghi nhận nộp, không ghi nhận hoạt động trên hệ thống trong 30 ngày cuối. Đây là quan sát theo nguồn OULAD, **không** kết luận sinh viên HUIT yếu một chủ đề, bỏ học hoặc không làm bài: dữ liệu thiếu ánh xạ bài–chủ đề/rubric, hạn cá nhân và cách học ngoài hệ thống. Các giới hạn và điều chưa thể chứng minh nằm trong phần mở rộng **Nguồn và giới hạn dữ liệu** và trong phần căn cứ của từng gợi ý. Đây là kiểm thử tích hợp từ nguồn lịch sử, chưa có kiểm chứng parity từng đặc trưng với pipeline nghiên cứu ban đầu hay hiệu lực dự báo trên HUIT. Trong bản thử, không có plan ACTIVE nên không thể bấm giao bài; điều này tránh giao nhiệm vụ cho hồ sơ nghiên cứu lịch sử.
 
 ### Bàn giao giao diện giảng viên cho Nguyên
 

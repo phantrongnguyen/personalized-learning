@@ -104,7 +104,7 @@ API đọc `GET /lecturer/courses/{presentation_id}/students/{student_id}/sugges
 Các nhóm và quy tắc này **không phải toàn bộ nguyên nhân dự báo của model 17 đặc trưng**, cũng không chứng minh một điểm yếu kiến thức. Biểu đồ đóng góp đã được tính cho bản ghi dự báo kiểm chứng, nhưng không có ánh xạ bài–chủ đề/rubric hay xác nhận hạn nộp cá nhân; vì vậy cần trao đổi và kiểm tra độc lập trước khi chọn mức bài. Dữ liệu OULAD lịch sử chỉ dùng minh họa luồng, không khẳng định kết quả với sinh viên HUIT.
 
 
-## Bản thử: giải thích riêng lần dự báo (chưa commit/push)
+## Giải thích riêng cho từng lần dự báo
 
 Trong **Thông tin & căn cứ**, phần “Mô hình dựa vào những gì” vẽ biểu đồ thanh hai phía cho **đủ 17 đầu vào** của chính bản ghi dự báo: cam làm tăng điểm nguy cơ, xanh làm giảm. Ba nhóm “bài đánh giá”, “hoạt động”, “học phần và nền” chỉ là cách sắp xếp để đọc, **không phải ba nguyên nhân**. Các cột one-hot của mỗi trường được cộng về trường gốc; không dùng top 3, không tự gán 100% nguyên nhân. Giá trị thanh là đóng góp **log-odds**, không phải điểm phần trăm xác suất. Điểm nền của cây và tổng 17 đóng góp phải tái tạo xác suất đã lưu trong sai số 10⁻⁶. Điểm nền không phải tỷ lệ nguy cơ của toàn bộ sinh viên. Đây là giải thích hoạt động nội bộ của LightGBM cho một trường hợp, không chứng minh quan hệ nhân quả hay hiệu quả của một bài tập.
 
