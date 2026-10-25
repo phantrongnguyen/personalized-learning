@@ -38,13 +38,13 @@
 - Backend: `apps/backend/services/support_suggestions.py`, `apps/backend/api/v1/endpoints/lecturer.py`, `apps/backend/repositories/academic_repo.py`, `apps/backend/schemas/advisor_lecturer.py`.
 - Tests: `apps/backend/tests/test_support_suggestions.py`, `apps/backend/tests/test_course_scope.py`.
 - Frontend/contracts: `apps/frontend/src/pages/LecturerPage.tsx`, `apps/frontend/src/services/api.ts`, `packages/shared/types/index.ts`.
-- Tài liệu: `README.md`, `apps/backend/README.md`, `docs/lecturer-suggestions-process.md`. Hai README còn lại giữ nguyên. Không chạm `notebooks/`, `outputs/`.
+- Tài liệu: `README.md`, `apps/backend/README.md`, `docs/product/lecturer-suggestions-process.md`. Hai README còn lại giữ nguyên. Không chạm `notebooks/`, `outputs/`.
 - Không có schema/migration. Cam kết: commit rõ nghĩa, không push.
 
 ## Định nghĩa và giới hạn cập nhật ngày 21/10/2026
 
-Xem [hợp đồng dữ liệu, radar và bảng quy tắc](priority1-data-and-rules.md). Phân biệt Dashboard nhập tay với luồng giảng viên có metadata; cả hai chưa có đánh giá hiệu quả can thiệp. Radar dùng mốc minh họa chưa kiểm chứng, không phải phân vị hay phép đo năng lực. Lần chuẩn hóa này không thay đổi điều kiện G02_AGGREGATE/G03/G04 hoặc artifact/ngưỡng model.
+Xem [hợp đồng dữ liệu, radar và bảng quy tắc](business-rules.md). Phân biệt Dashboard nhập tay với luồng giảng viên có metadata; cả hai chưa có đánh giá hiệu quả can thiệp. Radar dùng mốc minh họa chưa kiểm chứng, không phải phân vị hay phép đo năng lực. Lần chuẩn hóa này không thay đổi điều kiện G02_AGGREGATE/G03/G04 hoặc artifact/ngưỡng model.
 
 ## Rà soát nguồn từ database — ưu tiên 2
 
-Đã bổ sung màn hình/API đọc snapshot, xác nhận có trách nhiệm, tạo bản mới và audit. Xem [quy trình và giới hạn nguồn database](database-snapshot-review.md). Rule version hiện tại là `lecturer-support-1.1`; metadata cũ không tự được tin cậy nếu thiếu người xác nhận/hash nội dung. Hai snapshot local hiện vẫn chưa xác minh nguồn; không tự bật cờ đầy đủ.
+Đã bổ sung màn hình/API đọc snapshot, xác nhận có trách nhiệm, tạo bản mới và audit. Xem [quy trình và giới hạn nguồn database](../database/database-snapshot-review.md). Rule version hiện tại là `lecturer-support-1.1`; metadata cũ không tự được tin cậy nếu thiếu người xác nhận/hash nội dung. Hai snapshot local hiện vẫn chưa xác minh nguồn; không tự bật cờ đầy đủ.

@@ -1,6 +1,8 @@
 # Backend EduRisk AI — Tài liệu kỹ thuật và đánh giá
 
-**Cập nhật database 19/10/2026:** Schema hiện hành là Alembic `0002_normalize`, gồm 19 bảng nghiệp vụ và `alembic_version`. SQL/ORM đã đồng bộ CHECK/UNIQUE/default/FK/index; các quan hệ lịch sử dùng RESTRICT, metric có cột average_precision riêng. [Schema đầy đủ](../../database/database_design_plan.md), [migration và khôi phục](../../docs/database_migrations.md), [bằng chứng thực thi](../../reports/dailys/19-10-2026.md) thay thế các mô tả schema và đề xuất migration cũ trong tài liệu này.
+Tài liệu thiết kế và tra cứu: [docs/backend](../../docs/api/README.md) · [Mục lục docs](../../docs/README.md).
+
+**Cập nhật database 19/10/2026:** Schema hiện hành là Alembic `0002_normalize`, gồm 19 bảng nghiệp vụ và `alembic_version`. SQL/ORM đã đồng bộ CHECK/UNIQUE/default/FK/index; các quan hệ lịch sử dùng RESTRICT, metric có cột average_precision riêng. [Schema đầy đủ](../../database/database_design_plan.md), [migration và khôi phục](../../docs/database/migrations.md), [bằng chứng thực thi](../../reports/dailys/19-10-2026.md) thay thế các mô tả schema và đề xuất migration cũ trong tài liệu này.
 
 Tài liệu đối chiếu mã nguồn trong working tree ngày **13/10/2026**, bao gồm các thay đổi local chưa commit. Đây là mô tả hiện trạng triển khai, không phải cam kết rằng mọi chức năng đã chạy thành công trên database thật. Nguồn chính: `main.py`, `api/router.py`, `api/v1/endpoints`, `schemas`, `repositories`, `services`, `models`, `core`, `ml` và `../../docker/postgres/init-scripts/01_init_schema.sql`.
 
@@ -178,7 +180,7 @@ Mỗi worker có bản model riêng. `/admin/ml/reload` chỉ thay model của p
 
 Radar gồm sáu chỉ số hành vi tại snapshot, dùng chung cấu hình minh họa `packages/shared/constants/radar-reference.json` giữa frontend và backend. Mốc kế thừa là 350 click, 40 ngày, tỷ lệ ngày 0,45, 30 click/7 ngày và tỷ lệ nộp bài 0,95; chưa xác minh bằng tập tham chiếu OULAD/HUIT nên không mang nhãn Top 25% hay nhóm Giỏi.
 
-API dùng `reference_score` (tỷ lệ so với mốc, giới hạn 0–100), không dùng `percentile`. Chỉ số nộp trễ quy ước trừ 0,25/bài và trả null khi chưa nộp bài hoặc dữ liệu không hợp lệ; thiếu snapshot trả 404. Hai API radar sinh viên/cố vấn cùng trả phiên bản mốc, snapshot, cutoff và thời điểm ghi DB. Thời điểm ghi không phải ngày quan sát. Xem [hợp đồng dữ liệu và toàn bộ quy tắc](../../docs/priority1-data-and-rules.md); triển khai frontend/backend cùng phiên bản do đổi tên trường API.
+API dùng `reference_score` (tỷ lệ so với mốc, giới hạn 0–100), không dùng `percentile`. Chỉ số nộp trễ quy ước trừ 0,25/bài và trả null khi chưa nộp bài hoặc dữ liệu không hợp lệ; thiếu snapshot trả 404. Hai API radar sinh viên/cố vấn cùng trả phiên bản mốc, snapshot, cutoff và thời điểm ghi DB. Thời điểm ghi không phải ngày quan sát. Xem [hợp đồng dữ liệu và toàn bộ quy tắc](../../docs/product/business-rules.md); triển khai frontend/backend cùng phiên bản do đổi tên trường API.
 
 Khuyến nghị sinh viên là quy tắc trong `student_repo.get_enrollment_prediction`: nguy cơ >=0.5, số ngày hoạt động <20, bài trễ >0, click 7 ngày <15. Không phải recommendation model được huấn luyện; nhiều màn hình dùng ngưỡng 0.5 cố định thay vì ngưỡng của model record/artifact.
 
@@ -1637,4 +1639,4 @@ Bằng chứng và giới hạn chi tiết: reports/dailys/18-10-2026.md, mục 
 
 ### Rà soát snapshot từ database — 21/10/2026
 
-Luồng giảng viên bổ sung GET/POST `courses/{presentation_id}/students/{student_id}/snapshots/{snapshot_id}/review`: đọc dữ liệu, xác nhận phạm vi, tạo snapshot mới và audit theo người được phân công. Không tự coi số tổng hợp là log đầy đủ; không nâng dữ liệu minh họa thành nguồn thực. Thay đổi số liệu làm mất hiệu lực xác nhận cũ; khi giao từ gợi ý, server kiểm tra lại snapshot/rule và lưu audit. Xem [quy trình, API và giới hạn](../../docs/database-snapshot-review.md). Rule version `lecturer-support-1.1` yêu cầu metadata review mới; không cần migration DB.
+Luồng giảng viên bổ sung GET/POST `courses/{presentation_id}/students/{student_id}/snapshots/{snapshot_id}/review`: đọc dữ liệu, xác nhận phạm vi, tạo snapshot mới và audit theo người được phân công. Không tự coi số tổng hợp là log đầy đủ; không nâng dữ liệu minh họa thành nguồn thực. Thay đổi số liệu làm mất hiệu lực xác nhận cũ; khi giao từ gợi ý, server kiểm tra lại snapshot/rule và lưu audit. Xem [quy trình, API và giới hạn](../../docs/database/database-snapshot-review.md). Rule version `lecturer-support-1.1` yêu cầu metadata review mới; không cần migration DB.

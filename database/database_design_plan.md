@@ -17,7 +17,7 @@ Hệ thống gồm **19 bảng nghiệp vụ** và bảng hạ tầng `alembic_v
 - [SQL khởi tạo](../docker/postgres/init-scripts/01_init_schema.sql) được sinh từ metadata ORM đã rà soát bằng `scripts/prepare_schema_contract.py`.
 - [ORM và ràng buộc dùng chung](../apps/backend/models/schema_contract.py) khai báo cả Python default và server default.
 - [Migration bất biến](../apps/backend/migrations/versions/) giữ SQL baseline ngày 18/10 và revision nâng cấp độc lập với model hiện tại.
-- [Hướng dẫn migration/khôi phục](../docs/database_migrations.md) mô tả baseline, backup, dữ liệu lỗi và vận hành.
+- [Hướng dẫn migration/khôi phục](../docs/database/migrations.md) mô tả baseline, backup, dữ liệu lỗi và vận hành.
 - [Bằng chứng migration](../reports/test-results/task1-migrations.json) và [áp dụng local](../reports/test-results/task1-migration-apply.json).
 
 UUID có server default `gen_random_uuid()`; các mốc tạo/sửa/phân công mặc định `now()`. `updated_at` được ORM cập nhật khi thay đổi, chưa có trigger cập nhật timestamp cho mọi câu SQL trực tiếp. Trigger provenance là thành phần bổ sung ngoài ORM: không dùng `Base.metadata.create_all()` thay cho Alembic.
@@ -33,7 +33,7 @@ UUID có server default `gen_random_uuid()`; các mốc tạo/sửa/phân công 
 | [database.py](../apps/backend/core/database.py) | Engine, session và rollback. |
 | [prediction_service.py](../apps/backend/services/prediction_service.py), [risk_service.py](../apps/backend/services/risk_service.py), [model_registry.py](../apps/backend/services/model_registry.py) | Ghép đặc trưng, chọn dự báo hiện hành và chọn model active. |
 | [endpoints](../apps/backend/api/v1/endpoints/) và [repositories](../apps/backend/repositories/) | Phân quyền, nghiệp vụ đọc/ghi, transaction và phạm vi học phần. |
-| [migration](../apps/backend/migrations/) và [hướng dẫn vận hành](../docs/database_migrations.md) | Baseline, upgrade, backup/restore và xử lý dữ liệu cũ. |
+| [migration](../apps/backend/migrations/) và [hướng dẫn vận hành](../docs/database/migrations.md) | Baseline, upgrade, backup/restore và xử lý dữ liệu cũ. |
 | [Compose](../docker-compose.yml) và [requirements](../apps/backend/requirements.txt) | Kết nối, volume và dependency hiện tại. |
 
 ### 1.1. Quy ước đọc tài liệu
@@ -1271,7 +1271,7 @@ Alembic `0001_baseline` tạo schema trên DB trống hoặc kiểm tra schema c
 
 Baseline chỉ chấp nhận cấu trúc đã xác định và đúng các biến thể index legacy đã kiểm tra; schema lệch làm dừng. Preflight báo số dòng sai miền, academic_rank NULL hoặc active trùng; không tự clamp, chọn model hoặc xóa dữ liệu để vượt ràng buộc. DDL/correction chạy trong transaction có advisory lock và lock timeout.
 
-Tạo backup, khôi phục vào database riêng rồi thử nâng cấp trước khi áp dụng nguồn. Helper local còn khóa bảng, kiểm tra backup vẫn khớp và xác minh dữ liệu trước commit. Chi tiết xử lý lỗi/downgrade/khôi phục tại [database_migrations.md](../docs/database_migrations.md).
+Tạo backup, khôi phục vào database riêng rồi thử nâng cấp trước khi áp dụng nguồn. Helper local còn khóa bảng, kiểm tra backup vẫn khớp và xác minh dữ liệu trước commit. Chi tiết xử lý lỗi/downgrade/khôi phục tại [database_migrations.md](../docs/database/migrations.md).
 
 ```powershell
 # Chạy từ gốc repository sau khi cấu hình môi trường.

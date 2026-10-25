@@ -4,7 +4,7 @@ Dự án khóa luận tốt nghiệp KLTN 13 tại Trường Đại học Công 
 
 **Trạng thái:** đang phát triển và kiểm thử tích hợp. Nội dung README được đối chiếu với mã nguồn ngày **12/10/2026**; các chức năng đã có được phân biệt với phần còn cần hoàn thiện.
 
-**Cập nhật database 19/10/2026:** SQL/ORM đã đồng bộ 19 bảng, có Alembic `0002_normalize`, CHECK/UNIQUE và chính sách giữ lịch sử bằng RESTRICT. Xem [schema hiện hành](database/database_design_plan.md), [hướng dẫn migration/backup/khôi phục](docs/database_migrations.md) và [kết quả kiểm thử](reports/dailys/19-10-2026.md). Các mô tả schema/migration cũ bên dưới được thay thế bởi các tài liệu này.
+**Cập nhật database 19/10/2026:** SQL/ORM đã đồng bộ 19 bảng, có Alembic `0002_normalize`, CHECK/UNIQUE và chính sách giữ lịch sử bằng RESTRICT. Xem [schema hiện hành](database/database_design_plan.md), [hướng dẫn migration/backup/khôi phục](docs/database/migrations.md) và [kết quả kiểm thử](reports/dailys/19-10-2026.md). Các mô tả schema/migration cũ bên dưới được thay thế bởi các tài liệu này.
 
 ## Mục lục
 
@@ -150,7 +150,7 @@ personalized-learning/
 ├── docker/postgres/init-scripts/# Schema và dữ liệu khởi tạo
 ├── database/                   # Thiết kế database
 ├── data/                       # Vùng dữ liệu local, dữ liệu lớn không commit
-├── docs/                       # Kiến trúc, hướng dẫn database
+├── docs/                       # Product, kiến trúc, API, frontend, database, hướng dẫn
 ├── reports/                    # Báo cáo tiến độ và kế hoạch
 ├── .agents/                    # Quy định làm việc và Conventional Commits
 ├── .env.example
@@ -374,9 +374,10 @@ Các test `test_auth.py`, `test_sprint3.py`, `test_sprint4.py`, `test_sprint5.py
 
 - [Báo cáo tổng hợp ngày 12/10/2026](reports/dailys/12-10-2026.md).
 - [Kế hoạch backend](reports/planning/11-10-2026.md).
+- [Mục lục tài liệu](docs/README.md).
 - [Phân tích và kiến trúc](docs/architecture/system_analysis_and_architecture.md).
 - [Thiết kế database](database/database_design_plan.md).
-- [Hướng dẫn database local](docs/database_setup_guide.md) — đối chiếu thông số với `.env` đang dùng.
+- [Hướng dẫn database local](docs/database/setup.md) — đối chiếu thông số với `.env` đang dùng.
 - [Quy định commit](.agents/commit_github.md).
 
 Repository: [phantrongnguyen/personalized-learning](https://github.com/phantrongnguyen/personalized-learning). Nhánh cá nhân đang sử dụng: `phantrongnguyen`.
@@ -394,4 +395,4 @@ Dockerfile backend/frontend, nginx proxy và healthcheck đã có. `docker compo
 
 ### Chuẩn hóa radar và quy tắc gợi ý — 21/10/2026
 
-Radar dùng mốc tham khảo minh họa chưa kiểm chứng, không phải Top 25% hay điểm năng lực. API đổi `percentile` thành `reference_score` và có giá trị null khi thiếu dữ liệu. Quy tắc Dashboard chỉ minh họa; luồng gợi ý giảng viên kiểm tra metadata bằng chứng trước khi đề xuất. Chưa có quy đổi tín chỉ/bằng cấp OULAD sang HUIT; đã bỏ suy luận quá tải từ 90 tín chỉ. Xem [định nghĩa dữ liệu, công thức và bảng quy tắc](docs/priority1-data-and-rules.md). Backend/frontend cần triển khai cùng phiên bản.
+Radar dùng mốc tham khảo minh họa chưa kiểm chứng, không phải Top 25% hay điểm năng lực. API đổi `percentile` thành `reference_score` và có giá trị null khi thiếu dữ liệu. Quy tắc Dashboard chỉ minh họa; luồng gợi ý giảng viên kiểm tra metadata bằng chứng trước khi đề xuất. Chưa có quy đổi tín chỉ/bằng cấp OULAD sang HUIT; đã bỏ suy luận quá tải từ 90 tín chỉ. Xem [định nghĩa dữ liệu, công thức và bảng quy tắc](docs/product/business-rules.md). Backend/frontend cần triển khai cùng phiên bản.

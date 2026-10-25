@@ -1,5 +1,7 @@
 # 🖥️ EduRisk AI — Modern React Frontend SPA
 
+Tài liệu thiết kế và tra cứu: [docs/frontend](../../docs/frontend/architecture.md) · [Mục lục docs](../../docs/README.md).
+
 Giao diện Single Page Application (SPA) chuẩn công nghiệp dành cho hệ thống dự đoán và can thiệp nguy cơ học tập cá nhân hóa (**EduRisk AI Platform Enterprise Edition**).
 
 Được xây dựng trên nền tảng **React 18 + TypeScript + Vite + Tailwind CSS**, tích hợp trực tiếp với Backend **FastAPI** và chia sẻ kiểu dữ liệu với package `packages/shared`.
