@@ -69,12 +69,12 @@ async def test_sprint_5_admin_and_mlops():
         assert models_res.status_code == 200
         models_list = models_res.json()
         assert len(models_list) >= 1
-        assert models_list[0]["version"] == "v1.0.0"
+        assert any(model["is_active"] and model["version"] == "v1.0.0-cutoff75" for model in models_list)
 
         # 7. Admin nạp lại mô hình LightGBM vào bộ nhớ RAM (/api/v1/admin/ml/reload)
         reload_res = await client.post("/api/v1/admin/ml/reload", headers=admin_headers)
         assert reload_res.status_code == 200
-        assert "model_info" in reload_res.json()
+        assert reload_res.json()["model"]["model_id"]
 
         # 8. Admin kích hoạt Batch Predict quét mốc Cutoff 75% (/api/v1/admin/ml/batch-predict)
         batch_res = await client.post("/api/v1/admin/ml/batch-predict", headers=admin_headers)

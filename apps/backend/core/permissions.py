@@ -73,7 +73,8 @@ class RequireRoles:
 
     def __call__(self, current_user: User = Depends(get_current_user)) -> User:
         user_roles = [role.code for role in current_user.roles]
-        # Admin luôn có quyền truy cập hệ thống
+        # ADMIN bypasses the role gate only. Portal endpoints still enforce
+        # the actor's own profile and assignments; /admin owns global actions.
         if "ADMIN" in user_roles:
             return current_user
 

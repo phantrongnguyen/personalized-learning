@@ -1,0 +1,63 @@
+{
+  "status": "pending_expert_participation",
+  "ratings": 0,
+  "reviewers": 0,
+  "cases_reviewed": 0,
+  "cases_total": 10,
+  "mean_scores": {
+    "grounding": null,
+    "appropriateness": null,
+    "feasibility": null,
+    "clarity": null
+  },
+  "median_scores": {
+    "grounding": null,
+    "appropriateness": null,
+    "feasibility": null,
+    "clarity": null
+  },
+  "score_distributions": {
+    "grounding": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "appropriateness": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "feasibility": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    },
+    "clarity": {
+      "1": 0,
+      "2": 0,
+      "3": 0,
+      "4": 0,
+      "5": 0
+    }
+  },
+  "case_rating_counts": {
+    "C01": 0,
+    "C02": 0,
+    "C03": 0,
+    "C04": 0,
+    "C05": 0,
+    "C06": 0,
+    "C07": 0,
+    "C08": 0,
+    "C09": 0,
+    "C10": 0
+  },
+  "cases_with_two_or_more_raters": 0,
+  "limitation": "Expert ratings describe perceived suitability; they do not establish learning impact."
+}

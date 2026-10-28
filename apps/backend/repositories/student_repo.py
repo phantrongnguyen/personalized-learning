@@ -12,6 +12,7 @@ from models.feature import StudentFeatureSnapshot
 from models.ml import PredictionRun, MLModel
 from models.intervention import InterventionPlan, InterventionTask
 from models.help_request import StudentHelpRequest
+from services.risk_service import current_prediction
 
 
 async def get_student_profile_by_user_id(db: AsyncSession, user_id: uuid.UUID) -> Optional[StudentProfile]:
@@ -66,37 +67,20 @@ async def get_enrollment_prediction(
     pres_res = await db.execute(pres_query)
     _, course = pres_res.first()
 
-    # Lấy snapshot và prediction gần nhất
-    snap_query = (
-        select(StudentFeatureSnapshot)
-        .where(StudentFeatureSnapshot.enrollment_id == enr.id)
-        .order_by(desc(StudentFeatureSnapshot.created_at))
-        .limit(1)
-    )
-    snap_res = await db.execute(snap_query)
-    snap = snap_res.scalars().first()
-
-    if not snap:
-        return None
-
-    pred_query = (
-        select(PredictionRun, MLModel)
-        .join(MLModel, PredictionRun.model_id == MLModel.id)
-        .where(PredictionRun.snapshot_id == snap.id)
-        .order_by(desc(PredictionRun.created_at))
-        .limit(1)
-    )
-    pred_res = await db.execute(pred_query)
-    pred_row = pred_res.first()
-
-    if not pred_row:
-        return None
-
-    pred, model = pred_row
+    snap, pred = await current_prediction(db, enr.id)
+    if pred is None:
+        return {
+            "enrollment_id": enr.id, "code_module": course.code_module,
+            "snapshot_id": snap.id if snap else None,
+            "cutoff_stage": snap.cutoff_stage if snap else None,
+            "risk_probability": None, "risk_level": "NOT_PREDICTED",
+            "model_version": None, "predicted_at": None,
+            "pedagogical_recommendations": [], "provenance_status": "NOT_PREDICTED",
+        }
 
     # Sinh khuyến nghị sư phạm dựa trên rủi ro
     recs = []
-    if pred.risk_probability >= 0.5:
+    if pred.prediction_label == 1:
         recs.append("Cảnh báo nguy cơ không đạt học phần tại mốc 75% thời lượng môn học.")
         if snap.active_days_to_t < 20:
             recs.append("Tăng cường độ chuyên cần: Đăng nhập hệ thống học tập tối thiểu 3 ngày/tuần.")
@@ -112,10 +96,15 @@ async def get_enrollment_prediction(
         "code_module": course.code_module,
         "cutoff_stage": snap.cutoff_stage,
         "risk_probability": round(pred.risk_probability, 4),
-        "risk_level": "HIGH_RISK" if pred.risk_probability >= 0.5 else "SAFE",
-        "model_version": model.version,
+        "risk_level": "HIGH_RISK" if pred.prediction_label == 1 else "SAFE",
+        "model_version": (pred.inference_context or {}).get("model_version"),
+        "snapshot_id": snap.id,
+        "prediction_run_id": pred.id,
+        "provenance": pred.inference_context,
+        "provenance_status": "VERIFIED" if pred.inference_context else "LEGACY_UNVERIFIED",
         "predicted_at": pred.created_at,
         "pedagogical_recommendations": recs,
+        "data_source": (snap.raw_features_json or {}).get("data_source"),
     }
 
 
@@ -135,7 +124,16 @@ async def get_student_intervention_plans(
     return list(result.scalars().all())
 
 
-async def get_student_tasks_list(db: AsyncSession, student_id: uuid.UUID) -> List[InterventionTask]:
+async def get_owned_enrollment(db: AsyncSession, student_id: uuid.UUID, enrollment_id: uuid.UUID):
+    result = await db.execute(select(StudentEnrollment).where(
+        StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id,
+    ))
+    return result.scalars().first()
+
+
+async def get_student_tasks_list(
+    db: AsyncSession, student_id: uuid.UUID, enrollment_id: Optional[uuid.UUID] = None
+) -> List[InterventionTask]:
     """Lấy danh sách nhiệm vụ can thiệp của sinh viên"""
     query = (
         select(InterventionTask)
@@ -143,12 +141,19 @@ async def get_student_tasks_list(db: AsyncSession, student_id: uuid.UUID) -> Lis
         .where(and_(InterventionPlan.student_id == student_id, InterventionPlan.status == "ACTIVE"))
         .order_by(InterventionTask.is_completed.asc(), InterventionTask.id.desc())
     )
+    if enrollment_id is not None:
+        query = (query
+            .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+            .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+            .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+            .where(StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id))
     result = await db.execute(query)
     return list(result.scalars().all())
 
 
 async def complete_student_task(
-    db: AsyncSession, task_id: uuid.UUID, student_id: uuid.UUID, feedback: Optional[str]
+    db: AsyncSession, task_id: uuid.UUID, student_id: uuid.UUID, feedback: Optional[str],
+    enrollment_id: Optional[uuid.UUID] = None,
 ) -> Optional[InterventionTask]:
     """Sinh viên đánh dấu hoàn thành task của mình"""
     query = (
@@ -156,6 +161,12 @@ async def complete_student_task(
         .join(InterventionPlan, InterventionTask.plan_id == InterventionPlan.id)
         .where(and_(InterventionTask.id == task_id, InterventionPlan.student_id == student_id))
     )
+    if enrollment_id is not None:
+        query = (query
+            .join(PredictionRun, PredictionRun.id == InterventionPlan.prediction_run_id)
+            .join(StudentFeatureSnapshot, StudentFeatureSnapshot.id == PredictionRun.snapshot_id)
+            .join(StudentEnrollment, StudentEnrollment.id == StudentFeatureSnapshot.enrollment_id)
+            .where(StudentEnrollment.id == enrollment_id, StudentEnrollment.student_id == student_id))
     result = await db.execute(query)
     task = result.scalars().first()
     if not task:

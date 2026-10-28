@@ -113,6 +113,7 @@ async def test_sprint_3_advisor_and_lecturer():
 
         # 9. GVBM gửi cảnh báo học vụ tới GVCN
         alert_payload = {
+            "presentation_id": pres_id,
             "subject": "Sinh viên vắng tương tác 2 tuần liên tiếp",
             "content": "Sinh viên không nộp bài tập TMA đúng hạn, cần GVCN trao đổi trực tiếp",
         }

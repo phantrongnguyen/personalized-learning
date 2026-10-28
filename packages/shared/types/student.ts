@@ -25,6 +25,17 @@ export interface PredictionRequest {
 export interface PredictionResponse {
   prediction: number;
   confidence: number;
+  provenance?: PredictionProvenance | null;
+}
+
+export interface PredictionProvenance {
+  features: StudentFeatures;
+  model_version: string;
+  threshold: number;
+  model_sha256: string;
+  model_id?: string | null;
+  cutoff_fraction?: number | null;
+  positive_label?: 1 | null;
 }
 
 export interface InterventionStrategy {
@@ -47,11 +58,13 @@ export interface PredictionHistoryItem {
   prediction: number;
   confidence: number;
   features: StudentFeatures;
+  provenance?: PredictionProvenance | null;
 }
 
 export type RoleCode = 'ADMIN' | 'ADVISOR' | 'LECTURER' | 'STUDENT';
 
 export interface UserProfile {
+  userId?: string;
   name: string;
   email: string;
   role: string;

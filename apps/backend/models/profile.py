@@ -18,7 +18,7 @@ class StudentProfile(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), unique=True, nullable=False
     )
     student_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     gender: Mapped[str] = mapped_column(String(10), nullable=False)
@@ -42,10 +42,10 @@ class AdvisorProfile(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), unique=True, nullable=False
     )
     department: Mapped[str] = mapped_column(String(150), nullable=False)
-    office_location: Mapped[Optional[str]] = mapped_column(String(100), nullable=True)
+    office_location: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
     lms_api_key: Mapped[Optional[str]] = mapped_column(String(255), nullable=True)
 
     # Relationships
@@ -62,7 +62,7 @@ class LecturerProfile(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     user_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), unique=True, nullable=False
+        UUID(as_uuid=True), ForeignKey("users.id", ondelete="RESTRICT"), unique=True, nullable=False
     )
     lecturer_code: Mapped[str] = mapped_column(String(50), unique=True, nullable=False, index=True)
     department: Mapped[str] = mapped_column(String(150), nullable=False)

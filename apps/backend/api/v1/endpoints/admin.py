@@ -3,16 +3,13 @@ import time
 from typing import List, Optional, Dict, Any
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, desc, and_, update, delete
+from sqlalchemy import select, desc, and_, delete
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import selectinload
 
 from core.database import get_db
 from core.permissions import RequireRoles
 from core.security import get_password_hash
-from core.config import settings
-from ml.model_loader import load_model
-from ml.predictor import predict
 from models.user import User, Role
 from models.profile import StudentProfile, AdvisorProfile, LecturerProfile
 from models.academic import Course, CoursePresentation
@@ -24,6 +21,8 @@ from schemas.auth import UserOut
 from schemas.admin import (
     AdminUserCreateIn,
     AdminUserUpdateIn,
+    AdminPasswordResetIn,
+    AdminPasswordResetOut,
     UserStatusUpdateIn,
     UserRolesUpdateIn,
     CourseCreateIn,
@@ -36,6 +35,8 @@ from schemas.admin import (
     AuditLogOut,
 )
 from services.audit_service import write_audit_log, get_client_ip
+from services.prediction_service import generate_database_predictions
+from services.model_registry import model_registry, RUNTIME_KEY
 
 router = APIRouter()
 
@@ -91,6 +92,33 @@ async def get_user_detail(user_id: uuid.UUID, current_user: User = Depends(requi
     if not user:
         raise HTTPException(404, "Người dùng không tồn tại")
     return user
+
+
+@router.put("/users/{user_id}/reset-password", response_model=AdminPasswordResetOut,
+            summary="Admin đặt lại mật khẩu tài khoản")
+async def reset_user_password(
+    user_id: uuid.UUID,
+    payload: AdminPasswordResetIn,
+    request: Request,
+    current_user: User = Depends(require_admin),
+    db: AsyncSession = Depends(get_db),
+):
+    """Admin cấp mật khẩu mới, không cần mật khẩu cũ; không trả mật khẩu/hash."""
+    user = await db.get(User, user_id)
+    if not user:
+        raise HTTPException(status_code=404, detail="Người dùng không tồn tại")
+    try:
+        user.hashed_password = get_password_hash(payload.new_password.get_secret_value())
+        await write_audit_log(
+            db, user_id=current_user.id, action="RESET_USER_PASSWORD", target_type="USER",
+            target_id=user_id, detail="Quản trị viên đặt lại mật khẩu tài khoản",
+            ip_address=get_client_ip(request),
+        )
+        await db.commit()
+    except Exception:
+        await db.rollback()
+        raise
+    return {"message": "Đã đặt lại mật khẩu tài khoản", "user_id": user_id}
 
 
 @router.put("/users/{user_id}", response_model=UserOut, summary="Sửa thông tin tài khoản")
@@ -396,23 +424,25 @@ async def reload_ml_model(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        new_model = load_model(settings.model_path)
-        request.app.state.model = new_model
+        model, artifact = await model_registry.reload(db)
         await write_audit_log(
             db,
             user_id=current_user.id,
             action="RELOAD_ML_MODEL",
             target_type="ML_MODEL",
-            detail=f"Nạp lại mô hình từ {settings.model_path}",
+            target_id=model.id,
+            detail=f"Nạp lại model={model.id}; version={model.version}; sha256={artifact['_provenance']['model_sha256']}",
             ip_address=get_client_ip(request),
         )
+        result = {"message": "Đã kiểm tra và nạp lại mô hình active", "model": artifact["_provenance"]}
         await db.commit()
-        return {"message": "Nạp lại mô hình vào RAM thành công", "model_info": list(new_model.keys())}
-    except Exception as e:
-        raise HTTPException(
-            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Lỗi khi nạp lại mô hình: {str(e)}"
-        )
+        return result
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể nạp lại mô hình; trạng thái active được giữ nguyên") from exc
 
 
 @router.post("/ml/models/activate", response_model=MLModelOut, summary="Kích hoạt một phiên bản mô hình ML")
@@ -422,122 +452,58 @@ async def activate_ml_model(
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
 ):
-    model = await db.get(MLModel, payload.model_id)
-    if not model:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Phiên bản mô hình không tồn tại")
-
-    # Chỉ duy nhất một phiên bản được active tại một thời điểm
-    await db.execute(update(MLModel).values(is_active=False))
-    model.is_active = True
-    db.add(model)
-
-    await write_audit_log(
-        db,
-        user_id=current_user.id,
-        action="ACTIVATE_ML_MODEL",
-        target_type="ML_MODEL",
-        target_id=model.id,
-        detail=f"Kích hoạt mô hình {model.model_name} v{model.version}",
-        ip_address=get_client_ip(request),
-    )
-    await db.commit()
-    await db.refresh(model)
-    return model
+    try:
+        model, artifact = await model_registry.activate(db, payload.model_id)
+        await write_audit_log(
+            db, user_id=current_user.id, action="ACTIVATE_ML_MODEL",
+            target_type="ML_MODEL", target_id=model.id,
+            detail=f"Kích hoạt model={model.id}; version={model.version}; sha256={artifact['_provenance']['model_sha256']}",
+            ip_address=get_client_ip(request),
+        )
+        result = MLModelOut.model_validate(model)
+        await db.commit()
+        return result
+    except HTTPException:
+        await db.rollback()
+        raise
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể kích hoạt mô hình; trạng thái active được giữ nguyên") from exc
 
 
-@router.post("/ml/batch-predict", response_model=BatchPredictResultOut, summary="Quét và dự báo rủi ro hàng loạt mốc Cutoff 75%")
+@router.post("/ml/batch-predict", response_model=BatchPredictResultOut, summary="Dự báo bằng mô hình active từ snapshot mới nhất")
 async def batch_predict_all_students(
     request: Request,
     current_user: User = Depends(require_admin),
     db: AsyncSession = Depends(get_db),
+    enrollment_id: Optional[uuid.UUID] = None,
 ):
-    start_time = time.time()
-    # 1. Lấy mô hình đang active trong CSDL
-    active_model_res = await db.execute(select(MLModel).where(MLModel.is_active == True))
-    ml_model_record = active_model_res.scalars().first()
-    if not ml_model_record:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Chưa có mô hình ML nào được kích hoạt")
-
-    model_pipeline = getattr(request.app.state, "model", None)
-    if not model_pipeline:
-        model_pipeline = load_model(settings.model_path)
-        request.app.state.model = model_pipeline
-
-    # 2. Lấy toàn bộ snapshots chưa có kết quả dự báo mới nhất
-    snapshots_res = await db.execute(select(StudentFeatureSnapshot))
-    snapshots = snapshots_res.scalars().all()
-
-    total_scanned = len(snapshots)
-    generated = 0
-    high_risk = 0
-    safe = 0
-
-    for snap in snapshots:
-        # Chuẩn bị feature dict tương thích với model
-        features_dict = {
-            "total_clicks_to_t": snap.total_clicks_to_t,
-            "clicks_resource_to_t": snap.clicks_resource_to_t,
-            "clicks_url_to_t": snap.clicks_url_to_t,
-            "active_days_to_t": snap.active_days_to_t,
-            "active_day_ratio": snap.active_day_ratio,
-            "days_since_last_activity": snap.days_since_last_activity,
-            "clicks_recent_7": snap.clicks_recent_7,
-            "clicks_recent_30": snap.clicks_recent_30,
-            "assessments_submitted_to_t": snap.assessments_submitted_to_t,
-            "late_submissions_to_t": snap.late_submissions_to_t,
-            "submission_rate": snap.submission_rate,
-            "date_registration": 0,
-            "studied_credits": 60,
-            "num_of_prev_attempts": 0,
-            "highest_education": "HE Qualification",
-            "age_band": "0-35",
-            "gender": "M",
-        }
-
-        try:
-            pred_out = predict(model_pipeline, features_dict)
-            risk_prob = pred_out["confidence"]
-            pred_label = pred_out["prediction"]
-        except Exception:
-            # Fallback nếu feature thiếu cột
-            risk_prob = 0.55 if snap.submission_rate < 0.7 else 0.2
-            pred_label = 1 if risk_prob >= 0.5 else 0
-
-        run = PredictionRun(
-            snapshot_id=snap.id,
-            model_id=ml_model_record.id,
-            prediction_label=pred_label,
-            risk_probability=risk_prob,
-            execution_time_ms=10,
-            triggered_by_user_id=current_user.id,
+    started = time.perf_counter()
+    try:
+        model, runs = await generate_database_predictions(db, current_user.id, enrollment_id)
+        high_risk = sum(run.prediction_label == 1 for run in runs)
+        await write_audit_log(
+            db, user_id=current_user.id, action="BATCH_PREDICT",
+            target_type="ML_MODEL", target_id=model.id,
+            detail=f"Dự báo ML thực tế {len(runs)} snapshot; enrollment={enrollment_id or 'ALL'}",
+            ip_address=get_client_ip(request),
         )
-        db.add(run)
-        generated += 1
-        if risk_prob >= 0.5:
-            high_risk += 1
-        else:
-            safe += 1
-
-    await db.commit()
-    exec_ms = int((time.time() - start_time) * 1000)
-
-    await write_audit_log(
-        db,
-        user_id=current_user.id,
-        action="BATCH_PREDICT",
-        target_type="ML_MODEL",
-        target_id=ml_model_record.id,
-        detail=f"Quét {total_scanned} snapshot, sinh {generated} dự báo ({high_risk} HIGH_RISK)",
-        ip_address=get_client_ip(request),
-    )
-    await db.commit()
-
+        await db.commit()
+    except HTTPException:
+        await db.rollback()
+        raise
+    except (ValueError, TypeError, KeyError) as exc:
+        await db.rollback()
+        raise HTTPException(422, "Dữ liệu hoặc đầu vào mô hình không hợp lệ; không lưu dự báo") from exc
+    except Exception as exc:
+        await db.rollback()
+        raise HTTPException(500, "Không thể chạy/lưu dự báo ML; không lưu kết quả dự phòng") from exc
     return {
-        "total_snapshots_scanned": total_scanned,
-        "predictions_generated": generated,
-        "high_risk_count": high_risk,
-        "safe_count": safe,
-        "execution_time_ms": exec_ms,
+        "total_snapshots_scanned": len(runs), "predictions_generated": len(runs),
+        "high_risk_count": high_risk, "safe_count": len(runs) - high_risk,
+        "execution_time_ms": round((time.perf_counter() - started) * 1000),
+        "model_id": model.id, "model_version": model.version, "threshold": model.threshold,
+        "model_sha256": (model.metadata_json or {}).get(RUNTIME_KEY, {}).get("model_sha256"),
     }
 
 

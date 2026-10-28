@@ -1,0 +1,179 @@
+{
+  "section": "6.6",
+  "captured_on": "2026-10-26",
+  "images": [
+    {
+      "title": "Màn hình đăng nhập",
+      "path": "images/chapter6/login.png"
+    },
+    {
+      "title": "Biểu mẫu đăng ký",
+      "path": "images/chapter6/registration.png"
+    },
+    {
+      "title": "Hỗ trợ quên mật khẩu",
+      "path": "images/chapter6/forgot-password.png"
+    },
+    {
+      "title": "Hồ sơ cá nhân",
+      "path": "images/chapter6/profile.png"
+    },
+    {
+      "title": "Menu tài khoản",
+      "path": "images/chapter6/account-menu.png"
+    },
+    {
+      "title": "Biểu mẫu đặc trưng trên Dashboard",
+      "path": "images/chapter6/dashboard.png"
+    },
+    {
+      "title": "Kết quả dự báo và gợi ý trên dữ liệu tổng hợp",
+      "path": "images/chapter6/prediction-result.png"
+    },
+    {
+      "title": "Dữ liệu mẫu sinh viên tốt",
+      "path": "images/chapter6/good-student-form.png"
+    },
+    {
+      "title": "Kết quả dự báo mẫu sinh viên tốt",
+      "path": "images/chapter6/good-student-result.png"
+    },
+    {
+      "title": "Nhóm thông tin nhân khẩu và đăng ký",
+      "path": "images/chapter6/dashboard-demographics.png"
+    },
+    {
+      "title": "Nhóm thông tin bài nộp và đánh giá",
+      "path": "images/chapter6/dashboard-assessments.png"
+    },
+    {
+      "title": "Radar và các chỉ số đối chiếu",
+      "path": "images/chapter6/dashboard-radar.png"
+    },
+    {
+      "title": "Lịch sử dự báo và điều khiển xuất CSV",
+      "path": "images/chapter6/dashboard-history.png"
+    },
+    {
+      "title": "Hướng dẫn sử dụng Dashboard",
+      "path": "images/chapter6/dashboard-guide.png"
+    },
+    {
+      "title": "Chế độ hiển thị tối",
+      "path": "images/chapter6/dashboard-dark.png"
+    },
+    {
+      "title": "Danh sách tài khoản và bộ lọc",
+      "path": "images/chapter6/admin-users.png"
+    },
+    {
+      "title": "Biểu mẫu cấp tài khoản sinh viên",
+      "path": "images/chapter6/admin-create-student.png"
+    },
+    {
+      "title": "Biểu mẫu cấp tài khoản giảng viên",
+      "path": "images/chapter6/admin-create-lecturer.png"
+    },
+    {
+      "title": "Biểu mẫu cấp tài khoản cố vấn",
+      "path": "images/chapter6/admin-create-advisor.png"
+    },
+    {
+      "title": "Chi tiết tài khoản",
+      "path": "images/chapter6/admin-view-account.png"
+    },
+    {
+      "title": "Biểu mẫu sửa thông tin tài khoản",
+      "path": "images/chapter6/admin-edit-account.png"
+    },
+    {
+      "title": "Biểu mẫu đặt lại mật khẩu",
+      "path": "images/chapter6/admin-reset-password.png"
+    },
+    {
+      "title": "Không gian cố vấn học tập",
+      "path": "images/chapter6/advisor-overview.png"
+    },
+    {
+      "title": "Tổng quan lớp học phần giảng viên",
+      "path": "images/chapter6/lecturer-overview.png"
+    },
+    {
+      "title": "Thẻ thông tin và căn cứ",
+      "path": "images/chapter6/lecturer-evidence.png"
+    },
+    {
+      "title": "Giải thích dự báo và dữ liệu đối chiếu",
+      "path": "images/chapter6/lecturer-explanation.png"
+    },
+    {
+      "title": "Khu vực rà soát nguồn snapshot",
+      "path": "images/chapter6/lecturer-source-review.png"
+    },
+    {
+      "title": "Biểu mẫu rà soát dữ liệu",
+      "path": "images/chapter6/lecturer-review-form.png"
+    },
+    {
+      "title": "Thẻ gợi ý và giao bài",
+      "path": "images/chapter6/lecturer-actions.png"
+    },
+    {
+      "title": "Tùy chọn soạn nhiệm vụ",
+      "path": "images/chapter6/lecturer-task-options.png"
+    },
+    {
+      "title": "Biểu mẫu cảnh báo tới cố vấn",
+      "path": "images/chapter6/lecturer-alert-advisor.png"
+    },
+    {
+      "title": "Không gian học tập sinh viên",
+      "path": "images/chapter6/student-overview.png"
+    },
+    {
+      "title": "Biểu mẫu yêu cầu trợ giúp",
+      "path": "images/chapter6/student-help-form.png"
+    },
+    {
+      "title": "Thông báo môn học",
+      "path": "images/chapter6/student-notifications.png"
+    },
+    {
+      "title": "Trang chủ của website",
+      "path": "images/chapter6/home.png"
+    },
+    {
+      "title": "Bảng so sánh phóng lớn trên trang chủ",
+      "path": "images/chapter6/home-comparison.png"
+    },
+    {
+      "title": "Giới thiệu kiến trúc và thuật toán",
+      "path": "images/chapter6/about.png"
+    },
+    {
+      "title": "Biểu đồ so sánh metric phân loại",
+      "path": "images/chapter6/about-quality-chart.png"
+    },
+    {
+      "title": "Biểu đồ đặc trưng và AP",
+      "path": "images/chapter6/about-feature-ap.png"
+    },
+    {
+      "title": "Ma trận nhầm lẫn phóng lớn",
+      "path": "images/chapter6/about-confusion.png"
+    },
+    {
+      "title": "Biểu đồ đối chiếu cutoff",
+      "path": "images/chapter6/about-cutoffs.png"
+    },
+    {
+      "title": "Biểu đồ ROC-AUC giữa cấu hình",
+      "path": "images/chapter6/about-roc-auc.png"
+    },
+    {
+      "title": "Trang liên hệ và câu hỏi thường gặp",
+      "path": "images/chapter6/contact.png"
+    }
+  ],
+  "scope": "Actual local UI screenshots; observed forms do not prove successful data-changing operations."
+}

@@ -17,7 +17,7 @@ import {
 } from 'lucide-react';
 
 export const Footer: React.FC = () => {
-  const { setCurrentView, addToast } = useApp();
+  const { apiBase, setCurrentView, addToast } = useApp();
   const [newsletterEmail, setNewsletterEmail] = useState('');
 
   const handleNav = (view: NavigationPage) => {
@@ -29,8 +29,8 @@ export const Footer: React.FC = () => {
     e.preventDefault();
     if (!newsletterEmail.trim()) return;
     addToast(
-      `Cảm ơn bạn! Báo cáo xu hướng AI Giáo dục sẽ được gửi tới: ${newsletterEmail}`,
-      'success'
+      `Chưa gửi được yêu cầu: dịch vụ gửi tin chưa được kết nối.`,
+      'info'
     );
     setNewsletterEmail('');
   };
@@ -48,13 +48,13 @@ export const Footer: React.FC = () => {
             <div className="space-y-2 text-center lg:text-left max-w-xl">
               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-[11px] font-semibold">
                 <Award className="w-3.5 h-3.5" />
-                <span>Giải pháp AI Quản trị Rủi ro Đào tạo Tiên phong</span>
+                <span>Dự án nghiên cứu hỗ trợ quyết định học tập</span>
               </div>
               <h3 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Sẵn sàng Tối ưu Tỷ lệ Tốt nghiệp &amp; Giữ chân Học viên?
+                Dữ liệu học tập, gợi ý có căn cứ
               </h3>
               <p className="text-xs text-slate-400 leading-relaxed">
-                Nhận tài liệu kỹ thuật, nghiên cứu thực nghiệm mô hình HCO-VNLS và bản tin phân tích rủi ro học tập định kỳ dành cho các cơ sở giáo dục.
+                Đây là ứng dụng nghiên cứu. Dự báo và gợi ý cần được giảng viên kiểm tra trước khi quyết định hỗ trợ. Biểu mẫu nhận tin chưa kết nối dịch vụ gửi email; không nhập email cá nhân thật.
               </p>
             </div>
 
@@ -78,7 +78,7 @@ export const Footer: React.FC = () => {
                 type="submit"
                 className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-2.5 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-bold text-xs shadow-lg shadow-brand-600/20 transition-all shrink-0"
               >
-                <span>Đăng ký nhận tin</span>
+                <span>Xem thử biểu mẫu</span>
                 <Send className="w-3.5 h-3.5" />
               </button>
             </form>
@@ -99,22 +99,22 @@ export const Footer: React.FC = () => {
             </div>
 
             <p className="text-xs text-slate-400 leading-relaxed max-w-sm">
-              Hệ thống trí tuệ nhân tạo chuyên sâu hỗ trợ các trường đại học, học viện và tổ chức đào tạo phát hiện sớm nguy cơ trượt/bỏ học và tự động kê đơn can thiệp sư phạm cá nhân hóa.
+              Ứng dụng nghiên cứu dự báo nguy cơ học tập trên dữ liệu OULAD và đưa ra gợi ý có căn cứ để giảng viên xem xét. Không tự giao bài tập và chưa kiểm chứng hiệu quả trên dữ liệu HUIT.
             </p>
 
             {/* Corporate Compliance Badges */}
             <div className="flex flex-wrap items-center gap-2 pt-1 text-[10px] text-slate-400">
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">
                 <ShieldCheck className="w-3 h-3 text-cyan-400" />
-                <span>ISO/IEC 27001</span>
+                <span>Dữ liệu OULAD lịch sử</span>
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">
                 <Lock className="w-3 h-3 text-purple-400" />
-                <span>GDPR / FERPA</span>
+                <span>Giảng viên quyết định</span>
               </span>
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-slate-900 border border-slate-800">
                 <Server className="w-3 h-3 text-brand-400" />
-                <span>LTI 1.3 Advantage</span>
+                <span>Chưa tích hợp LMS</span>
               </span>
             </div>
           </div>
@@ -132,7 +132,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-brand-400 transition-colors flex items-center gap-1.5"
                 >
                   <ArrowRight className="w-3 h-3 text-brand-500" />
-                  <span>Dashboard Phân Tích 17 Chỉ Số</span>
+                  <span>Trang phân tích học tập</span>
                 </button>
               </li>
               <li>
@@ -152,7 +152,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-brand-400 transition-colors flex items-center gap-1.5"
                 >
                   <ArrowRight className="w-3 h-3 text-brand-500" />
-                  <span>Biểu Đồ Radar Đối Sánh Năng Lực</span>
+                  <span>Biểu Đồ Radar Chỉ Số Hành Vi</span>
                 </button>
               </li>
               <li>
@@ -162,7 +162,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-brand-400 transition-colors flex items-center gap-1.5"
                 >
                   <ArrowRight className="w-3 h-3 text-brand-500" />
-                  <span>Kê Đơn Can Thiệp Sư Phạm Tự Động</span>
+                  <span>Gợi ý để giảng viên xem xét</span>
                 </button>
               </li>
               <li>
@@ -211,12 +211,12 @@ export const Footer: React.FC = () => {
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
                   <Terminal className="w-3 h-3 text-cyan-500" />
-                  <span>Khóa Tích Hợp LMS (API Key)</span>
+                  <span>API nội bộ của ứng dụng</span>
                 </button>
               </li>
               <li>
                 <a
-                  href="/docs"
+                  href={`${apiBase}/docs`}
                   target="_blank"
                   rel="noreferrer"
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
@@ -232,7 +232,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3 h-3 text-cyan-500" />
-                  <span>Đồng Bộ Hai Chiều Canvas &amp; Moodle</span>
+                  <span>Tích hợp LMS cần kiểm chứng</span>
                 </button>
               </li>
               <li>
@@ -242,7 +242,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3 h-3 text-cyan-500" />
-                  <span>Triển Khai Docker &amp; Kubernetes</span>
+                  <span>Chạy thử bằng Docker</span>
                 </button>
               </li>
               <li>
@@ -252,7 +252,7 @@ export const Footer: React.FC = () => {
                   className="hover:text-cyan-400 transition-colors flex items-center gap-1.5"
                 >
                   <CheckCircle2 className="w-3 h-3 text-cyan-500" />
-                  <span>Phân Quyền Bảo Mật Tier 1 Access</span>
+                  <span>Phân quyền theo vai trò</span>
                 </button>
               </li>
             </ul>
@@ -267,16 +267,16 @@ export const Footer: React.FC = () => {
               <div className="flex items-start gap-2">
                 <Phone className="w-3.5 h-3.5 text-brand-400 shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-[11px] text-slate-500">Hotline Doanh nghiệp:</div>
-                  <strong className="text-slate-200 font-mono">1900 888 668</strong>
+                  <div className="text-[11px] text-slate-500">Hotline:</div>
+                  <strong className="text-slate-200 font-mono">Chưa thiết lập</strong>
                 </div>
               </div>
 
               <div className="flex items-start gap-2">
                 <Mail className="w-3.5 h-3.5 text-cyan-400 shrink-0 mt-0.5" />
                 <div>
-                  <div className="text-[11px] text-slate-500">Email tư vấn:</div>
-                  <code className="text-slate-300 font-mono text-[11px]">enterprise@edurisk.ai</code>
+                  <div className="text-[11px] text-slate-500">Email liên hệ:</div>
+                  <code className="text-slate-300 font-mono text-[11px]">Chưa thiết lập</code>
                 </div>
               </div>
 
@@ -286,7 +286,7 @@ export const Footer: React.FC = () => {
                   onClick={() => handleNav('contact')}
                   className="w-full flex items-center justify-center gap-1.5 px-3 py-2 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 text-slate-200 text-xs font-semibold transition-colors"
                 >
-                  <span>Gửi yêu cầu Demo</span>
+                  <span>Liên hệ hỗ trợ</span>
                   <ArrowRight className="w-3 h-3" />
                 </button>
               </div>
@@ -299,14 +299,14 @@ export const Footer: React.FC = () => {
       <div className="border-t border-slate-800/80 bg-slate-950/95 py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex flex-wrap items-center justify-center md:justify-start gap-x-6 gap-y-2 text-[11px] text-slate-400">
-            <span>&copy; {new Date().getFullYear()} EduRisk AI Systems Inc. Bảo lưu mọi quyền.</span>
+            <span>&copy; {new Date().getFullYear()} EduRisk AI — dự án nghiên cứu.</span>
             <span className="hidden sm:inline text-slate-700">&bull;</span>
             <button
               type="button"
               onClick={() => handleNav('about')}
               className="hover:text-slate-200 transition-colors"
             >
-              Điều khoản dịch vụ (Terms)
+              Giới thiệu nghiên cứu
             </button>
             <span className="hidden sm:inline text-slate-700">&bull;</span>
             <button
@@ -314,7 +314,7 @@ export const Footer: React.FC = () => {
               onClick={() => handleNav('about')}
               className="hover:text-slate-200 transition-colors"
             >
-              Chính sách bảo mật dữ liệu (Privacy Policy)
+              Giới hạn dữ liệu
             </button>
             <span className="hidden sm:inline text-slate-700">&bull;</span>
             <button
@@ -322,7 +322,7 @@ export const Footer: React.FC = () => {
               onClick={() => handleNav('contact')}
               className="hover:text-slate-200 transition-colors"
             >
-              Tiêu chuẩn tuân thủ (Compliance)
+              Thông tin liên hệ
             </button>
           </div>
 
@@ -332,7 +332,7 @@ export const Footer: React.FC = () => {
               <span>Tiếng Việt (VN)</span>
             </span>
             <span className="text-slate-700">&bull;</span>
-            <span className="font-mono text-slate-400">v2.4 Enterprise</span>
+            <span className="font-mono text-slate-400">Bản nghiên cứu</span>
           </div>
         </div>
       </div>

@@ -1,0 +1,15 @@
+.git
+.venv
+.cache
+.env
+**/node_modules
+**/dist
+**/__pycache__
+**/.pytest_cache
+apps/backend/uploads
+apps/backend/artifacts/archive
+data
+reports
+experiments
+docs
+*.pdf

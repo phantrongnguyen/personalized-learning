@@ -1,28 +1,50 @@
-from typing import Any
+from typing import Annotated, Literal
+import uuid
 
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+Count = Annotated[int, Field(ge=0)]
+Ratio = Annotated[float, Field(ge=0, le=1, allow_inf_nan=False)]
+RiskLevel = Literal["SAFE", "HIGH_RISK", "NOT_PREDICTED"]
 
 
-class StudentFeatures(BaseModel):
-    """Đặc trưng đầu vào theo đúng thứ tự và tên cột khi huấn luyện model."""
+class BehaviorFeatures(BaseModel):
+    """Numeric observation contract shared by snapshot updates and inference."""
+    model_config = ConfigDict(extra="forbid", allow_inf_nan=False)
+    total_clicks_to_t: Count
+    clicks_resource_to_t: Count
+    clicks_url_to_t: Count
+    active_days_to_t: Count
+    assessments_submitted_to_t: Count
+    late_submissions_to_t: Count
+    active_day_ratio: Ratio
+    submission_rate: Ratio
+    days_since_last_activity: Count
+    clicks_recent_7: Count
+    clicks_recent_30: Count
 
-    code_module: str = Field(examples=["AAA"])
-    gender: str = Field(examples=["M"])
-    highest_education: str = Field(examples=["A Level or Equivalent"])
-    age_band: str = Field(examples=["18-23"])
-    studied_credits: float = Field(examples=[60.0])
-    date_registration: float = Field(examples=[-10.0])
-    total_clicks_to_t: float = Field(examples=[1500.0])
-    clicks_resource_to_t: float = Field(examples=[400.0])
-    clicks_url_to_t: float = Field(examples=[200.0])
-    active_days_to_t: float = Field(examples=[45.0])
-    assessments_submitted_to_t: float = Field(examples=[5.0])
-    late_submissions_to_t: float = Field(examples=[1.0])
-    active_day_ratio: float = Field(examples=[0.5])
-    submission_rate: float = Field(examples=[0.6])
-    days_since_last_activity: float = Field(examples=[3.0])
-    clicks_recent_7: float = Field(examples=[80.0])
-    clicks_recent_30: float = Field(examples=[350.0])
+
+class StudentFeatures(BehaviorFeatures):
+    """Shared contract for manual and database inference at cutoff 75%."""
+    code_module: Literal["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG"]
+    gender: Literal["M", "F"]
+    highest_education: Literal[
+        "A Level or Equivalent", "HE Qualification", "Lower Than A Level",
+        "No Formal quals", "Post Graduate Qualification",
+    ]
+    age_band: Literal["0-35", "35-55", "55<="]
+    studied_credits: float = Field(gt=0, description="Credits of modules currently studied, in OULAD units; no validated HUIT conversion")
+    date_registration: int = Field(description="Days relative to course start; may be negative")
+
+
+class PredictionProvenance(BaseModel):
+    features: StudentFeatures
+    model_version: str
+    threshold: Ratio
+    model_sha256: str = Field(pattern=r"^[0-9a-f]{64}$")
+    model_id: uuid.UUID | None = None
+    cutoff_fraction: Ratio | None = None
+    positive_label: Literal[1] | None = None
 
 
 class PredictionRequest(BaseModel):
@@ -30,5 +52,6 @@ class PredictionRequest(BaseModel):
 
 
 class PredictionResponse(BaseModel):
-    prediction: Any
-    confidence: float | None = None
+    prediction: Literal[0, 1]
+    confidence: Ratio
+    provenance: PredictionProvenance | None = None

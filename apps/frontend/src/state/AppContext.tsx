@@ -1,5 +1,7 @@
+import { getSessionEpoch, historyStorageKey, SESSION_ENDED } from '../services/session';
 import React, { createContext, useContext, useEffect, useState, useCallback } from 'react';
 import { PredictionHistoryItem, RoleCode, UserProfile } from '@shared/types';
+import { applyTheme, getInitialTheme, THEME_KEY, Theme } from './theme';
 import {
   checkBackendHealth,
   getCurrentUserApi,
@@ -54,8 +56,13 @@ export interface ToastItem {
 }
 
 interface AppContextValue {
+  theme: Theme;
+  setTheme: (theme: Theme) => void;
   currentView: NavigationPage;
   setCurrentView: (view: NavigationPage) => void;
+  studentEnrollmentToOpen: string | null;
+  openStudentEnrollment: (enrollmentId: string) => void;
+  clearStudentEnrollmentToOpen: () => void;
   apiBase: string;
   setApiBase: (url: string) => void;
   backendStatus: BackendStatus;
@@ -83,10 +90,11 @@ interface AppContextValue {
 const AppContext = createContext<AppContextValue | null>(null);
 
 const API_BASE_KEY = 'edurisk_api_base';
-const HISTORY_KEY = 'edurisk_history_v2';
 const USER_KEY = 'edurisk_current_user';
 
 function getDefaultApiBase(): string {
+  const configured = import.meta.env.VITE_API_BASE_URL?.trim();
+  if (configured) return configured.replace(/\/+$/, '');
   if (typeof window !== 'undefined' && window.location.origin.startsWith('http')) {
     // If running on Vite dev server (port 5173), point to default FastAPI port 8000
     if (window.location.port === '5173') {
@@ -98,7 +106,36 @@ function getDefaultApiBase(): string {
 }
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [theme, setThemeState] = useState<Theme>(getInitialTheme);
+
+  const setTheme = useCallback((next: Theme) => {
+    applyTheme(next);
+    setThemeState(next);
+    try {
+      localStorage.setItem(THEME_KEY, next);
+    } catch {
+      // Switching still works when browser storage is unavailable.
+    }
+  }, []);
+
+  useEffect(() => {
+    applyTheme(theme);
+  }, [theme]);
+
+  useEffect(() => {
+    const syncTheme = (event: StorageEvent) => {
+      if (event.storageArea === localStorage && (event.key === THEME_KEY || event.key === null)) {
+        const next = event.newValue === 'dark' && event.key === THEME_KEY ? 'dark' : 'light';
+        applyTheme(next);
+        setThemeState(next);
+      }
+    };
+    window.addEventListener('storage', syncTheme);
+    return () => window.removeEventListener('storage', syncTheme);
+  }, []);
   const [currentView, setCurrentViewState] = useState<NavigationPage>('home');
+  const [studentEnrollmentToOpen, setStudentEnrollmentToOpen] = useState<string | null>(null);
+  const clearStudentEnrollmentToOpen = useCallback(() => setStudentEnrollmentToOpen(null), []);
   const [apiBase, setApiBaseState] = useState<string>(() => {
     return localStorage.getItem(API_BASE_KEY) || getDefaultApiBase();
   });
@@ -106,23 +143,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [modelLoaded, setModelLoaded] = useState<boolean | null>(null);
   const [latency, setLatency] = useState<number | null>(null);
 
-  const [user, setUser] = useState<UserProfile | null>(() => {
+  // Restore identity only after /me confirms it; never display the last account's cached data.
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [history, setHistory] = useState<PredictionHistoryItem[]>([]);
+  const historyKey = historyStorageKey(apiBase, user?.userId);
+  const restoreHistory = (profile: UserProfile) => {
+    const key = historyStorageKey(apiBase, profile.userId);
     try {
-      const stored = localStorage.getItem(USER_KEY);
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
-
-  const [history, setHistory] = useState<PredictionHistoryItem[]>(() => {
-    try {
-      const stored = localStorage.getItem(HISTORY_KEY);
-      return stored ? JSON.parse(stored) : [];
-    } catch {
-      return [];
-    }
-  });
+      const stored = key ? JSON.parse(localStorage.getItem(key) || '[]') : [];
+      setHistory(Array.isArray(stored) ? stored : []);
+    } catch { setHistory([]); }
+  };
+  useEffect(() => {
+    const end = () => {
+      setUser(null); setHistory([]); setStudentEnrollmentToOpen(null);
+      localStorage.removeItem(USER_KEY);
+    };
+    const sync = (event: StorageEvent) => {
+      if (event.key === 'edurisk_jwt_access_token' || event.key === null) end();
+    };
+    window.addEventListener(SESSION_ENDED, end);
+    window.addEventListener('storage', sync);
+    return () => { window.removeEventListener(SESSION_ENDED, end); window.removeEventListener('storage', sync); };
+  }, []);
 
   const [toasts, setToasts] = useState<ToastItem[]>([]);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
@@ -150,6 +193,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  const openStudentEnrollment = (enrollmentId: string) => {
+    setStudentEnrollmentToOpen(enrollmentId);
+    setCurrentView('student');
+  };
+
   const addToast = useCallback((message: string, type: ToastType = 'info', duration = 3500) => {
     const id = Math.random().toString(36).slice(2, 9);
     setToasts((prev) => [...prev, { id, message, type }]);
@@ -165,6 +213,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const setApiBase = (url: string) => {
     const clean = url.trim().replace(/\/+$/, '');
+    clearStoredTokens();
     setApiBaseState(clean);
     localStorage.setItem(API_BASE_KEY, clean);
     addToast(`Đã cập nhật máy chủ API: ${clean}`, 'info');
@@ -196,6 +245,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }, [refreshHealth]);
 
   const login = (newUser: UserProfile) => {
+    setHistory([]);
+    restoreHistory(newUser);
     setUser(newUser);
     localStorage.setItem(USER_KEY, JSON.stringify(newUser));
     setIsAuthModalOpen(false);
@@ -206,7 +257,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const logout = () => {
+    setStudentEnrollmentToOpen(null);
     setUser(null);
+    setHistory([]);
     localStorage.removeItem(USER_KEY);
     clearStoredTokens();
     setCurrentViewState('home');
@@ -214,13 +267,18 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const refreshUser = useCallback(async (): Promise<UserProfile | null> => {
+    const epoch = getSessionEpoch();
     const backendUser = await getCurrentUserApi(apiBase);
+    if (epoch !== getSessionEpoch()) return null;
     if (backendUser) {
       const mapped = mapBackendUser(backendUser);
+      restoreHistory(mapped);
       setUser(mapped);
       localStorage.setItem(USER_KEY, JSON.stringify(mapped));
       return mapped;
     }
+    setUser(null);
+    setHistory([]);
     return null;
   }, [apiBase]);
 
@@ -238,17 +296,19 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const addHistory = (item: PredictionHistoryItem) => {
+    if (!historyKey) return;
     setHistory((prev) => {
       const next = [item, ...prev].slice(0, 50);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      localStorage.setItem(historyKey, JSON.stringify(next));
       return next;
     });
   };
 
   const removeHistoryItem = (id: string) => {
+    if (!historyKey) return;
     setHistory((prev) => {
       const next = prev.filter((h) => h.id !== id);
-      localStorage.setItem(HISTORY_KEY, JSON.stringify(next));
+      localStorage.setItem(historyKey, JSON.stringify(next));
       return next;
     });
     addToast('Đã xóa 1 bản ghi lịch sử.', 'info');
@@ -256,15 +316,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearHistory = () => {
     setHistory([]);
-    localStorage.removeItem(HISTORY_KEY);
+    if (historyKey) localStorage.removeItem(historyKey);
     addToast('Đã dọn sạch toàn bộ lịch sử dự đoán.', 'info');
   };
 
   return (
     <AppContext.Provider
       value={{
+        theme,
+        setTheme,
         currentView,
         setCurrentView,
+        studentEnrollmentToOpen,
+        openStudentEnrollment,
+        clearStudentEnrollmentToOpen,
         apiBase,
         setApiBase,
         backendStatus,

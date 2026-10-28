@@ -11,6 +11,7 @@ from models.academic import StudentEnrollment, CoursePresentation, Course
 from models.feature import StudentFeatureSnapshot
 from models.help_request import StudentHelpRequest
 from schemas.student import (
+    CourseReminderOut,
     StudentProfileDetailOut,
     StudentCourseItemOut,
     RiskPredictionOut,
@@ -28,13 +29,25 @@ from repositories.student_repo import (
     get_student_tasks_list,
     complete_student_task,
     get_student_intervention_plans,
+    get_owned_enrollment,
 )
-from services.radar_service import calculate_radar_6d
+from services.radar_service import snapshot_radar
+from services.reminder_service import get_student_course_reminders
+from services.help_request_service import resolve_help_recipient
 
 router = APIRouter()
 
 # Yêu cầu vai trò STUDENT (hoặc ADMIN)
 require_student = RequireRoles(["STUDENT"])
+
+
+@router.get("/reminders", response_model=List[CourseReminderOut], summary="Thông báo nhắc nhở môn học")
+async def get_my_reminders(
+    current_user: User = Depends(require_student),
+    db: AsyncSession = Depends(get_db),
+):
+    profile = await get_student_profile_by_user_id(db, current_user.id)
+    return await get_student_course_reminders(db, profile.id) if profile else []
 
 
 @router.get("/profile", response_model=StudentProfileDetailOut, summary="Hồ sơ cá nhân sinh viên")
@@ -95,7 +108,7 @@ async def get_my_course_risk(
     return pred
 
 
-@router.get("/courses/{enrollment_id}/radar", response_model=RadarDataOut, summary="Biểu đồ Radar Năng lực 6D đối sánh Benchmark Top 25%")
+@router.get("/courses/{enrollment_id}/radar", response_model=RadarDataOut, summary="Radar hành vi tại snapshot so với mốc tham khảo minh họa")
 async def get_my_course_radar(
     enrollment_id: uuid.UUID,
     current_user: User = Depends(require_student),
@@ -126,38 +139,29 @@ async def get_my_course_radar(
     snap_query = (
         select(StudentFeatureSnapshot)
         .where(StudentFeatureSnapshot.enrollment_id == enr.id)
-        .order_by(desc(StudentFeatureSnapshot.created_at))
+        .order_by(desc(StudentFeatureSnapshot.created_at), desc(StudentFeatureSnapshot.id))
         .limit(1)
     )
     snap_res = await db.execute(snap_query)
     snap = snap_res.scalars().first()
+    if snap is None:
+        raise HTTPException(404, "Học phần chưa có dữ liệu radar")
 
-    snap_dict = {
-        "total_clicks_to_t": snap.total_clicks_to_t if snap else 0,
-        "active_days_to_t": snap.active_days_to_t if snap else 0,
-        "active_day_ratio": snap.active_day_ratio if snap else 0.0,
-        "clicks_recent_7": snap.clicks_recent_7 if snap else 0,
-        "submission_rate": snap.submission_rate if snap else 0.0,
-        "late_submissions_to_t": snap.late_submissions_to_t if snap else 0,
-    }
-
-    dimensions = calculate_radar_6d(snap_dict)
-    return {
-        "enrollment_id": enr.id,
-        "code_module": course.code_module,
-        "dimensions": dimensions,
-    }
+    return snapshot_radar(snap, enr.id, course.code_module)
 
 
 @router.get("/tasks", response_model=List[StudentTaskItemOut], summary="Danh sách nhiệm vụ can thiệp sư phạm cần làm")
 async def get_my_tasks(
     current_user: User = Depends(require_student),
     db: AsyncSession = Depends(get_db),
+    enrollment_id: Optional[uuid.UUID] = None,
 ):
     profile = await get_student_profile_by_user_id(db, current_user.id)
     if not profile:
         return []
-    return await get_student_tasks_list(db, profile.id)
+    if enrollment_id is not None and not await get_owned_enrollment(db, profile.id, enrollment_id):
+        raise HTTPException(404, "Học phần không thuộc sinh viên")
+    return await get_student_tasks_list(db, profile.id, enrollment_id)
 
 
 @router.get("/intervention-plans", response_model=List[PlanOut], summary="Danh sách kế hoạch can thiệp sư phạm của bản thân")
@@ -183,7 +187,7 @@ async def complete_task(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hồ sơ sinh viên")
 
-    task = await complete_student_task(db, task_id, profile.id, payload.student_feedback)
+    task = await complete_student_task(db, task_id, profile.id, payload.student_feedback, payload.enrollment_id)
     if not task:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy nhiệm vụ can thiệp của bạn")
     return task
@@ -193,18 +197,19 @@ async def complete_task(
 async def get_my_help_requests(
     current_user: User = Depends(require_student),
     db: AsyncSession = Depends(get_db),
+    enrollment_id: Optional[uuid.UUID] = None,
 ):
     profile = await get_student_profile_by_user_id(db, current_user.id)
     if not profile:
         return []
-
-    query = (
-        select(StudentHelpRequest)
-        .where(StudentHelpRequest.student_id == profile.id)
-        .order_by(desc(StudentHelpRequest.created_at))
-    )
-    res = await db.execute(query)
-    return list(res.scalars().all())
+    query = select(StudentHelpRequest).where(StudentHelpRequest.student_id == profile.id)
+    if enrollment_id is not None:
+        enrollment = await get_owned_enrollment(db, profile.id, enrollment_id)
+        if enrollment is None:
+            raise HTTPException(404, "Học phần không thuộc sinh viên")
+        query = query.where(StudentHelpRequest.presentation_id == enrollment.presentation_id)
+    result = await db.execute(query.order_by(desc(StudentHelpRequest.created_at)))
+    return list(result.scalars().all())
 
 
 @router.post("/help-requests", response_model=HelpRequestOut, summary="Tạo yêu cầu trợ giúp gửi GVCN hoặc GVBM")
@@ -217,11 +222,30 @@ async def create_help_request(
     if not profile:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Không tìm thấy hồ sơ sinh viên")
 
+    presentation_id = payload.presentation_id
+    if payload.enrollment_id is not None:
+        enrollment = await get_owned_enrollment(db, profile.id, payload.enrollment_id)
+        if enrollment is None:
+            raise HTTPException(404, "Học phần không thuộc sinh viên")
+        if presentation_id is not None and presentation_id != enrollment.presentation_id:
+            raise HTTPException(422, "Học phần và đăng ký không khớp")
+        presentation_id = enrollment.presentation_id
+    elif presentation_id is not None:
+        owned = await db.execute(select(StudentEnrollment).where(
+            StudentEnrollment.student_id == profile.id,
+            StudentEnrollment.presentation_id == presentation_id,
+        ))
+        if owned.scalars().first() is None:
+            raise HTTPException(404, "Học phần không thuộc sinh viên")
+
+    recipient_id = await resolve_help_recipient(
+        db, profile.id, payload.target_role, presentation_id, payload.target_user_id,
+    )
     req = StudentHelpRequest(
         student_id=profile.id,
         target_role=payload.target_role,
-        presentation_id=payload.presentation_id,
-        target_user_id=payload.target_user_id,
+        presentation_id=presentation_id,
+        target_user_id=recipient_id,
         subject=payload.subject,
         content=payload.content,
         status="PENDING",

@@ -15,7 +15,7 @@ class StudentHelpRequest(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     student_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False
     )
     target_role: Mapped[str] = mapped_column(String(20), nullable=False)  # 'ADVISOR' hoặc 'LECTURER'
     target_user_id: Mapped[Optional[uuid.UUID]] = mapped_column(

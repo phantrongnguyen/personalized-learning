@@ -12,7 +12,7 @@ export const ContactPage: React.FC = () => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    addToast(`Cảm ơn bạn ${name}! Đội ngũ chuyên gia EduRisk AI sẽ liên hệ lại trong vòng 24 giờ làm việc.`, 'success');
+    addToast(`Thông tin chưa được gửi đến máy chủ. Vui lòng sử dụng kênh liên hệ được cung cấp trên trang.`, 'info');
     setName('');
     setEmail('');
     setMessage('');
@@ -21,19 +21,19 @@ export const ContactPage: React.FC = () => {
   const faqs = [
     {
       q: 'Hệ thống EduRisk AI tích hợp với các nền tảng LMS hiện có như thế nào?',
-      a: 'EduRisk AI hỗ trợ chuẩn kết nối giáo dục quốc tế IMS LTI 1.3 và RESTful API. Hệ thống có thể tích hợp hai chiều liền mạch với Canvas LMS, Moodle, Blackboard, hoặc các hệ thống SIS/LMS nội bộ của cơ sở đào tạo mà không làm gián đoạn vận hành.',
+      a: 'Ứng dụng có API phục vụ các phân hệ nội bộ. Chưa kiểm chứng tích hợp hai chiều với Canvas, Moodle, Blackboard hoặc hệ thống LMS bên ngoài.',
     },
     {
       q: 'Chính sách bảo mật dữ liệu người học và quyền riêng tư (Privacy)?',
-      a: 'Hệ thống tuân thủ nghiêm ngặt các quy định bảo vệ dữ liệu giáo dục (FERPA, GDPR và Nghị định 13/2023/NĐ-CP). Dữ liệu được mã hóa chuẩn AES-256 khi lưu trữ và TLS 1.3 trong quá trình truyền tải. Các mô hình máy học chỉ suy luận trên vector đặc trưng hành vi ẩn danh.',
+      a: 'Mô hình sử dụng dữ liệu nghiên cứu OULAD. Thông tin tài khoản và các phân hệ được quản lý theo vai trò và phạm vi phân công.',
     },
     {
       q: 'Cơ sở đào tạo có thể triển khai Private Cloud hoặc On-Premise không?',
-      a: 'Hoàn toàn có thể. Bên cạnh mô hình Cloud SaaS, EduRisk AI hỗ trợ đóng gói trọn gói qua Docker / Kubernetes để triển khai trực tiếp trên hạ tầng Private Cloud hoặc cụm máy chủ nội bộ của quý đơn vị với đầy đủ cam kết SLA 99.9%.',
+      a: 'Repo có cấu hình Docker để chạy thử cục bộ. Chưa đánh giá triển khai Kubernetes, Private Cloud hoặc cam kết thời gian hoạt động.',
     },
     {
       q: 'Ý nghĩa của mốc Cutoff 75% đối với công tác quản trị rủi ro đào tạo?',
-      a: 'Mốc 75% học kỳ là "thời điểm vàng" để can thiệp: lượng dữ liệu tương tác LMS đủ phong phú để mô hình đạt độ chính xác >93%, đồng thời vẫn còn đủ từ 3 đến 4 tuần trước kỳ thi để cố vấn học tập và giảng viên triển khai các kế hoạch can thiệp sư phạm cá nhân hóa.',
+      a: 'Mốc 75% thời lượng học phần là mốc quan sát trong thí nghiệm OULAD. Không suy ra số tuần còn lại hoặc hiệu quả can thiệp ở một học kỳ thực tế; xem báo cáo đánh giá model để biết thước đo và giới hạn.',
     },
   ];
 
@@ -65,7 +65,7 @@ export const ContactPage: React.FC = () => {
                   <div className="font-semibold text-slate-100">
                     Trung tâm R&amp;D Giải pháp AI Giáo dục
                   </div>
-                  <div className="text-slate-400">Khu Công nghệ Cao TP.HCM (SHTP), TP. Hồ Chí Minh, Việt Nam</div>
+                  <div className="text-slate-400">Thông tin địa chỉ liên hệ cần được nhóm dự án xác nhận trước khi công bố.</div>
                 </div>
               </div>
 
@@ -74,7 +74,7 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <div className="font-semibold text-slate-100">Tổng đài Hỗ trợ Doanh nghiệp:</div>
                   <div className="text-slate-400 font-mono">
-                    Hotline: <strong className="text-slate-200">1900 888 668</strong> &bull; Tel: <strong className="text-slate-200">(+84) 28 7300 8866</strong>
+                    Chưa thiết lập tổng đài hỗ trợ.
                   </div>
                 </div>
               </div>
@@ -84,10 +84,10 @@ export const ContactPage: React.FC = () => {
                 <div>
                   <div className="font-semibold text-slate-100">Kênh liên hệ trực tuyến:</div>
                   <div className="text-slate-400">
-                    &bull; Tư vấn giải pháp: <code className="text-brand-400">enterprise@edurisk.ai</code>
+                    &bull; Tư vấn giải pháp: <code className="text-brand-400">Chưa thiết lập</code>
                   </div>
                   <div className="text-slate-400">
-                    &bull; Hỗ trợ kỹ thuật &amp; API: <code className="text-brand-400">support@edurisk.ai</code>
+                    &bull; Hỗ trợ kỹ thuật &amp; API: <code className="text-brand-400">Chưa thiết lập</code>
                   </div>
                 </div>
               </div>
@@ -96,7 +96,7 @@ export const ContactPage: React.FC = () => {
                 <Clock className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
                 <div>
                   <div className="font-semibold text-slate-100">Thời gian làm việc:</div>
-                  <div className="text-slate-400">Thứ Hai – Thứ Sáu: 08:00 – 17:30 (Hỗ trợ 24/7 đối với gói Enterprise SLA)</div>
+                  <div className="text-slate-400">Chưa có lịch hỗ trợ chính thức.</div>
                 </div>
               </div>
             </div>
@@ -109,9 +109,10 @@ export const ContactPage: React.FC = () => {
           >
             <h3 className="text-base font-bold text-white flex items-center gap-2">
               <Send className="w-4 h-4 text-brand-400" />
-              <span>Đăng Ký Tư Vấn &amp; Trải Nghiệm Demo</span>
+              <span>Liên hệ hỗ trợ</span>
             </h3>
 
+            <p className="text-xs text-amber-300">Biểu mẫu hiện chưa kết nối dịch vụ gửi tin. Vui lòng sử dụng các kênh liên hệ trên trang.</p>
             <div>
               <label className="block text-xs font-semibold text-slate-300 mb-1">Họ và tên người đại diện:</label>
               <input
@@ -152,7 +153,7 @@ export const ContactPage: React.FC = () => {
               type="submit"
               className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-xl bg-brand-600 hover:bg-brand-500 text-white font-semibold text-xs shadow-lg shadow-brand-600/20 transition-all"
             >
-              <span>Gửi yêu cầu tư vấn</span>
+              <span>Kiểm tra biểu mẫu (không gửi)</span>
             </button>
           </form>
         </div>

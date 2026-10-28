@@ -1,11 +1,9 @@
 import React, { useState } from 'react';
 import { useApp } from '../state/AppContext';
 import { loginApi, mapBackendUser } from '../services/api';
-import { BrandLogo } from '../components/common/BrandLogo';
+import { ThemeToggle } from '../components/common/ThemeToggle';
 import {
   GraduationCap,
-  ShieldCheck,
-  UserCheck,
   User,
   Mail,
   Lock,
@@ -13,14 +11,7 @@ import {
   EyeOff,
   Building,
   ArrowRight,
-  Sparkles,
-  BrainCircuit,
-  TrendingUp,
-  Cpu,
-  Layers,
-  CheckCircle2,
   AlertCircle,
-  Compass,
 } from 'lucide-react';
 
 export const AuthPage: React.FC = () => {
@@ -63,14 +54,6 @@ export const AuthPage: React.FC = () => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 1-Click Demo Accounts (tài khoản được seed sẵn trong Backend, mật khẩu: 123)
-  const handleQuickLogin = (email: string) => {
-    setLoginMode('staff');
-    setLoginEmail(email);
-    setLoginPassword('123');
-    void authenticate(email, '123');
   };
 
   const handleLoginSubmit = (e: React.FormEvent) => {
@@ -128,177 +111,34 @@ export const AuthPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col justify-between relative overflow-hidden selection:bg-brand-500/30">
-      {/* Background Glow Orbs */}
-      <div className="absolute top-[-10%] left-[-10%] w-[45vw] h-[45vw] rounded-full bg-brand-600/10 blur-[130px] pointer-events-none" />
-      <div className="absolute bottom-[-15%] right-[-10%] w-[50vw] h-[50vw] rounded-full bg-brand-600/10 blur-[140px] pointer-events-none" />
-      <div className="absolute top-[30%] right-[20%] w-[30vw] h-[30vw] rounded-full bg-cyan-600/5 blur-[120px] pointer-events-none" />
+    <div className="min-h-screen min-h-[100svh] bg-slate-950 text-slate-100 flex flex-col relative isolate overflow-hidden selection:bg-brand-500/30">
+      <img
+        src={`${import.meta.env.BASE_URL}images/login-campus-enhanced.png`}
+        alt=""
+        aria-hidden="true"
+        fetchPriority="high"
+        className="absolute inset-0 h-full w-full object-cover object-center pointer-events-none"
+      />
+      <div aria-hidden="true" className="absolute inset-0 bg-gradient-to-r from-slate-950/10 via-slate-950/20 to-slate-950/60 pointer-events-none" />
 
-      {/* Top Bar / Brand header */}
-      <header className="relative z-10 w-full border-b border-slate-800/80 bg-slate-950/70 backdrop-blur-md px-4 sm:px-8 py-3.5 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <BrandLogo className="w-[200px] sm:w-[239px] max-w-full" />
-        </div>
-      </header>
+      <div className="absolute top-5 right-5 sm:right-10 z-20">
+        <ThemeToggle />
+      </div>
 
       {/* Main Container */}
-      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 flex items-center justify-center">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center w-full">
-          
-          {/* Left Column: Solution Highlights & Scientific Metrics (7 cols on lg) */}
-          <div className="lg:col-span-6 space-y-6 text-left">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold">
-              <Sparkles className="w-3.5 h-3.5" />
-              <span>Hệ thống Khuyến nghị Học tập Thông minh &bull; KLTN 2026</span>
-            </div>
-
-            <h1 className="text-3xl sm:text-4xl lg:text-5xl font-extrabold text-white tracking-tight leading-tight">
-              Phát Hiện Sớm Rủi Ro &amp;{' '}
-              <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-cyan-400 bg-clip-text text-transparent">
-                Can Thiệp Cá Nhân Hóa
-              </span>
-            </h1>
-
-            <p className="text-slate-300 text-sm sm:text-base leading-relaxed">
-              Giải pháp kết hợp mô hình phân lớp <strong className="text-white">LightGBM</strong> tại mốc Cutoff 75% thời lượng môn học và thuật toán tối ưu hóa siêu tham số lai <strong className="text-brand-400">HCO-VNLS</strong>, giúp ban cố vấn học tập chủ động ngăn chặn nguy cơ trượt/bỏ học của sinh viên.
-            </p>
-
-            {/* KPI Performance Metrics */}
-            <div className="grid grid-cols-3 gap-3 pt-2">
-              <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <div className="text-[11px] text-slate-400 font-semibold flex items-center justify-between mb-1">
-                  <span>Accuracy</span>
-                  <TrendingUp className="w-3.5 h-3.5 text-brand-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold font-mono text-brand-400">93.04%</div>
-                <div className="text-[10px] text-slate-400">Kiểm thử OULAD</div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <div className="text-[11px] text-slate-400 font-semibold flex items-center justify-between mb-1">
-                  <span>ROC-AUC</span>
-                  <BrainCircuit className="w-3.5 h-3.5 text-cyan-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold font-mono text-cyan-400">0.9785</div>
-                <div className="text-[10px] text-slate-400">Phân tách nhãn rủi ro</div>
-              </div>
-
-              <div className="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800 shadow-sm">
-                <div className="text-[11px] text-slate-400 font-semibold flex items-center justify-between mb-1">
-                  <span>Tối ưu hóa</span>
-                  <Cpu className="w-3.5 h-3.5 text-amber-400" />
-                </div>
-                <div className="text-xl sm:text-2xl font-bold font-mono text-amber-400">HCO-VNLS</div>
-                <div className="text-[10px] text-slate-400">Rút gọn 86.7% chiều</div>
-              </div>
-            </div>
-
-            {/* 4 Pillars Feature List */}
-            <div className="space-y-3 pt-2">
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-brand-500/10 text-brand-400 mt-0.5 shrink-0">
-                  <CheckCircle2 className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-200">
-                    Dự báo chính xác tại Cutoff 75% thời lượng học phần
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Phân tích toàn diện chỉ số click VLE, bài tập nộp trễ và tương tác học tập trực tuyến.
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-brand-500/10 text-brand-400 mt-0.5 shrink-0">
-                  <Compass className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-200">
-                    Chiến lược can thiệp theo 4 nhóm trọng tâm
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Đề xuất giải pháp thiết thực: Chuyên cần, Học thuật, Tiến độ và Động lực học tập.
-                  </div>
-                </div>
-              </div>
-
-              <div className="flex items-start gap-3">
-                <div className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 mt-0.5 shrink-0">
-                  <Layers className="w-4 h-4" />
-                </div>
-                <div>
-                  <div className="text-xs font-semibold text-slate-200">
-                    Tích hợp sẵn sàng chuẩn LMS LTI 1.3
-                  </div>
-                  <div className="text-[11px] text-slate-400">
-                    Kết nối an toàn với Canvas LMS, Moodle, Blackboard và cơ sở dữ liệu đào tạo.
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Column: Authentication Card (6 cols on lg) */}
-          <div className="lg:col-span-6 w-full max-w-lg mx-auto">
-            <div className="bg-slate-900/90 border border-slate-800 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
+      <main className="relative z-10 flex-1 max-w-7xl w-full mx-auto px-4 sm:px-8 lg:px-12 py-20 flex items-center justify-center">
+          {/* Authentication card */}
+          <div className="w-full max-w-md">
+            <div className="bg-slate-900/95 border border-slate-700/60 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl relative">
               
-              {/* 1-Click Fast Demo Accounts Bar */}
-              <div className="mb-6 p-4 rounded-2xl bg-slate-950/70 border border-slate-800/80 space-y-2.5">
-                <div className="flex items-center justify-between">
-                  <span className="text-[11px] font-bold text-brand-400 uppercase tracking-wider flex items-center gap-1.5">
-                    <Sparkles className="w-3.5 h-3.5" />
-                    Khởi Chạy Nhanh (1-Click Demo)
-                  </span>
-                  <span className="text-[10px] text-slate-400">Không cần mật khẩu</span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-brand-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-brand-300">
-                      <UserCheck className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Cố vấn</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">advisor@huit.edu.vn</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => handleQuickLogin('admin@huit.edu.vn')}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-brand-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-brand-300">
-                      <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Quản trị viên</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">admin@huit.edu.vn</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    disabled={loading}
-                    onClick={() => {
-                      setActiveTab('login');
-                      setLoginMode('student');
-                      setLoginEmail('');
-                      setLoginPassword('');
-                      setErrorMsg(null);
-                    }}
-                    className="flex flex-col p-2.5 rounded-xl bg-slate-850 hover:bg-slate-800 border border-slate-750 hover:border-cyan-500/50 text-left transition-all group"
-                  >
-                    <div className="flex items-center gap-1.5 text-xs font-bold text-slate-200 group-hover:text-cyan-300">
-                      <GraduationCap className="w-3.5 h-3.5 text-cyan-400" />
-                      <span>Sinh viên</span>
-                    </div>
-                    <span className="text-[10px] text-slate-400 truncate mt-0.5">Đăng nhập bằng MSSV</span>
-                  </button>
-                </div>
+              <div className="mb-6 flex justify-center">
+                <img
+                  src={`${import.meta.env.BASE_URL}images/huit.jpg`}
+                  alt="Logo Trường Đại học Công Thương TP. Hồ Chí Minh (HUIT)"
+                  width={304}
+                  height={304}
+                  className="theme-logo h-20 w-20 sm:h-24 sm:w-24 object-contain"
+                />
               </div>
 
               {/* Tabs: Đăng nhập vs Đăng ký */}
@@ -356,7 +196,7 @@ export const AuthPage: React.FC = () => {
                   </div>
                   <div>
                     <label htmlFor="login-username" className="block text-xs font-semibold text-slate-300 mb-1.5">
-                      {loginMode === 'student' ? 'Mã số sinh viên (MSSV):' : 'Email công tác:'}
+                      {loginMode === 'student' ? 'Mã số sinh viên' : 'Email công tác:'}
                     </label>
                     <div className="relative">
                       {loginMode === 'student' ? <GraduationCap className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" /> : <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-3.5" />}
@@ -370,7 +210,7 @@ export const AuthPage: React.FC = () => {
                         required
                         value={loginEmail}
                         onChange={(e) => setLoginEmail(e.target.value)}
-                        placeholder={loginMode === 'student' ? 'Nhập mã số sinh viên được cấp' : 'Nhập email công tác'}
+                        placeholder={loginMode === 'student' ? 'Nhập mã số sinh viên' : 'Nhập email công tác'}
                         className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-slate-950 border border-slate-750 text-slate-100 text-sm placeholder:text-slate-600 focus:border-brand-500 focus:outline-none transition-colors"
                       />
                     </div>
@@ -427,7 +267,7 @@ export const AuthPage: React.FC = () => {
                         onChange={(e) => setRememberMe(e.target.checked)}
                         className="rounded border-slate-700 text-brand-600 focus:ring-brand-500 w-4 h-4 bg-slate-950"
                       />
-                      <span>Ghi nhớ phiên đăng nhập (30 ngày)</span>
+                      <span>Ghi nhớ đăng nhập</span>
                     </label>
                   </div>
 
@@ -437,26 +277,15 @@ export const AuthPage: React.FC = () => {
                     className="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-brand-600 to-brand-600 hover:from-brand-500 hover:to-brand-500 text-white font-bold text-sm shadow-xl shadow-brand-600/25 flex items-center justify-center gap-2 transition-all hover:scale-[1.01] disabled:opacity-50"
                   >
                     {loading ? (
-                      <span>Đang xác thực hệ thống…</span>
+                      <span>Đang đăng nhập…</span>
                     ) : (
                       <>
-                        <span>Đăng nhập vào Hệ thống</span>
+                        <span>Đăng nhập</span>
                         <ArrowRight className="w-4 h-4" />
                       </>
                     )}
                   </button>
 
-                  {/* Fast Guest Mode Link */}
-                  <div className="text-center pt-2">
-                    <button
-                      type="button"
-                      onClick={() => handleQuickLogin('advisor@huit.edu.vn')}
-                      className="text-xs text-slate-400 hover:text-brand-400 transition-colors inline-flex items-center gap-1.5"
-                    >
-                      <Sparkles className="w-3.5 h-3.5 text-brand-400" />
-                      <span>Duyệt nhanh với tư cách Khách tham quan (Guest Mode)</span>
-                    </button>
-                  </div>
                 </form>
               )}
 
@@ -483,7 +312,7 @@ export const AuthPage: React.FC = () => {
 
                     <div>
                       <label className="block text-xs font-semibold text-slate-300 mb-1">
-                        Mã số sinh viên (MSSV):
+                        Mã số sinh viên
                       </label>
                       <input
                         type="text"
@@ -619,23 +448,9 @@ export const AuthPage: React.FC = () => {
                 </form>
               )}
 
-              {/* Bottom Security Info */}
-              <div className="mt-6 pt-4 border-t border-slate-800/80 flex items-center justify-between text-[10px] text-slate-400">
-                <span className="flex items-center gap-1">
-                  <ShieldCheck className="w-3.5 h-3.5 text-brand-400" />
-                  Mã hóa cấp Enterprise
-                </span>
-                <span>Chuẩn LTI 1.3 / IMS Global</span>
-              </div>
             </div>
           </div>
-        </div>
       </main>
-
-      {/* Footer */}
-      <footer className="relative z-10 w-full border-t border-slate-800/80 bg-slate-950/80 backdrop-blur-md px-4 sm:px-8 py-3 text-center text-xs text-slate-400">
-        EduRisk AI Enterprise &copy; 2026 &bull; Khóa luận Tốt nghiệp Đại học KLTN-13 &bull; Tối ưu hóa can thiệp học tập cá nhân hóa
-      </footer>
     </div>
   );
 };

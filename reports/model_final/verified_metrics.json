@@ -1,0 +1,27 @@
+{
+  "scope": "historical OULAD test, not a new external holdout",
+  "evaluated_at": "2026-10-09",
+  "model_sha256": "90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db",
+  "metadata_sha256": "c80bc48dfb02130c5cbb4eaa464f312f29d03cb4bd7f888ba31576859778c301",
+  "dataset_sha256_reported": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23",
+  "predictions_sha256": "cd75705e42a2ead286e78ba7846b2ba951afc12eacff2f6bb0f20886921ecf39",
+  "threshold_unchanged": 0.5,
+  "metrics": {
+    "test_rows": 3447,
+    "accuracy": 0.8619089062953292,
+    "precision_risk": 0.9123222748815166,
+    "recall_risk": 0.6569965870307167,
+    "f1_risk": 0.7638888888888888,
+    "weighted_f1": 0.8553179744156014,
+    "average_precision_risk": 0.8815750676130706,
+    "roc_auc": 0.9049323031916888,
+    "brier_score": 0.10136986801098771,
+    "tn": 2201,
+    "fp": 74,
+    "fn": 402,
+    "tp": 770,
+    "alerts": 844,
+    "actual_risk": 1172
+  },
+  "note": "Recomputed from archived predictions; this script does not load or fit the model."
+}

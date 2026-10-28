@@ -1,7 +1,9 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { radarAppearance, RADAR_COLOR_NOTE } from '@shared/radar';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useApp } from '../state/AppContext';
 import {
   StudentCourseItem,
+  StudentProfileDetail,
   StudentRiskPrediction,
   StudentRadarData,
   StudentTaskItem,
@@ -9,6 +11,7 @@ import {
 } from '@shared/types';
 import {
   getStudentCoursesApi,
+  getStudentProfileApi,
   getStudentRiskPredictionApi,
   getStudentRadarApi,
   getStudentTasksApi,
@@ -16,6 +19,7 @@ import {
   getStudentHelpRequestsApi,
   createHelpRequestApi,
 } from '../services/api';
+import { Avatar } from '../components/common/Avatar';
 import {
   GraduationCap,
   Loader2,
@@ -26,13 +30,37 @@ import {
   Send,
   ClipboardList,
   HelpCircle,
+  ArrowUpRight,
+  Mail,
+  Phone,
+  User,
+  CalendarDays,
 } from 'lucide-react';
 
 export const StudentPage: React.FC = () => {
-  const { apiBase, addToast, user } = useApp();
+  const { apiBase, addToast, user, setCurrentView, studentEnrollmentToOpen, clearStudentEnrollmentToOpen } = useApp();
+  const [profile, setProfile] = useState<StudentProfileDetail | null>(null);
+  const [profileLoading, setProfileLoading] = useState(true);
+  const [profileError, setProfileError] = useState('');
+
+  useEffect(() => {
+    let cancelled = false;
+    setProfile(null);
+    setProfileError('');
+    setProfileLoading(true);
+    getStudentProfileApi(apiBase).then((data) => {
+      if (!cancelled) setProfile(data);
+    }).catch((error: Error) => {
+      if (!cancelled) setProfileError(error.message);
+    }).finally(() => { if (!cancelled) setProfileLoading(false); });
+    return () => { cancelled = true; };
+  }, [apiBase, user?.email]);
 
   const [courses, setCourses] = useState<StudentCourseItem[]>([]);
+  const [selectedSemester, setSelectedSemester] = useState('');
   const [selectedEnrollment, setSelectedEnrollment] = useState<string>('');
+  const selectionRef = useRef(selectedEnrollment);
+  selectionRef.current = selectedEnrollment;
   const [prediction, setPrediction] = useState<StudentRiskPrediction | null>(null);
   const [radar, setRadar] = useState<StudentRadarData | null>(null);
   const [tasks, setTasks] = useState<StudentTaskItem[]>([]);
@@ -53,9 +81,8 @@ export const StudentPage: React.FC = () => {
     try {
       const data = await getStudentCoursesApi(apiBase);
       setCourses(data);
-      if (data.length > 0) {
-        setSelectedEnrollment(data[0].enrollment_id);
-      }
+      setSelectedSemester('');
+      setSelectedEnrollment(data[0]?.enrollment_id || '');
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     } finally {
@@ -65,49 +92,100 @@ export const StudentPage: React.FC = () => {
 
   const loadTasks = useCallback(async () => {
     try {
-      setTasks(await getStudentTasksApi(apiBase));
+      const scope = selectedEnrollment;
+      if (!scope) return;
+      const data = await getStudentTasksApi(apiBase, scope);
+      if (selectionRef.current === scope) setTasks(data);
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     }
-  }, [apiBase, addToast]);
+  }, [apiBase, addToast, selectedEnrollment]);
 
   const loadHelpRequests = useCallback(async () => {
     try {
-      setHelpRequests(await getStudentHelpRequestsApi(apiBase));
+      const scope = selectedEnrollment;
+      if (!scope) return;
+      const data = await getStudentHelpRequestsApi(apiBase, scope);
+      if (selectionRef.current === scope) setHelpRequests(data);
     } catch (err) {
       addToast((err as Error).message, 'error', 5000);
     }
-  }, [apiBase, addToast]);
+  }, [apiBase, addToast, selectedEnrollment]);
 
   useEffect(() => {
     loadCourses();
-    loadTasks();
-    loadHelpRequests();
-  }, [loadCourses, loadTasks, loadHelpRequests]);
+  }, [loadCourses]);
 
   useEffect(() => {
-    if (!selectedEnrollment) return;
+    let cancelled = false;
+    setPrediction(null);
+    setRadar(null);
+    setTasks([]);
+    setHelpRequests([]);
+    setShowHelpForm(false);
+    setHelpSubject('');
+    setHelpContent('');
+    if (!selectedEnrollment) { setLoadingDetail(false); return; }
     setLoadingDetail(true);
-    Promise.all([
+    Promise.allSettled([
       getStudentRiskPredictionApi(apiBase, selectedEnrollment),
       getStudentRadarApi(apiBase, selectedEnrollment),
-    ])
-      .then(([pred, radarData]) => {
-        setPrediction(pred);
-        setRadar(radarData);
-      })
-      .catch((err) => addToast((err as Error).message, 'error', 5000))
-      .finally(() => setLoadingDetail(false));
+      getStudentTasksApi(apiBase, selectedEnrollment),
+      getStudentHelpRequestsApi(apiBase, selectedEnrollment),
+    ]).then(([pred, radarData, courseTasks, courseHelp]) => {
+      if (cancelled) return;
+      if (pred.status === 'fulfilled') setPrediction(pred.value);
+      else addToast((pred.reason as Error).message, 'error', 5000);
+      if (radarData.status === 'fulfilled') setRadar(radarData.value);
+      else addToast((radarData.reason as Error).message, 'error', 5000);
+      if (courseTasks.status === 'fulfilled') setTasks(courseTasks.value);
+      else addToast((courseTasks.reason as Error).message, 'error', 5000);
+      if (courseHelp.status === 'fulfilled') setHelpRequests(courseHelp.value);
+      else addToast((courseHelp.reason as Error).message, 'error', 5000);
+      setLoadingDetail(false);
+    });
+    return () => { cancelled = true; };
   }, [selectedEnrollment, apiBase, addToast]);
 
-  const selectedCourse = courses.find((c) => c.enrollment_id === selectedEnrollment);
+  const semesters = useMemo(() => [...new Set(courses.map(course => course.code_presentation))]
+    .sort((a, b) => b.localeCompare(a, 'vi', { numeric: true })), [courses]);
+  const filteredCourses = useMemo(() => selectedSemester
+    ? courses.filter(course => course.code_presentation === selectedSemester)
+    : courses, [courses, selectedSemester]);
+  const selectedCourse = filteredCourses.find((c) => c.enrollment_id === selectedEnrollment);
+  useEffect(() => {
+    if (!studentEnrollmentToOpen || loading) return;
+    const course = courses.find(item => item.enrollment_id === studentEnrollmentToOpen);
+    if (course) {
+      setSelectedSemester(course.code_presentation);
+      setSelectedEnrollment(course.enrollment_id);
+    } else {
+      addToast('Không tìm thấy học phần của thông báo.', 'warning');
+    }
+    clearStudentEnrollmentToOpen();
+  }, [studentEnrollmentToOpen, loading, courses, addToast, clearStudentEnrollmentToOpen]);
+  const changeSemester = (semester: string) => {
+    const matching = semester ? courses.filter(course => course.code_presentation === semester) : courses;
+    setSelectedSemester(semester);
+    if (!matching.some(course => course.enrollment_id === selectedEnrollment)) {
+      const next = matching[0]?.enrollment_id || '';
+      setPrediction(null);
+      setRadar(null);
+      setTasks([]);
+      setHelpRequests([]);
+      setShowHelpForm(false);
+      setLoadingDetail(Boolean(next));
+      setSelectedEnrollment(next);
+    }
+  };
   const upcomingTasks = tasks.filter((t) => !t.is_completed);
   const doneTasks = tasks.filter((t) => t.is_completed);
 
   const handleCompleteTask = async (task: StudentTaskItem) => {
     setCompletingTaskId(task.id);
     try {
-      await completeStudentTaskApi(apiBase, task.id, 'Hoàn thành từ phía sinh viên.');
+      await completeStudentTaskApi(apiBase, task.id, 'Hoàn thành từ phía sinh viên.', selectedEnrollment);
+      window.dispatchEvent(new Event('course-reminders-updated'));
       addToast(`Đã hoàn thành nhiệm vụ: ${task.title}`, 'success');
       await loadTasks();
     } catch (err) {
@@ -119,10 +197,12 @@ export const StudentPage: React.FC = () => {
 
   const handleSendHelpRequest = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!selectedEnrollment) return;
     setSendingHelp(true);
     try {
       await createHelpRequestApi(apiBase, {
         target_role: helpTarget,
+        enrollment_id: selectedEnrollment,
         subject: helpSubject,
         content: helpContent,
       });
@@ -153,23 +233,92 @@ export const StudentPage: React.FC = () => {
         </div>
       </div>
 
+      {user && (
+        <section aria-labelledby="student-info-heading" aria-busy={profileLoading}
+          className="overflow-hidden rounded-2xl border border-slate-800 bg-slate-900/80 shadow-sm">
+          <div className="flex flex-col gap-5 border-b border-slate-800 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+            <div className="flex min-w-0 items-center gap-4">
+              <Avatar src={user.avatarUrl} initials={user.initials} alt="Ảnh đại diện sinh viên"
+                className="h-16 w-16 rounded-full border border-brand-500/30 text-xl sm:h-20 sm:w-20" />
+              <div className="min-w-0">
+                <h2 id="student-info-heading" className="text-[11px] font-bold uppercase tracking-wider text-brand-400">Thông tin sinh viên</h2>
+                <p className="mt-1 break-words text-xl font-bold text-slate-100">{profile?.full_name || user.name}</p>
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-xs">
+                  <span className="rounded-lg border border-slate-700 bg-slate-950 px-2.5 py-1 font-mono text-slate-300">
+                    MSSV: {profile?.student_code || user.studentCode || 'Chưa cập nhật'}
+                  </span>
+                  <span className="rounded-full bg-brand-500/10 px-2.5 py-1 font-medium text-brand-400">{user.role}</span>
+                </div>
+              </div>
+            </div>
+            <button type="button" onClick={() => setCurrentView('profile')}
+              className="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-xl border border-slate-700 px-3 py-2 text-xs font-semibold text-slate-200 transition-colors hover:bg-slate-800 sm:self-center">
+              Xem hồ sơ <ArrowUpRight aria-hidden="true" className="h-4 w-4" />
+            </button>
+          </div>
+          <div className="grid gap-5 p-5 sm:p-6 lg:grid-cols-[1fr_auto]">
+            <dl className="grid min-w-0 gap-4 sm:grid-cols-3">
+              <div className="min-w-0">
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><Mail aria-hidden="true" className="h-3.5 w-3.5" /> Email</dt>
+                <dd className="mt-1.5 break-all text-sm font-medium text-slate-200">{profile?.email || user.email}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><Phone aria-hidden="true" className="h-3.5 w-3.5" /> Số điện thoại</dt>
+                <dd className="mt-1.5 text-sm font-medium text-slate-200">{user.phone || 'Chưa cập nhật'}</dd>
+              </div>
+              <div>
+                <dt className="flex items-center gap-1.5 text-xs text-slate-400"><User aria-hidden="true" className="h-3.5 w-3.5" /> Giới tính</dt>
+                <dd className="mt-1.5 text-sm font-medium text-slate-200">
+                  {profileLoading ? 'Đang tải…' : profile?.gender === 'M' ? 'Nam' : profile?.gender === 'F' ? 'Nữ' : 'Chưa cập nhật'}
+                </dd>
+              </div>
+            </dl>
+            <dl className="grid grid-cols-2 gap-3 lg:min-w-56">
+              <div className="rounded-xl bg-slate-950 px-4 py-3">
+                <dt className="text-[11px] text-slate-400">Học phần đăng ký</dt>
+                <dd className="mt-1 text-2xl font-bold text-brand-400">{loading ? '—' : courses.length}</dd>
+              </div>
+              <div className="rounded-xl bg-slate-950 px-4 py-3">
+                <dt className="text-[11px] text-slate-400">Tín chỉ đăng ký</dt>
+                <dd className="mt-1 text-2xl font-bold text-cyan-400">{profileLoading || !profile ? '—' : profile.studied_credits_total}</dd>
+              </div>
+            </dl>
+          </div>
+          {profileError && <p role="alert" className="px-5 pb-4 text-xs text-rose-400 sm:px-6">{profileError}</p>}
+        </section>
+      )}
+
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         {/* Left: Course list */}
         <div className="lg:col-span-4 space-y-4">
-          <h2 className="text-sm font-bold text-white uppercase tracking-wider">Môn học của tôi</h2>
+          <div className="flex items-center justify-between gap-2">
+            <h2 className="text-sm font-bold text-white uppercase tracking-wider">Môn học của tôi</h2>
+          </div>
+          <div className="rounded-2xl border border-slate-800 bg-slate-900/70 p-4">
+            <label htmlFor="student-semester" className="mb-2 flex items-center gap-2 text-xs font-semibold text-slate-300">
+              <CalendarDays aria-hidden="true" className="h-4 w-4 text-cyan-400" /> Học kỳ
+            </label>
+            <select id="student-semester" value={selectedSemester} onChange={event => changeSemester(event.target.value)}
+              disabled={loading || courses.length === 0 || sendingHelp || completingTaskId !== null}
+              className="w-full rounded-xl border border-slate-700 bg-slate-950 px-3 py-2.5 text-sm text-slate-100 focus:border-cyan-500 focus:outline-none disabled:cursor-not-allowed disabled:opacity-50">
+              <option value="">{loading ? 'Đang tải học kỳ…' : 'Tất cả học kỳ'}</option>
+              {semesters.map(semester => <option key={semester} value={semester}>{semester}</option>)}
+            </select>
+          </div>
           {loading ? (
             <div className="flex items-center gap-2 text-slate-400 text-sm">
               <Loader2 className="w-4 h-4 animate-spin" />
               Đang tải…
             </div>
-          ) : courses.length === 0 ? (
-            <div className="text-xs text-slate-400">Chưa có môn học được đăng ký.</div>
+          ) : filteredCourses.length === 0 ? (
+            <div className="text-xs text-slate-400">{courses.length === 0 ? 'Chưa có môn học được đăng ký.' : 'Không có môn học trong học kỳ này.'}</div>
           ) : (
             <div className="space-y-2.5">
-              {courses.map((c) => (
+              {filteredCourses.map((c) => (
                 <button
                   key={c.enrollment_id}
                   type="button"
+                  disabled={sendingHelp || completingTaskId !== null}
                   onClick={() => setSelectedEnrollment(c.enrollment_id)}
                   className={`w-full p-4 rounded-2xl border text-left transition-all ${
                     selectedEnrollment === c.enrollment_id
@@ -201,7 +350,7 @@ export const StudentPage: React.FC = () => {
               <Loader2 className="w-4 h-4 animate-spin" />
               Đang tải dự báo tại mốc Cutoff 75%…
             </div>
-          ) : prediction ? (
+          ) : prediction && prediction.risk_level !== 'NOT_PREDICTED' && prediction.risk_probability !== null ? (
             <>
               {/* Risk card */}
               <div
@@ -249,9 +398,13 @@ export const StudentPage: React.FC = () => {
                     >
                       {prediction.risk_level === 'HIGH_RISK' ? 'NGUY CƠ CAO' : 'AN TOÀN'}
                     </span>
+
                     <div className="text-[10px] text-slate-500 mt-2 font-mono">
-                      {prediction.cutoff_stage} &bull; {prediction.model_version}
+                      {prediction.cutoff_stage} &bull; {prediction.model_version || 'Phiên bản chưa xác minh'}
                     </div>
+                    {prediction.provenance_status === 'LEGACY_UNVERIFIED' && (
+                      <p className="text-xs text-amber-400 mt-2">Kết quả cũ chưa đủ thông tin truy vết.</p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -261,7 +414,7 @@ export const StudentPage: React.FC = () => {
                 <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
                   <h3 className="text-sm font-bold text-white flex items-center gap-2 mb-3">
                     <Lightbulb className="w-4 h-4 text-amber-400" />
-                    Khuyến nghị sư phạm từ mô hình
+                    Khuyến nghị theo nguy cơ và chỉ số học tập
                   </h3>
                   <ul className="space-y-2 text-xs">
                     {prediction.pedagogical_recommendations.map((rec, i) => (
@@ -273,14 +426,15 @@ export const StudentPage: React.FC = () => {
                   </ul>
                 </div>
               )}
-
-              {/* Radar 6D */}
-              {radar && <Radar6DCard radar={radar} />}
             </>
           ) : (
             <div className="p-8 rounded-2xl bg-slate-900/60 border border-slate-800 border-dashed text-center text-slate-400 text-sm">
-              Chọn một môn học để xem dự báo rủi ro &amp; đối sánh năng lực.
+              {selectedEnrollment ? "Chưa có dự báo cho dữ liệu hiện tại của môn học. Cần chạy dự báo sau khi cập nhật tiến độ." : "Chọn một môn học để xem dự báo và radar."}
             </div>
+          )}
+          {!loadingDetail && radar && <Radar6DCard radar={radar} />}
+          {!loadingDetail && selectedEnrollment && !radar && (
+            <p className="text-sm text-slate-400">Môn học chưa có dữ liệu radar.</p>
           )}
         </div>
       </div>
@@ -289,11 +443,12 @@ export const StudentPage: React.FC = () => {
       <div>
         <h2 className="text-sm font-bold text-white uppercase tracking-wider mb-3 flex items-center gap-2">
           <ClipboardList className="w-4 h-4 text-brand-400" />
-          Nhiệm vụ can thiệp cần thực hiện
+          Nhiệm vụ can thiệp — {selectedCourse?.code_module || 'chưa chọn môn'}
         </h2>
-        {upcomingTasks.length === 0 && (
+        {loadingDetail && <p className="text-xs text-slate-400">Đang tải nhiệm vụ của môn học…</p>}
+        {!loadingDetail && upcomingTasks.length === 0 && (
           <div className="text-xs text-slate-400">
-            Không có nhiệm vụ nào đang chờ. Chúc bạn học tốt!
+            {selectedEnrollment ? 'Môn học này chưa có nhiệm vụ đang chờ.' : 'Chọn môn học để xem nhiệm vụ.'}
           </div>
         )}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -362,10 +517,11 @@ export const StudentPage: React.FC = () => {
         <div className="flex items-center justify-between mb-3">
           <h2 className="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
             <HelpCircle className="w-4 h-4 text-cyan-400" />
-            Yêu cầu trợ giúp
+            Yêu cầu trợ giúp — {selectedCourse?.code_module || 'chưa chọn môn'}
           </h2>
           <button
             type="button"
+            disabled={!selectedEnrollment || loadingDetail || sendingHelp}
             onClick={() => setShowHelpForm((v) => !v)}
             className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold"
           >
@@ -426,8 +582,10 @@ export const StudentPage: React.FC = () => {
           </form>
         )}
 
-        {helpRequests.length === 0 ? (
-          <div className="text-xs text-slate-400">Bạn chưa gửi yêu cầu trợ giúp nào.</div>
+        {loadingDetail ? (
+          <p className="text-xs text-slate-400">Đang tải yêu cầu trợ giúp của môn học…</p>
+        ) : helpRequests.length === 0 ? (
+          <div className="text-xs text-slate-400">Môn học này chưa có yêu cầu trợ giúp.</div>
         ) : (
           <div className="space-y-2.5">
             {helpRequests.map((r) => (
@@ -461,11 +619,12 @@ export const StudentPage: React.FC = () => {
 };
 
 /**
- * Biểu đồ Radar đối sánh năng lực 6D lấy trực tiếp từ dữ liệu
+ * Biểu đồ Radar chỉ số hành vi 6D lấy trực tiếp từ dữ liệu
  * /api/v1/student/courses/{id}/radar của Backend.
  */
 const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
   const dims = radar.dimensions;
+  const appearance = radarAppearance(dims.map(d => d.reference_score));
 
   const chart = useMemo(() => {
     const n = dims.length;
@@ -474,7 +633,7 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
     const cy = 110;
     const pt = (value: number, index: number): [number, number] => {
       const angle = (2 * Math.PI * index) / n - Math.PI / 2;
-      const r = Math.max(4, Math.min(maxR, value));
+      const r = Math.max(0, Math.min(maxR, value));
       return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
     };
     const poly = (values: number[]) =>
@@ -487,15 +646,18 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
   return (
     <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800">
       <h3 className="text-sm font-bold text-white mb-1">
-        Đối sánh năng lực 6D{' '}
+        Đối sánh chỉ số hành vi 6D{' '}
         <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-400">
           Radar
         </span>
       </h3>
       <p className="text-xs text-slate-400 mb-3">
-        {radar.code_module} so với mức chuẩn của nhóm sinh viên Khá/Giỏi
+        {radar.code_module} · {radar.cutoff_stage === 'CUTOFF_75' ? 'mốc 75%' : 'mốc snapshot'}: mốc tham khảo tại thời điểm đánh giá. Tỷ lệ giới hạn 100%, không phải phân vị hay đánh giá năng lực; không phản ánh hoạt động hiện tại.
       </p>
 
+      <p className="text-xs text-slate-400 mb-3">{RADAR_COLOR_NOTE}</p>
+      {!radar.data_source && <p className="text-xs text-slate-400 mb-3">Chưa xác nhận nguồn dữ liệu; không coi đây là dữ liệu HUIT đã kiểm chứng.</p>}
+      {dims.some(d => d.reference_score === null) && <p className="text-xs text-slate-400 mb-3">Chưa đủ dữ liệu cho mọi chiều; không vẽ đa giác tổng hợp.</p>}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
         <svg viewBox="0 0 240 220" className="w-full max-w-xs mx-auto">
           <g>
@@ -516,21 +678,22 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
               );
             })}
             <polygon
-              points={dims.map((_, i) => chart.pt(dims[i].benchmark_value, i).join(',')).join(' ')}
+              points={dims.map((_, i) => chart.pt(100, i).join(',')).join(' ')}
               fill="rgba(59,130,246,0.12)"
               stroke="#60a5fa"
               strokeWidth="2"
               strokeDasharray="5,4"
             />
-            <polygon
-              points={dims.map((_, i) => chart.pt(dims[i].student_value, i).join(',')).join(' ')}
-              fill="rgba(34,211,238,0.2)"
-              stroke="#22d3ee"
+            {dims.every(d => d.reference_score !== null) && <polygon
+              points={dims.map((_, i) => chart.pt(dims[i].reference_score ?? 0, i).join(',')).join(' ')}
+              fill={appearance.fill}
+              stroke={appearance.stroke}
               strokeWidth="2"
-            />
+            />}
             {dims.map((d, i) => {
-              const [x, y] = chart.pt(d.student_value, i);
-              return <circle key={i} cx={x} cy={y} r="4" fill="#22d3ee" stroke="#0f172a" strokeWidth="1.5" />;
+              if (d.reference_score === null) return null;
+              const [x, y] = chart.pt(d.reference_score, i);
+              return <circle key={i} cx={x} cy={y} r="4" fill={radarAppearance([d.reference_score]).stroke} stroke="#0f172a" strokeWidth="1.5" />;
             })}
           </g>
         </svg>
@@ -540,24 +703,24 @@ const Radar6DCard: React.FC<{ radar: StudentRadarData }> = ({ radar }) => {
             <div key={d.metric} className="space-y-1">
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-300 font-medium">{d.metric}</span>
-                <span className="text-slate-400 font-mono">
-                  {d.percentile.toFixed(0)}%
+                <span className={`font-mono ${d.reference_score === null ? 'text-slate-400' : radarAppearance([d.reference_score]).text}`}>
+                  {d.reference_score === null ? 'Chưa đủ dữ liệu' : `${d.reference_score.toFixed(0)}% mốc`}
                 </span>
               </div>
               <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden">
                 <div
-                  className={`h-full rounded-full ${d.percentile < 50 ? 'bg-rose-500' : 'bg-cyan-400'}`}
-                  style={{ width: `${Math.min(100, d.percentile)}%` }}
+                  className={`h-full rounded-full ${radarAppearance([d.reference_score]).bar}`}
+                  style={{ width: `${Math.min(100, d.reference_score ?? 0)}%` }}
                 />
               </div>
             </div>
           ))}
           <div className="flex items-center gap-4 pt-1 text-[11px] text-slate-400">
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full bg-cyan-400" /> Tôi
+              <span className={`w-2.5 h-2.5 rounded-full ${appearance.bar}`} /> Tôi
             </span>
             <span className="flex items-center gap-1.5">
-              <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" /> Chuẩn giỏi
+              <span className="w-2.5 h-2.5 rounded-full border border-blue-400 border-dashed bg-blue-400/30" /> Mốc minh họa
             </span>
           </div>
         </div>

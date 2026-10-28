@@ -21,7 +21,7 @@ class Course(Base):
 
     # Relationships
     presentations: Mapped[List["CoursePresentation"]] = relationship(
-        "CoursePresentation", back_populates="course", cascade="all, delete-orphan"
+        "CoursePresentation", back_populates="course", passive_deletes="all"
     )
 
     def __repr__(self) -> str:
@@ -35,16 +35,16 @@ class CoursePresentation(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     course_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("courses.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("courses.id", ondelete="RESTRICT"), nullable=False
     )
     code_presentation: Mapped[str] = mapped_column(String(20), nullable=False, index=True)
     start_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
-    module_presentation_length: Mapped[int] = mapped_column(Integer, nullable=False)
+    module_presentation_length: Mapped[int] = mapped_column(Integer, default=260, nullable=False)
 
     # Relationships
     course: Mapped[Course] = relationship("Course", back_populates="presentations")
     enrollments: Mapped[List["StudentEnrollment"]] = relationship(
-        "StudentEnrollment", back_populates="presentation", cascade="all, delete-orphan"
+        "StudentEnrollment", back_populates="presentation", passive_deletes="all"
     )
 
     def __repr__(self) -> str:
@@ -58,12 +58,12 @@ class StudentEnrollment(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     student_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False
     )
     presentation_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("course_presentations.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("course_presentations.id", ondelete="RESTRICT"), nullable=False
     )
-    date_registration: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
+    date_registration: Mapped[int] = mapped_column(Integer, default=-10, nullable=False)
     date_unregistration: Mapped[Optional[int]] = mapped_column(Integer, nullable=True)
     studied_credits: Mapped[int] = mapped_column(Integer, default=60, nullable=False)
     num_of_prev_attempts: Mapped[int] = mapped_column(Integer, default=0, nullable=False)

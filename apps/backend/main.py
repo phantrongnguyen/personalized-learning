@@ -5,18 +5,17 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from api.router import api_router
 from core.config import settings
-from ml.model_loader import load_model
+from core.database import AsyncSessionLocal
+from services.model_registry import model_registry
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
-    # Load model một lần khi ứng dụng khởi động
-    app.state.model = load_model(settings.model_path)
-
+    async with AsyncSessionLocal() as db:
+        await model_registry.initialize(db)
+        await db.commit()
+    # No process-local active pointer: every request resolves the DB selection.
     yield
-
-    # Giải phóng tham chiếu khi ứng dụng tắt
-    app.state.model = None
 
 
 app = FastAPI(
@@ -26,6 +25,10 @@ app = FastAPI(
 )
 
 from pathlib import Path
+from fastapi.staticfiles import StaticFiles
+
+settings.avatar_upload_dir.mkdir(parents=True, exist_ok=True)
+app.mount("/media/avatars", StaticFiles(directory=str(settings.avatar_upload_dir)), name="avatars")
 
 # Thêm header cho phép trình duyệt truy cập private network (PNA)
 @app.middleware("http")
@@ -53,7 +56,6 @@ frontend_dir = Path(__file__).resolve().parent.parent / "frontend"
 dist_dir = frontend_dir / "dist"
 serve_dir = dist_dir if dist_dir.exists() else frontend_dir
 if serve_dir.exists():
-    from fastapi.staticfiles import StaticFiles
     app.mount("/app", StaticFiles(directory=str(serve_dir), html=True), name="frontend")
 
 

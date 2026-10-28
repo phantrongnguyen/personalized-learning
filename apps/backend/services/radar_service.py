@@ -1,74 +1,47 @@
-from typing import Dict, Any, List
+"""Illustrative reference scores, never population percentiles or ability scores."""
+import json
+from math import floor, isfinite
+from pathlib import Path
+from typing import Any
+
+RADAR_REFERENCE = json.loads((Path(__file__).resolve().parents[3] /
+    "packages/shared/constants/radar-reference.json").read_text(encoding="utf-8"))
 
 
-# Benchmark OULAD Top 25% sinh viên Giỏi (mốc Cutoff 75%)
-BENCHMARK_TOP_25: Dict[str, float] = {
-    "total_clicks": 350.0,
-    "active_days": 40.0,
-    "active_day_ratio": 0.45,
-    "clicks_recent_7": 30.0,
-    "submission_rate": 0.95,
-    "late_submissions": 0.0,
-}
+def _number(value):
+    return type(value) in (int, float) and isfinite(value) and value >= 0
 
 
-def calculate_radar_6d(snap_data: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """
-    Tính toán 6 chiều năng lực học tập đối sánh với chuẩn Benchmark Top 25% sinh viên:
-    1. Độ chuyên cần (active_days)
-    2. Tổng tương tác VLE (total_clicks)
-    3. Tương tác 7 ngày gần nhất (clicks_recent_7)
-    4. Tỷ lệ nộp bài tập (submission_rate)
-    5. Kỷ luật đúng hạn (late_submissions nghịch đảo)
-    6. Mật độ ngày học tích lũy (active_day_ratio)
-    """
-    total_clicks = float(snap_data.get("total_clicks_to_t", 0))
-    active_days = float(snap_data.get("active_days_to_t", 0))
-    active_day_ratio = float(snap_data.get("active_day_ratio", 0.0))
-    clicks_recent_7 = float(snap_data.get("clicks_recent_7", 0))
-    submission_rate = float(snap_data.get("submission_rate", 0.0))
-    late_submissions = float(snap_data.get("late_submissions_to_t", 0))
-
-    # Kỷ luật nộp bài: nếu 0 bài trễ -> 100%, mỗi bài trễ trừ 25% (tối thiểu 0%)
-    discipline_score = max(0.0, 1.0 - (late_submissions * 0.25))
-
-    dimensions = [
-        {
-            "metric": "Tổng tương tác VLE",
-            "student_value": total_clicks,
-            "benchmark_value": BENCHMARK_TOP_25["total_clicks"],
-            "percentile": min(100.0, round((total_clicks / BENCHMARK_TOP_25["total_clicks"]) * 100, 1)),
-        },
-        {
-            "metric": "Số ngày học tích lũy",
-            "student_value": active_days,
-            "benchmark_value": BENCHMARK_TOP_25["active_days"],
-            "percentile": min(100.0, round((active_days / BENCHMARK_TOP_25["active_days"]) * 100, 1)),
-        },
-        {
-            "metric": "Mật độ ngày học",
-            "student_value": round(active_day_ratio, 2),
-            "benchmark_value": BENCHMARK_TOP_25["active_day_ratio"],
-            "percentile": min(100.0, round((active_day_ratio / BENCHMARK_TOP_25["active_day_ratio"]) * 100, 1)),
-        },
-        {
-            "metric": "Tương tác 7 ngày gần đây",
-            "student_value": clicks_recent_7,
-            "benchmark_value": BENCHMARK_TOP_25["clicks_recent_7"],
-            "percentile": min(100.0, round((clicks_recent_7 / BENCHMARK_TOP_25["clicks_recent_7"]) * 100, 1)),
-        },
-        {
-            "metric": "Tỷ lệ nộp bài tập",
-            "student_value": round(submission_rate * 100, 1),
-            "benchmark_value": round(BENCHMARK_TOP_25["submission_rate"] * 100, 1),
-            "percentile": min(100.0, round((submission_rate / BENCHMARK_TOP_25["submission_rate"]) * 100, 1)),
-        },
-        {
-            "metric": "Kỷ luật đúng hạn",
-            "student_value": round(discipline_score * 100, 1),
-            "benchmark_value": 100.0,
-            "percentile": round(discipline_score * 100, 1),
-        },
-    ]
-
+def calculate_radar_6d(snap_data: dict[str, Any]) -> list[dict[str, Any]]:
+    dimensions = []
+    for spec in RADAR_REFERENCE["dimensions"]:
+        key, reference = spec["key"], spec["reference"]
+        value = snap_data.get(key)
+        valid = _number(value)
+        if key in ("active_day_ratio", "submission_rate"):
+            valid = valid and value <= 1
+        if key == "late_submissions_to_t":
+            submitted = snap_data.get("assessments_submitted_to_t")
+            valid = valid and _number(submitted) and submitted > 0 and value <= submitted
+            # No submissions is not evidence of perfect submission discipline.
+            value = max(0, 1 - value * RADAR_REFERENCE["late_submission_penalty"]) * 100 if valid else None
+        if not valid:
+            value = None
+        score = floor(min(100, max(0, value / reference * 100)) * 10 + 0.5) / 10 if value is not None else None
+        dimensions.append({"metric": spec["metric"], "student_value": value,
+                           "benchmark_value": reference, "reference_score": score,
+                           "unit": spec["unit"]})
     return dimensions
+
+
+def snapshot_radar(snapshot, enrollment_id, code_module):
+    keys = [spec["key"] for spec in RADAR_REFERENCE["dimensions"]] + ["assessments_submitted_to_t"]
+    source = snapshot.raw_features_json
+    return {
+        "enrollment_id": enrollment_id, "code_module": code_module,
+        "dimensions": calculate_radar_6d({key: getattr(snapshot, key, None) for key in keys}),
+        "reference_version": RADAR_REFERENCE["version"], "reference_status": RADAR_REFERENCE["status"],
+        "snapshot_id": snapshot.id, "cutoff_stage": snapshot.cutoff_stage,
+        "recorded_at": snapshot.created_at,
+        "data_source": source.get("data_source") if isinstance(source, dict) else None,
+    }

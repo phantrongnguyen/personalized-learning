@@ -1,0 +1,115 @@
+{
+  "model": "XGBoost",
+  "run_time_local": "2026-10-07T22:05:04",
+  "python": "3.12.6",
+  "versions": {
+    "numpy": "2.2.6",
+    "pandas": "2.2.2",
+    "scikit-learn": "1.6.0",
+    "lightgbm": "4.7.0",
+    "catboost": "1.2.10",
+    "xgboost": "3.1.2"
+  },
+  "params": {
+    "n_estimators": 80,
+    "max_depth": 4,
+    "learning_rate": 0.055,
+    "min_child_weight": 1,
+    "reg_lambda": 1.0,
+    "reg_alpha": 0.0,
+    "subsample": 1.0,
+    "colsample_bytree": 1.0,
+    "tree_method": "hist",
+    "objective": "binary:logistic",
+    "eval_metric": "logloss",
+    "random_state": 41,
+    "n_jobs": 4,
+    "verbosity": 0,
+    "device": "cpu"
+  },
+  "lightgbm_params": {
+    "n_estimators": 80,
+    "learning_rate": 0.055,
+    "num_leaves": 15,
+    "min_child_samples": 35,
+    "verbosity": -1,
+    "random_state": 41,
+    "n_jobs": 4
+  },
+  "seed": 41,
+  "budget": 8,
+  "population": 3,
+  "alpha": 0.85,
+  "threshold": 0.5,
+  "cv": "GroupKFold(n_splits=3) inside train",
+  "split_source": "Existing student split column, seed 41",
+  "test_evaluated": false,
+  "production_model_changed": false,
+  "data_sha256": {
+    "0.5": "10a489a6f22ef2188ac17bdcc52cf9ececcfb152b8dbc4a7c8ec283d56224644",
+    "0.75": "03eb791cd312467eca322ed2f0b34020973e2ffdb3af7fc4e0212c467046bd23"
+  },
+  "excluded_columns": {
+    "0.5": [
+      "id_student",
+      "final_result",
+      "module_presentation_length",
+      "progress_fraction",
+      "risk",
+      "cutoff",
+      "cutoff_mode",
+      "score_policy",
+      "split"
+    ],
+    "0.75": [
+      "id_student",
+      "final_result",
+      "module_presentation_length",
+      "progress_fraction",
+      "risk",
+      "cutoff",
+      "cutoff_mode",
+      "score_policy",
+      "split"
+    ]
+  },
+  "data_audit": [
+    {
+      "cutoff": 0.5,
+      "rows": 24599,
+      "raw_columns": 47,
+      "train_rows": 17310,
+      "validation_rows": 3638,
+      "test_rows": 3651,
+      "features": 38,
+      "train_students": 15943,
+      "validation_students": 3380,
+      "risk_rate_train": 0.37250144425187753,
+      "risk_rate_validation": 0.38207806487080814
+    },
+    {
+      "cutoff": 0.75,
+      "rows": 23159,
+      "raw_columns": 47,
+      "train_rows": 16297,
+      "validation_rows": 3415,
+      "test_rows": 3447,
+      "features": 38,
+      "train_students": 15206,
+      "validation_students": 3207,
+      "risk_rate_train": 0.33349696263115913,
+      "risk_rate_validation": 0.3417276720351391
+    }
+  ],
+  "lightgbm_max_ap_drift": 0.0,
+  "frozen_csv_sha256": "ede07c9531bad94798ce47041f5f0eee7e75632f622e8dff68c8bfc56b0170ab",
+  "timing_repeats": 1,
+  "reference_search_rerun": false,
+  "missing_policy": "train-only median/mode + OneHot",
+  "artifacts": [
+    "so_sanh_xgboost_lightgbm_50_75.csv",
+    "tim_mask_xgboost_50_75.csv",
+    "so_sanh_xgboost_lightgbm_50_75.png",
+    "tim_mask_xgboost_50_75.png"
+  ]
+}

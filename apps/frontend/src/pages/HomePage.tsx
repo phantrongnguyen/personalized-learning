@@ -1,3 +1,4 @@
+import { ZoomableChart } from '../components/evaluation/ZoomableChart';
 import React from 'react';
 import { useApp } from '../state/AppContext';
 import {
@@ -22,44 +23,23 @@ import {
 } from 'lucide-react';
 
 export const HomePage: React.FC = () => {
-  const { setCurrentView, user } = useApp();
+  const { setCurrentView } = useApp();
 
   return (
     <div className="space-y-16 py-6">
       {/* 1. Hero Section */}
       <section className="text-center max-w-4xl mx-auto px-4 pt-6 pb-2">
-        {user && (
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/90 border border-brand-500/30 text-xs text-slate-300 mb-5 shadow-lg shadow-brand-500/5">
-            <span className="w-2 h-2 rounded-full bg-brand-400 animate-pulse" />
-            <span>
-              Xin chào, <strong className="text-white">{user.name}</strong>
-            </span>
-            <span className="text-slate-600">&bull;</span>
-            <span className="text-brand-400 font-semibold">{user.role}</span>
-            {user.department && (
-              <>
-                <span className="text-slate-600 hidden sm:inline">&bull;</span>
-                <span className="text-slate-400 hidden sm:inline">{user.department}</span>
-              </>
-            )}
-          </div>
-        )}
-
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-brand-500/10 border border-brand-500/20 text-brand-400 text-xs font-semibold mb-6">
-          <Sparkles className="w-3.5 h-3.5" />
-          <span>EduRisk AI Enterprise Platform &bull; Quản trị Rủi ro Đào tạo &amp; Cá nhân hóa Học tập</span>
-        </div>
-
         <h1 className="text-3xl sm:text-5xl font-extrabold text-white tracking-tight leading-tight sm:leading-tight mb-6">
           Dự Đoán Nguy Cơ &amp; Can Thiệp Học Tập <br className="hidden sm:inline" />
           <span className="bg-gradient-to-r from-brand-400 via-brand-300 to-cyan-400 bg-clip-text text-transparent">
-            Chuẩn Xác Với Trí Tuệ Nhân Tạo
+            Hỗ trợ quyết định từ dữ liệu học tập
           </span>
         </h1>
 
         <p className="text-base sm:text-lg text-slate-300 max-w-2xl mx-auto leading-relaxed mb-8">
-          Ứng dụng mô hình phân lớp <strong className="text-white">LightGBM</strong> tối ưu siêu tham số
-          bằng thuật toán lai <strong className="text-brand-400">HCO-VNLS</strong> (Human Conception Optimization &amp; Variable Neighborhood Local Search), hỗ trợ ban cố vấn học tập và cơ sở giáo dục phát hiện sớm nguy cơ trượt/bỏ học để can thiệp kịp thời.
+          Kết hợp <strong className="text-white">LightGBM</strong> với thuật toán chọn đặc trưng
+          <strong className="text-brand-400"> HCO–VNLS</strong> để nhận diện nguy cơ trượt môn hoặc bỏ học.
+          Kết quả nghiên cứu trên OULAD hỗ trợ cố vấn xem xét và lập kế hoạch học tập phù hợp.
         </p>
 
         <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
@@ -82,44 +62,120 @@ export const HomePage: React.FC = () => {
       </section>
 
       {/* 2. KPI Stats Grid */}
-      <section className="max-w-6xl mx-auto px-4">
+      <section className="max-w-6xl mx-auto px-4" aria-labelledby="validation-heading">
+        <h2 id="validation-heading" className="text-xl font-bold text-white mb-2">Kết quả tham chiếu trên OULAD</h2>
+        <p className="text-sm text-slate-400 mb-5 leading-relaxed">
+          HCO–VNLS + LightGBM · cutoff 75% · seed 41. Các chỉ số được đo trên validation của model fit train,
+          không phải điểm kiểm thử độc lập của model đã fit lại trên train + validation.
+        </p>
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
               <span className="text-xs font-semibold">Độ chính xác (Accuracy)</span>
               <TrendingUp className="w-4 h-4 text-brand-400" />
             </div>
-            <div className="text-3xl font-extrabold text-white font-mono">93.04%</div>
-            <div className="text-[11px] text-brand-400 mt-1">Đánh giá kiểm thử độc lập (Test 20%)</div>
+            <div className="text-3xl font-extrabold text-white font-mono">87,41%</div>
+            <div className="text-[11px] text-brand-400 mt-1">Validation lịch sử · 3.415 lượt đăng ký</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-semibold">ROC-AUC Score</span>
+              <span className="text-xs font-semibold">Average Precision (AP)</span>
               <BrainCircuit className="w-4 h-4 text-cyan-400" />
             </div>
-            <div className="text-3xl font-extrabold text-white font-mono">0.9785</div>
-            <div className="text-[11px] text-cyan-400 mt-1">Khả năng phân tách nhãn nhị phân tối ưu</div>
+            <div className="text-3xl font-extrabold text-white font-mono">0,8968</div>
+            <div className="text-[11px] text-cyan-400 mt-1">AP lớp nguy cơ · ROC-AUC: 0,9174</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-semibold">Giảm số chiều dữ liệu</span>
+              <span className="text-xs font-semibold">Giảm số đặc trưng đầu vào</span>
               <Filter className="w-4 h-4 text-amber-400" />
             </div>
-            <div className="text-3xl font-extrabold text-white font-mono">86.7%</div>
-            <div className="text-[11px] text-amber-400 mt-1">Lọc từ 30 biến xuống 4 đặc trưng cốt lõi</div>
+            <div className="text-3xl font-extrabold text-white font-mono">55,26%</div>
+            <div className="text-[11px] text-amber-400 mt-1">Từ 38 xuống 17 cột trước mã hóa</div>
           </div>
 
           <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-lg relative overflow-hidden group hover:border-brand-500/40 transition-colors">
             <div className="flex items-center justify-between text-slate-400 mb-2">
-              <span className="text-xs font-semibold">Thời điểm quan sát</span>
+              <span className="text-xs font-semibold">Phát hiện trường hợp nguy cơ (Recall)</span>
               <Clock className="w-4 h-4 text-purple-400" />
             </div>
-            <div className="text-3xl font-extrabold text-white font-mono">Cutoff 75%</div>
-            <div className="text-[11px] text-purple-400 mt-1">Thời điểm vàng để can thiệp trước thi</div>
+            <div className="text-3xl font-extrabold text-white font-mono">68,98%</div>
+            <div className="text-[11px] text-purple-400 mt-1">Cutoff 75% · Ngưỡng phân loại 0,5</div>
           </div>
         </div>
+      </section>
+
+      <section className="max-w-6xl mx-auto px-4" aria-labelledby="comparison-heading">
+        <div className="mb-5">
+          <h2 id="comparison-heading" className="text-2xl font-bold text-white mb-2">Ít đặc trưng hơn, chất lượng gần giữ nguyên</h2>
+          <p className="text-sm text-slate-400 leading-relaxed max-w-3xl">
+            Tại cutoff 75%, hybrid LightGBM giảm 21 cột nhưng AP thấp hơn đối chứng đủ cột 0,000231.
+            Lợi ích chính là độ gọn của đầu vào; chưa có bằng chứng cải thiện khả năng phát hiện nguy cơ.
+          </p>
+        </div>
+        <ZoomableChart title="So sánh kết quả các bộ học tại cutoff 75%" variant="table">
+        <div className="overflow-x-auto rounded-2xl border border-slate-800 bg-slate-900/60">
+          <table className="w-full min-w-[640px] text-sm text-left">
+            <caption className="text-left px-5 py-4 text-xs text-slate-400">
+              Validation lịch sử · ngưỡng 0,5 · cùng cutoff 75%. Mỗi bộ học dùng mask được chọn với evaluator tương ứng.
+            </caption>
+            <thead className="bg-slate-800/70 text-slate-300">
+              <tr>
+                {['Bộ học / Đặc trưng', 'Số cột', 'Accuracy', 'Recall nguy cơ', 'AP'].map(label => (
+                  <th key={label} scope="col" className="px-5 py-3 font-semibold whitespace-nowrap">{label}</th>
+                ))}
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-slate-800">
+              {[
+                { name: 'LightGBM · Đủ cột', columns: 38, accuracy: '87,35%', recall: '68,98%', ap: '0,896987' },
+                { name: 'LightGBM · HCO–VNLS', columns: 17, accuracy: '87,41%', recall: '68,98%', ap: '0,896757', highlighted: true },
+                { name: 'XGBoost · Đủ cột', columns: 38, accuracy: '87,29%', recall: '68,29%', ap: '0,895345' },
+                { name: 'XGBoost · HCO–VNLS', columns: 17, accuracy: '87,32%', recall: '67,95%', ap: '0,894079' },
+                { name: 'CatBoost · Đủ cột', columns: 38, accuracy: '87,14%', recall: '68,47%', ap: '0,897867' },
+                { name: 'CatBoost · HCO–VNLS', columns: 16, accuracy: '85,89%', recall: '64,70%', ap: '0,883905' },
+              ].map(row => (
+                <tr key={row.name} className={row.highlighted ? 'bg-brand-500/10 text-brand-300' : 'text-slate-300'}>
+                  <th scope="row" className="px-5 py-3 font-medium">{row.name}</th>
+                  <td className="px-5 py-3 font-mono">{row.columns}</td>
+                  <td className="px-5 py-3 font-mono">{row.accuracy}</td>
+                  <td className="px-5 py-3 font-mono">{row.recall}</td>
+                  <td className="px-5 py-3 font-mono">{row.ap}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        </ZoomableChart>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+            <h3 className="font-semibold text-white mb-2">Hiểu đúng cảnh báo</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Hybrid LightGBM phát hiện 805/1.167 lượt đăng ký nguy cơ, bỏ sót 362 (31,02%) và cảnh báo nhầm 68 trường hợp.
+              Đơn vị đánh giá là lượt đăng ký học phần, không phải sinh viên duy nhất.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+            <h3 className="font-semibold text-white mb-2">Kết quả phụ thuộc thời điểm</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Ở cutoff 50%, AP của hybrid LightGBM là 0,845151, thấp hơn đủ cột 0,851085.
+              Mốc 75% có kết quả tốt hơn nhưng ít thời gian hỗ trợ hơn và quần thể đánh giá cũng thay đổi.
+            </p>
+          </div>
+          <div className="rounded-xl border border-slate-800 bg-slate-900/60 p-5">
+            <h3 className="font-semibold text-white mb-2">Cần kiểm chứng thêm</h3>
+            <p className="text-xs text-slate-400 leading-relaxed">
+              Qua 5 seed, AP validation hybrid 75% trung bình 0,893906; độ trùng lặp tập cột Jaccard chỉ 0,2568.
+              Chưa có tập học kỳ mới độc lập để xác nhận kết quả hoặc hiệu quả can thiệp.
+            </p>
+          </div>
+        </div>
+        <p className="text-xs text-slate-400 mt-4 leading-relaxed">
+          AP đo chất lượng xếp hạng lớp nguy cơ, khác ROC-AUC. Nguồn: báo cáo thí nghiệm HCO–VNLS,
+          đối chiếu ngày 19/10/2026. Đây là kết quả nghiên cứu tham chiếu, không phải phép đo model đang hoạt động.
+        </p>
       </section>
 
       {/* 3. Three Core Highlights */}
@@ -127,7 +183,7 @@ export const HomePage: React.FC = () => {
         <div className="text-center mb-10">
           <h2 className="text-2xl font-bold text-white mb-2">Quy trình Khép kín từ Dữ liệu tới Hành động</h2>
           <p className="text-xs sm:text-sm text-slate-400">
-            Chuyển dịch từ phân tích dự báo (Predictive) sang kê đơn giải pháp (Prescriptive)
+            Theo dõi chỉ số, xem dự báo và xây dựng kế hoạch hỗ trợ cùng cố vấn
           </p>
         </div>
 
@@ -136,10 +192,10 @@ export const HomePage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-brand-500/10 border border-brand-500/20 text-brand-400 flex items-center justify-center mb-4">
               <Filter className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-white mb-2">1. Lọc Đặc Trưng Tối Ưu (HCO-VNLS)</h3>
+            <h3 className="text-base font-bold text-white mb-2">1. Chọn đặc trưng với HCO–VNLS</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Thuật toán lai Human Conception Optimization kết hợp Variable Neighborhood Local Search
-              tự động loại bỏ các thuộc tính nhiễu, đa cộng tuyến trong nhật ký LMS.
+              Tìm tập con đặc trưng bằng cách cân bằng AP trên train-CV và số cột được giữ lại.
+              Cấu hình 75% chọn 17/38 cột; chưa chứng minh đây là tập đặc trưng tối ưu.
             </p>
           </div>
 
@@ -147,10 +203,10 @@ export const HomePage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-cyan-500/10 border border-cyan-500/20 text-cyan-400 flex items-center justify-center mb-4">
               <BrainCircuit className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-white mb-2">2. Suy Luận Thời Gian Thực (FastAPI)</h3>
+            <h3 className="text-base font-bold text-white mb-2">2. Dự báo với LightGBM</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Mô hình LightGBM được đóng gói và phục vụ qua RESTful API tốc độ cao, tính toán xác suất
-              rủi ro trượt môn chỉ trong vài mili-giây.
+              Pipeline LightGBM nhận 17 đặc trưng đúng mốc quan sát và trả xác suất nguy cơ qua API.
+              Model cutoff 75% cần dữ liệu tương ứng, không tự áp dụng cho mốc 50%.
             </p>
           </div>
 
@@ -158,10 +214,10 @@ export const HomePage: React.FC = () => {
             <div className="w-10 h-10 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center mb-4">
               <Layers className="w-5 h-5" />
             </div>
-            <h3 className="text-base font-bold text-white mb-2">3. Đề Xuất Chiến Lược &amp; Radar Chart</h3>
+            <h3 className="text-base font-bold text-white mb-2">3. Xem xét và lập kế hoạch hỗ trợ</h3>
             <p className="text-xs text-slate-400 leading-relaxed">
-              Hệ luật sư phạm đối sánh hành vi sinh viên với nhóm khá giỏi (Pass/Distinction), kê đơn
-              hành động cụ thể kèm chỉ số mục tiêu đo lường được.
+              Biểu đồ và gợi ý giúp sinh viên, giảng viên, cố vấn trao đổi về tiến độ học tập.
+              Hiệu quả giảm trượt môn hoặc bỏ học của các can thiệp chưa được đánh giá thực địa.
             </p>
           </div>
         </div>
@@ -174,9 +230,9 @@ export const HomePage: React.FC = () => {
             <Cpu className="w-6 h-6" />
           </div>
           <div>
-            <h2 className="text-2xl font-bold text-white">Thông Tin Nền Tảng &amp; Đặc Tả Hệ Thống</h2>
+            <h2 className="text-2xl font-bold text-white">Dữ liệu và phạm vi sử dụng</h2>
             <p className="text-xs text-slate-400">
-              Kiến trúc kỹ thuật, chuẩn dữ liệu giáo dục và các cam kết vận hành doanh nghiệp
+              Thông tin nghiên cứu và chức năng hỗ trợ trong dự án
             </p>
           </div>
         </div>
@@ -186,15 +242,16 @@ export const HomePage: React.FC = () => {
           <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
             <div className="flex items-center gap-2 text-brand-400 font-bold text-sm">
               <Sparkles className="w-4 h-4" />
-              <span>Sứ Mệnh &amp; Bản Quyền</span>
+              <span>Mục tiêu của dự án</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              <strong>EduRisk AI Platform (Enterprise Edition)</strong> là giải pháp AI phân tích hành vi học tập chuyên sâu, đồng hành cùng các trường đại học và tổ chức giáo dục trong việc nhận diện sớm học viên gặp khó khăn và giảm thiểu tỷ lệ bỏ học/trượt môn.
+              <strong>EduRisk AI</strong> là dự án hỗ trợ nhận diện nguy cơ học tập, theo dõi tiến độ
+              và lập kế hoạch can thiệp. Dự báo là thông tin tham khảo để trao đổi, không thay thế đánh giá của người phụ trách.
             </p>
             <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <div>&bull; Bản quyền: &copy; {new Date().getFullYear()} EduRisk AI Systems</div>
-              <div>&bull; Phiên bản: v2.4 Enterprise Stable</div>
-              <div>&bull; Môi trường vận hành: Private Cloud / On-Premise</div>
+              <div>&bull; Bài toán: nguy cơ trượt môn hoặc bỏ học</div>
+              <div>&bull; Nhãn nguy cơ: Fail / Withdrawn</div>
+              <div>&bull; Nhãn không nguy cơ: Pass / Distinction</div>
             </div>
           </div>
 
@@ -205,12 +262,14 @@ export const HomePage: React.FC = () => {
               <span>Dữ Liệu &amp; Thuật Toán Lõi</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Mô hình học máy LightGBM được huấn luyện trên <strong>32.593 bản ghi</strong> thuộc tập dữ liệu <em>Open University Learning Analytics Dataset (OULAD)</em>, sử dụng thuật toán bọc lai <strong>HCO-VNLS</strong> để tối ưu chọn lọc đặc trưng với hàm thích nghi đa mục tiêu.
+              Thí nghiệm cutoff 75% sử dụng <strong>23.159 lượt đăng ký học phần</strong> từ
+              <em> Open University Learning Analytics Dataset (OULAD)</em>: 16.297 train,
+              3.415 validation và 3.447 test, chia theo sinh viên.
             </p>
             <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <div>&bull; Backend: FastAPI &bull; Python 3.12 &bull; Joblib Engine</div>
-              <div>&bull; Frontend: React 18 &bull; TypeScript &bull; Vite &bull; Tailwind</div>
-              <div>&bull; Tốc độ suy luận API: &lt; 20ms / truy vấn</div>
+              <div>&bull; Chọn mask: GroupKFold 3 fold trong train</div>
+              <div>&bull; Bộ học: LightGBM 80 cây · seed 41</div>
+              <div>&bull; Đóng gói: fit lại 19.712 dòng train + validation</div>
             </div>
           </div>
 
@@ -218,15 +277,16 @@ export const HomePage: React.FC = () => {
           <div className="p-6 rounded-2xl bg-slate-900/70 border border-slate-800 space-y-3">
             <div className="flex items-center gap-2 text-purple-400 font-bold text-sm">
               <ShieldCheck className="w-4 h-4" />
-              <span>Bảo Mật &amp; Tích Hợp LMS</span>
+              <span>Điều kiện áp dụng</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Hệ thống đáp ứng các chuẩn kết nối quốc tế trong ngành EdTech, cho phép đồng bộ hóa dữ liệu 2 chiều với hệ thống quản lý học tập (LMS) mà vẫn đảm bảo tính bảo mật và quyền riêng tư tuyệt đối cho dữ liệu học viên.
+              Đặc trưng phải được tính từ thông tin đã có tại cutoff. Kết quả OULAD chưa xác nhận
+              khả năng khái quát sang sinh viên HUIT hoặc một học kỳ mới.
             </p>
             <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 space-y-1">
-              <div>&bull; Tương thích: IMS LTI 1.3 Advantage &bull; REST API v1</div>
-              <div>&bull; Mã hóa: Chuẩn AES-256 (At-rest) &bull; TLS 1.3 (In-transit)</div>
-              <div>&bull; Tiêu chuẩn tuân thủ: FERPA &bull; GDPR &bull; ISO 27001</div>
+              <div>&bull; Ngưỡng 0,5 chưa tối ưu cho vận hành</div>
+              <div>&bull; Chưa đánh giá đầy đủ độ hiệu chỉnh xác suất</div>
+              <div>&bull; Cần dữ liệu mới để kiểm chứng độc lập</div>
             </div>
           </div>
         </div>
@@ -266,7 +326,7 @@ export const HomePage: React.FC = () => {
               <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-brand-400" />
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-4">
-              Nhập 17 đặc trưng học tập OULAD, nạp mẫu sinh viên, xem đồng hồ đo SVG Gauge và biểu đồ Radar đối sánh.
+              Nhập 17 đặc trưng học tập theo cutoff 75%, xem dự báo nguy cơ và biểu đồ đối sánh.
             </p>
 
             <div className="flex items-center gap-1 text-xs font-semibold text-brand-400">
@@ -290,11 +350,11 @@ export const HomePage: React.FC = () => {
             </div>
 
             <h3 className="text-base font-bold text-white group-hover:text-cyan-300 transition-colors mb-1.5 flex items-center justify-between">
-              <span>Hồ Sơ Chuyên Gia</span>
+              <span>Hồ sơ cá nhân</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-cyan-400" />
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-4">
-              Quản lý tài khoản cố vấn, theo dõi thống kê số ca rủi ro phát hiện trong phiên và lấy LMS API Integration Key.
+              Xem và cập nhật thông tin tài khoản, ảnh đại diện và thông tin liên hệ.
             </p>
 
             <div className="flex items-center gap-1 text-xs font-semibold text-cyan-400">
@@ -346,15 +406,15 @@ export const HomePage: React.FC = () => {
             </div>
 
             <h3 className="text-base font-bold text-white group-hover:text-amber-300 transition-colors mb-1.5 flex items-center justify-between">
-              <span>Hợp Tác Doanh Nghiệp</span>
+              <span>Liên hệ và hỗ trợ</span>
               <ExternalLink className="w-3.5 h-3.5 text-slate-500 group-hover:text-amber-400" />
             </h3>
             <p className="text-xs text-slate-400 leading-relaxed mb-4">
-              Kênh tư vấn triển khai giải pháp Private Cloud, hỗ trợ kỹ thuật API và bộ giải đáp thắc mắc chuyên sâu (FAQs).
+              Tìm thông tin liên hệ và gửi trao đổi về cách sử dụng nền tảng.
             </p>
 
             <div className="flex items-center gap-1 text-xs font-semibold text-amber-400">
-              <span>Liên hệ hợp tác</span>
+              <span>Xem thông tin liên hệ</span>
               <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
             </div>
           </div>
@@ -390,7 +450,7 @@ export const HomePage: React.FC = () => {
                 <span>Bước 1: Nạp Dữ Liệu</span>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Nhập 17 trường chỉ số học tập hoặc nhấn nhanh mẫu thử nghiệm (Sinh viên yếu / Sinh viên tốt).
+                Chuẩn bị 17 đặc trưng từ dữ liệu đã có tại mốc 75% thời lượng học phần.
               </p>
             </div>
 
@@ -407,20 +467,20 @@ export const HomePage: React.FC = () => {
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-purple-400">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Bước 3: Đối Sánh Năng Lực</span>
+                <span>Bước 3: Xem xét chỉ số</span>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Quan sát biểu đồ Radar Chart để phát hiện ngay các chỉ số bị tụt hậu so với ngưỡng chuẩn giỏi.
+                Xem biểu đồ đối sánh và trao đổi với cố vấn về các chỉ số cần theo dõi.
               </p>
             </div>
 
             <div className="p-4 rounded-xl bg-slate-900/60 border border-slate-800/80 space-y-1.5">
               <div className="flex items-center gap-2 font-bold text-amber-400">
                 <CheckCircle2 className="w-4 h-4" />
-                <span>Bước 4: Kê Đơn &amp; Báo Cáo</span>
+                <span>Bước 4: Lập kế hoạch hỗ trợ</span>
               </div>
               <p className="text-slate-300 leading-relaxed">
-                Sao chép khuyến nghị can thiệp hành vi 1-click và xuất lịch sử ra file CSV chuẩn tiếng Việt.
+                Cùng cố vấn chọn hành động phù hợp và theo dõi tiến độ; dự báo không tự quyết định kết quả học vụ.
               </p>
             </div>
           </div>

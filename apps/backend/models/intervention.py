@@ -15,10 +15,10 @@ class InterventionPlan(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     prediction_run_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("prediction_runs.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("prediction_runs.id", ondelete="RESTRICT"), nullable=False
     )
     student_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_profiles.id", ondelete="RESTRICT"), nullable=False
     )
     status: Mapped[str] = mapped_column(String(30), default="ACTIVE", nullable=False)
     target_completion_date: Mapped[Optional[date]] = mapped_column(Date, nullable=True)
@@ -35,7 +35,7 @@ class InterventionPlan(Base):
 
     # Relationships
     tasks: Mapped[List["InterventionTask"]] = relationship(
-        "InterventionTask", back_populates="plan", cascade="all, delete-orphan", lazy="selectin"
+        "InterventionTask", back_populates="plan", passive_deletes="all", lazy="selectin"
     )
 
     def __repr__(self) -> str:
@@ -49,13 +49,13 @@ class InterventionTask(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     plan_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("intervention_plans.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("intervention_plans.id", ondelete="RESTRICT"), nullable=False
     )
     category: Mapped[str] = mapped_column(String(50), nullable=False)
     priority: Mapped[str] = mapped_column(String(20), default="MEDIUM", nullable=False)
     title: Mapped[str] = mapped_column(String(255), nullable=False)
     description: Mapped[str] = mapped_column(Text, nullable=False)
-    target_metric: Mapped[str] = mapped_column(String(100), nullable=False)
+    target_metric: Mapped[str] = mapped_column(String(255), nullable=False)
     is_completed: Mapped[bool] = mapped_column(Boolean, default=False, nullable=False)
     completed_at: Mapped[Optional[datetime]] = mapped_column(DateTime(timezone=True), nullable=True)
     student_feedback: Mapped[Optional[str]] = mapped_column(Text, nullable=True)
@@ -74,10 +74,10 @@ class AdvisingNote(Base):
         UUID(as_uuid=True), primary_key=True, default=uuid.uuid4
     )
     enrollment_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("student_enrollments.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("student_enrollments.id", ondelete="RESTRICT"), nullable=False
     )
     advisor_id: Mapped[uuid.UUID] = mapped_column(
-        UUID(as_uuid=True), ForeignKey("advisor_profiles.id", ondelete="CASCADE"), nullable=False
+        UUID(as_uuid=True), ForeignKey("advisor_profiles.id", ondelete="RESTRICT"), nullable=False
     )
     meeting_date: Mapped[date] = mapped_column(Date, nullable=False)
     meeting_type: Mapped[str] = mapped_column(String(50), default="ONLINE", nullable=False)

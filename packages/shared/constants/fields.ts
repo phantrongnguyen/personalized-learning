@@ -24,7 +24,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     key: 'highest_education',
     group: 'info',
     label: 'Học vấn cao nhất',
-    hint: 'highest_education',
+    hint: 'Nhóm học vấn OULAD; chưa ánh xạ bằng cấp HUIT',
     type: 'select',
     options: [
       'A Level or Equivalent',
@@ -39,7 +39,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     key: 'age_band',
     group: 'info',
     label: 'Nhóm độ tuổi',
-    hint: 'age_band',
+    hint: 'Nhóm tuổi OULAD, không phải nhóm lớp HUIT',
     type: 'select',
     options: ['0-35', '35-55', '55<='],
     default: '0-35',
@@ -47,12 +47,12 @@ export const FIELDS: FeatureFieldDefinition[] = [
   {
     key: 'studied_credits',
     group: 'info',
-    label: 'Số tín chỉ đăng ký',
-    hint: 'studied_credits (Tổng tín chỉ kỳ này)',
+    label: 'Tín chỉ đang học (OULAD)',
+    hint: 'Đơn vị OULAD; chưa quy đổi sang tín chỉ HUIT',
     type: 'number',
     default: 60,
     step: 5,
-    min: 0,
+    min: 1,
     max: 300,
   },
   {
@@ -121,7 +121,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     key: 'days_since_last_activity',
     group: 'activity',
     label: 'Số ngày ngưng truy cập',
-    hint: 'days_since_last_activity',
+    hint: 'Số ngày không có click tính đến cutoff; không phải hiện tại',
     type: 'number',
     default: 5,
     step: 1,
@@ -131,7 +131,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     key: 'clicks_recent_7',
     group: 'activity',
     label: 'Lượt click trong 7 ngày',
-    hint: 'clicks_recent_7 (Đo lường độ tích cực gần nhất)',
+    hint: 'Click trong cửa sổ 7 ngày kết thúc tại cutoff',
     type: 'number',
     default: 60,
     step: 5,
@@ -141,7 +141,7 @@ export const FIELDS: FeatureFieldDefinition[] = [
     key: 'clicks_recent_30',
     group: 'activity',
     label: 'Lượt click trong 30 ngày',
-    hint: 'clicks_recent_30',
+    hint: 'Click trong cửa sổ 30 ngày kết thúc tại cutoff',
     type: 'number',
     default: 300,
     step: 10,
@@ -218,7 +218,7 @@ export const PRESETS: Record<'weak' | 'good', StudentFeatures> = {
     days_since_last_activity: 21,
     clicks_recent_7: 2,
     clicks_recent_30: 15,
-    assessments_submitted_to_t: 1,
+    assessments_submitted_to_t: 2,
     late_submissions_to_t: 2,
     submission_rate: 0.2,
   },
@@ -241,18 +241,4 @@ export const PRESETS: Record<'weak' | 'good', StudentFeatures> = {
     late_submissions_to_t: 0,
     submission_rate: 0.95,
   },
-};
-
-/**
- * Benchmark metrics calculated from Pass / Distinction students in OULAD dataset.
- * Used for Gap Analysis and Radar Chart normalization.
- */
-export const BENCHMARKS = {
-  total_clicks_to_t: 2400,
-  active_days_to_t: 85,
-  active_day_ratio: 0.65,
-  clicks_recent_7: 120,
-  clicks_recent_30: 500,
-  submission_rate: 0.85,
-  late_submissions_to_t: 0.2,
 };

@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime, date
 from typing import Optional, List, Dict, Any
-from pydantic import BaseModel, ConfigDict, EmailStr, Field, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, Field, SecretStr, field_validator
 
 
 # -------------------------------------------------------------
@@ -24,6 +24,26 @@ class AdminUserCreateIn(BaseModel):
 
 class UserStatusUpdateIn(BaseModel):
     is_active: bool
+
+
+class AdminPasswordResetIn(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    new_password: SecretStr = Field(..., min_length=6, max_length=72)
+
+    @field_validator("new_password")
+    @classmethod
+    def validate_password(cls, value: SecretStr):
+        password = value.get_secret_value()
+        if not password.strip():
+            raise ValueError("Mật khẩu không được chỉ chứa khoảng trắng")
+        if len(password.encode("utf-8")) > 72:
+            raise ValueError("Mật khẩu không được vượt quá 72 byte UTF-8")
+        return value
+
+
+class AdminPasswordResetOut(BaseModel):
+    message: str
+    user_id: uuid.UUID
 
 
 class AdminUserUpdateIn(BaseModel):
@@ -55,14 +75,14 @@ class UserRolesUpdateIn(BaseModel):
 class CourseCreateIn(BaseModel):
     code_module: str
     name: str
-    credits_default: int = 30
+    credits_default: int = Field(30, gt=0)
     description: Optional[str] = None
 
 
 class CoursePresentationCreateIn(BaseModel):
     course_id: uuid.UUID
     code_presentation: str
-    module_presentation_length: int = 268
+    module_presentation_length: int = Field(268, gt=0)
     start_date: Optional[date] = None
 
 
@@ -90,6 +110,7 @@ class MLModelOut(BaseModel):
     cutoff_fraction: float
     accuracy: Optional[float] = None
     roc_auc: Optional[float] = None
+    average_precision: Optional[float] = None
     is_active: bool
     created_at: datetime
 
@@ -106,6 +127,10 @@ class BatchPredictResultOut(BaseModel):
     high_risk_count: int
     safe_count: int
     execution_time_ms: int
+    model_id: uuid.UUID | None = None
+    model_version: str | None = None
+    threshold: float | None = None
+    model_sha256: str | None = None
 
 
 # -------------------------------------------------------------

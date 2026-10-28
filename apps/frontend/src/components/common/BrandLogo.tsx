@@ -12,7 +12,7 @@ export const BrandLogo: React.FC<BrandLogoProps> = ({ compact = false, className
       alt="HUIT — Trường Đại học Công Thương TP. Hồ Chí Minh"
       width={239}
       height={52}
-      className={compact ? 'h-10 w-auto max-w-none' : 'block h-auto w-full object-contain'}
+      className={`theme-logo ${compact ? 'h-10 w-auto max-w-none' : 'block h-auto w-full object-contain'}`}
       decoding="async"
     />
   </span>

@@ -1,10 +1,11 @@
 import React from 'react';
 import { useApp } from '../../state/AppContext';
+import { ThemeToggle } from './ThemeToggle';
+import { ProfileDropdown } from './ProfileDropdown';
+import { CourseReminderBell } from './CourseReminderBell';
 import {
   Menu,
-  ChevronRight,
   LogIn,
-  LogOut,
   LayoutDashboard,
   User,
   Home,
@@ -30,9 +31,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const {
     currentView,
-    setCurrentView,
     user,
-    logout,
     setIsAuthModalOpen,
   } = useApp();
 
@@ -46,7 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         };
       case 'dashboard':
         return {
-          title: 'Dashboard Phân tích Nguy cơ',
+          title: 'Dashboard',
           subtitle: 'Mô hình LightGBM Cutoff 75%',
           icon: <LayoutDashboard className="w-4 h-4 text-brand-400" />,
         };
@@ -88,7 +87,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         };
       default:
         return {
-          title: 'EduRisk AI Enterprise Platform',
+          title: 'Trang chủ',
           subtitle: 'Quản trị rủi ro học tập & Can thiệp cá nhân hóa',
           icon: <Home className="w-4 h-4 text-brand-400" />,
         };
@@ -102,7 +101,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       <div className="px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Left: Sidebar Toggles & Breadcrumb */}
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 min-w-0">
             {/* Mobile Hamburger Drawer Toggle */}
             <button
               type="button"
@@ -128,15 +127,8 @@ export const Navbar: React.FC<NavbarProps> = ({
             </button>
 
             {/* Breadcrumb Path */}
-            <div className="flex items-center gap-2 text-xs">
-              <span
-                onClick={() => setCurrentView('home')}
-                className="text-slate-400 hover:text-slate-200 cursor-pointer hidden sm:inline"
-              >
-                EduRisk Platform
-              </span>
-              <ChevronRight className="w-3.5 h-3.5 text-slate-600 hidden sm:inline" />
-              <div className="flex items-center gap-1.5 font-semibold text-slate-100">
+            <div className="flex min-w-0 items-center gap-2 text-xs">
+              <div className="flex min-w-0 items-center gap-1.5 font-semibold text-slate-100">
                 {currentInfo.icon}
                 <span className="text-sm font-bold truncate">{currentInfo.title}</span>
               </div>
@@ -144,32 +136,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           </div>
 
           {/* Right: Actions (User Profile & Logout) */}
-          <div className="flex items-center gap-3">
+          <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+            <ThemeToggle />
+            {user?.roleCode === 'STUDENT' && <CourseReminderBell key={user.email} />}
             {/* Auth Profile / Login */}
             {user ? (
-              <div className="flex items-center gap-2 pl-2 border-l border-slate-800">
-                <div
-                  onClick={() => setCurrentView('profile')}
-                  className="flex items-center gap-2 cursor-pointer hover:opacity-85 transition-opacity"
-                  title="Nhấp để xem Hồ sơ chuyên gia"
-                >
-                  <div className="w-8 h-8 rounded-lg bg-brand-600/30 border border-brand-500/40 text-brand-300 font-bold text-xs flex items-center justify-center">
-                    {user.initials}
-                  </div>
-                  <div className="text-left hidden md:block">
-                    <div className="text-xs font-semibold text-slate-200">{user.name}</div>
-                    <div className="text-[10px] text-brand-400">{user.role}</div>
-                  </div>
-                </div>
-                <button
-                  type="button"
-                  onClick={logout}
-                  className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-950/30 transition-colors"
-                  title="Đăng xuất"
-                >
-                  <LogOut className="w-4 h-4" />
-                </button>
-              </div>
+              <ProfileDropdown />
             ) : (
               <button
                 type="button"

@@ -1,3 +1,4 @@
+import { authenticatedFetch, getStoredToken, setStoredTokens, clearStoredTokens, getSessionEpoch } from './session';
 import {
   PredictionRequest,
   PredictionResponse,
@@ -10,7 +11,10 @@ import {
   CreateInterventionPlanPayload,
   LecturerCourseItem,
   CourseStudentRiskItem,
+  CourseSuggestionResponse,
   StudentCourseItem,
+  CourseReminder,
+  StudentProfileDetail,
   StudentRiskPrediction,
   StudentRadarData,
   StudentTaskItem,
@@ -45,6 +49,7 @@ export function mapBackendUser(user: BackendUser): UserProfile {
     .toUpperCase();
 
   return {
+    userId: user.id,
     name: user.full_name,
     email: user.email,
     role: primaryRole?.name || 'Thành viên',
@@ -61,23 +66,7 @@ export function mapBackendUser(user: BackendUser): UserProfile {
   };
 }
 
-export const TOKEN_KEY = 'edurisk_jwt_access_token';
-export const REFRESH_TOKEN_KEY = 'edurisk_jwt_refresh_token';
-
-export function getStoredToken(): string | null {
-  return localStorage.getItem(TOKEN_KEY);
-}
-
-export function setStoredTokens(access: string, refresh: string) {
-  localStorage.setItem(TOKEN_KEY, access);
-  localStorage.setItem(REFRESH_TOKEN_KEY, refresh);
-}
-
-export function clearStoredTokens() {
-  localStorage.removeItem(TOKEN_KEY);
-  localStorage.removeItem(REFRESH_TOKEN_KEY);
-}
-
+export { TOKEN_KEY, REFRESH_TOKEN_KEY, getStoredToken, setStoredTokens, clearStoredTokens } from './session';
 function authHeaders(): Record<string, string> {
   const token = getStoredToken();
   return token ? { Authorization: `Bearer ${token}` } : {};
@@ -110,10 +99,11 @@ export async function predictStudentRisk(
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
   const payload: PredictionRequest = { features };
 
-  const res = await fetch(`${cleanUrl}/api/v1/predictions/`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/predictions/`, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
+      ...authHeaders(),
     },
     body: JSON.stringify(payload),
     signal: AbortSignal.timeout(20000),
@@ -165,10 +155,11 @@ export async function loginApi(
   setStoredTokens(tokens.access_token, tokens.refresh_token);
 
   // Lấy thông tin user hiện tại
-  const meRes = await fetch(`${cleanUrl}/api/v1/auth/me`, {
+  const meRes = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/me`, {
     headers: { Authorization: `Bearer ${tokens.access_token}` },
   });
   if (!meRes.ok) {
+    clearStoredTokens();
     throw new Error('Không thể tải thông tin tài khoản');
   }
 
@@ -182,13 +173,13 @@ export async function getCurrentUserApi(baseUrl: string): Promise<BackendUser | 
 
   const cleanUrl = cleanBase(baseUrl);
   try {
-    const res = await fetch(`${cleanUrl}/api/v1/auth/me`, {
+    const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/me`, {
       headers: { Authorization: `Bearer ${token}` },
     });
     if (res.ok) {
       return (await res.json()) as BackendUser;
     }
-    clearStoredTokens();
+    if (res.status === 401 || res.status === 403) clearStoredTokens();
     return null;
   } catch {
     return null;
@@ -206,7 +197,7 @@ export async function updateProfileApi(
   payload: UpdateProfilePayload
 ): Promise<BackendUser> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/auth/profile`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/auth/profile`, {
     method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -218,12 +209,25 @@ export async function updateProfileApi(
   return (await res.json()) as BackendUser;
 }
 
+export async function uploadAvatarApi(baseUrl: string, file: File): Promise<BackendUser> {
+  const data = new FormData();
+  data.append('file', file);
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/auth/profile/avatar`, {
+    method: 'POST', headers: authHeaders(), body: data,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Không thể tải ảnh đại diện');
+  }
+  return (await res.json()) as BackendUser;
+}
+
 // -------------------------------------------------------------
 // 3. ADVISOR APIS (GIÁO VIÊN CHỦ NHIỆM)
 // -------------------------------------------------------------
 export async function getAdvisorClassesApi(baseUrl: string): Promise<AdvisorClassSummary[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/classes`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/classes`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách lớp chủ nhiệm');
@@ -239,9 +243,23 @@ export async function getAdvisorStudentsApi(
     ? `${cleanUrl}/api/v1/advisor/students?class_name=${encodeURIComponent(className)}`
     : `${cleanUrl}/api/v1/advisor/students`;
 
-  const res = await fetch(url, { headers: authHeaders() });
-  if (!res.ok) throw new Error('Không thể tải danh sách sinh viên lớp chủ nhiệm');
-  return res.json();
+  return fetchAllPages<AdvisorStudentItem>(baseUrl, url, 'Không thể tải danh sách sinh viên lớp chủ nhiệm');
+}
+
+async function fetchAllPages<T>(baseUrl: string, url: string, message: string): Promise<T[]> {
+  const result: T[] = [];
+  const epoch = getSessionEpoch();
+  const limit = 100;
+  for (let offset = 0; ; offset += limit) {
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    const res = await authenticatedFetch(baseUrl,
+      `${url}${url.includes('?') ? '&' : '?'}limit=${limit}&offset=${offset}`, { headers: authHeaders() });
+    if (!res.ok) throw new Error(message);
+    const page: T[] = await res.json();
+    if (getSessionEpoch() !== epoch) throw new DOMException('Session changed', 'AbortError');
+    result.push(...page);
+    if (page.length < limit) return result;
+  }
 }
 
 export async function createInterventionPlanApi(
@@ -249,7 +267,7 @@ export async function createInterventionPlanApi(
   payload: CreateInterventionPlanPayload
 ): Promise<any> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/interventions`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/interventions`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -266,7 +284,7 @@ export async function createInterventionPlanApi(
 // -------------------------------------------------------------
 export async function getLecturerCoursesApi(baseUrl: string): Promise<LecturerCourseItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/lecturer/courses`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/lecturer/courses`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách lớp học phần phụ trách');
@@ -278,19 +296,38 @@ export async function getCourseRiskBoardApi(
   presentationId: string
 ): Promise<CourseStudentRiskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) throw new Error('Không thể tải bảng cảnh báo nguy cơ học phần');
-  return res.json();
+  return fetchAllPages<CourseStudentRiskItem>(baseUrl,
+    `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/risk-board`, 'Không thể tải bảng cảnh báo nguy cơ học phần');
 }
 
 // -------------------------------------------------------------
 // 5. STUDENT APIS (SINH VIÊN)
 // -------------------------------------------------------------
+export async function getCourseSuggestionsApi(baseUrl: string, presentationId: string, studentId: string): Promise<CourseSuggestionResponse> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/suggestions`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Không thể tải gợi ý cho sinh viên trong học phần');
+  return res.json();
+}
+
+export async function getCourseRemindersApi(baseUrl: string, signal?: AbortSignal): Promise<CourseReminder[]> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/student/reminders`, { headers: authHeaders(), signal });
+  if (!res.ok) throw new Error('Không thể tải thông báo nhắc nhở môn học.');
+  return res.json();
+}
+
+export async function getStudentProfileApi(baseUrl: string): Promise<StudentProfileDetail> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/student/profile`, { headers: authHeaders() });
+  if (!res.ok) {
+    throw new Error(res.status === 404 ? 'Tài khoản chưa có hồ sơ sinh viên.' : 'Không thể tải thông tin sinh viên.');
+  }
+  return res.json();
+}
+
 export async function getStudentCoursesApi(baseUrl: string): Promise<StudentCourseItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách môn học của sinh viên');
@@ -300,11 +337,12 @@ export async function getStudentCoursesApi(baseUrl: string): Promise<StudentCour
 export async function getStudentRiskPredictionApi(
   baseUrl: string,
   enrollmentId: string
-): Promise<StudentRiskPrediction> {
+): Promise<StudentRiskPrediction | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/risk-prediction`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses/${enrollmentId}/risk-prediction`, {
     headers: authHeaders(),
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error('Không thể tải dự báo nguy cơ học tập');
   return res.json();
 }
@@ -312,18 +350,19 @@ export async function getStudentRiskPredictionApi(
 export async function getStudentRadarApi(
   baseUrl: string,
   enrollmentId: string
-): Promise<StudentRadarData> {
+): Promise<StudentRadarData | null> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/courses/${enrollmentId}/radar`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/courses/${enrollmentId}/radar`, {
     headers: authHeaders(),
   });
+  if (res.status === 404) return null;
   if (!res.ok) throw new Error('Không thể tải biểu đồ Radar năng lực 6D');
   return res.json();
 }
 
-export async function getStudentTasksApi(baseUrl: string): Promise<StudentTaskItem[]> {
+export async function getStudentTasksApi(baseUrl: string, enrollmentId?: string): Promise<StudentTaskItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/tasks`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/tasks${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách nhiệm vụ cần làm');
@@ -333,21 +372,22 @@ export async function getStudentTasksApi(baseUrl: string): Promise<StudentTaskIt
 export async function completeStudentTaskApi(
   baseUrl: string,
   taskId: string,
-  feedback?: string
+  feedback?: string,
+  enrollmentId?: string
 ): Promise<StudentTaskItem> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/tasks/${taskId}/complete`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/tasks/${taskId}/complete`, {
     method: 'PATCH',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
-    body: JSON.stringify({ student_feedback: feedback || '' }),
+    body: JSON.stringify({ student_feedback: feedback || '', enrollment_id: enrollmentId }),
   });
   if (!res.ok) throw new Error('Không thể cập nhật trạng thái nhiệm vụ');
   return res.json();
 }
 
-export async function getStudentHelpRequestsApi(baseUrl: string): Promise<StudentHelpRequestItem[]> {
+export async function getStudentHelpRequestsApi(baseUrl: string, enrollmentId?: string): Promise<StudentHelpRequestItem[]> {
   const cleanUrl = baseUrl.trim().replace(/\/+$/, '');
-  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/help-requests${enrollmentId ? `?enrollment_id=${encodeURIComponent(enrollmentId)}` : ''}`, {
     headers: authHeaders(),
   });
   if (!res.ok) throw new Error('Không thể tải danh sách yêu cầu trợ giúp');
@@ -355,6 +395,7 @@ export async function getStudentHelpRequestsApi(baseUrl: string): Promise<Studen
 }
 
 export interface CreateHelpRequestPayload {
+  enrollment_id?: string;
   target_role: 'ADVISOR' | 'LECTURER';
   presentation_id?: string;
   target_user_id?: string;
@@ -367,7 +408,7 @@ export async function createHelpRequestApi(
   payload: CreateHelpRequestPayload
 ): Promise<StudentHelpRequestItem> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/student/help-requests`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/student/help-requests`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -384,6 +425,9 @@ export async function createHelpRequestApi(
 // -------------------------------------------------------------
 export interface AssignCourseTaskPayload {
   student_id: string;
+  suggestion_snapshot_id?: string;
+  suggestion_rule_id?: string;
+  verified_basis?: string;
   title: string;
   description: string;
   priority?: 'HIGH' | 'MEDIUM' | 'LOW';
@@ -396,7 +440,7 @@ export async function assignCourseTaskApi(
   payload: AssignCourseTaskPayload
 ): Promise<StudentTaskItem> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(
+  const res = await authenticatedFetch(baseUrl,
     `${cleanUrl}/api/v1/lecturer/courses/${presentationId}/tasks`,
     {
       method: 'POST',
@@ -412,6 +456,7 @@ export async function assignCourseTaskApi(
 }
 
 export interface AlertAdvisorPayload {
+  presentation_id: string;
   subject?: string;
   content: string;
 }
@@ -422,7 +467,7 @@ export async function alertAdvisorApi(
   payload: AlertAdvisorPayload
 ): Promise<{ message: string; alert_id: string }> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(
+  const res = await authenticatedFetch(baseUrl,
     `${cleanUrl}/api/v1/lecturer/students/${studentId}/alert-advisor`,
     {
       method: 'POST',
@@ -453,7 +498,7 @@ export async function createAdvisingNoteApi(
   payload: AdvisingNotePayload
 ): Promise<any> {
   const cleanUrl = cleanBase(baseUrl);
-  const res = await fetch(`${cleanUrl}/api/v1/advisor/advising-notes`, {
+  const res = await authenticatedFetch(baseUrl, `${cleanUrl}/api/v1/advisor/advising-notes`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(payload),
@@ -461,6 +506,37 @@ export async function createAdvisingNoteApi(
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error(err.detail || 'Không thể lưu ghi chép tư vấn');
+  }
+  return res.json();
+}
+
+
+export async function getAdvisorStudentCoursesApi(baseUrl: string, studentId: string): Promise<StudentCourseItem[]> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/advisor/students/${encodeURIComponent(studentId)}/overview`, {
+    headers: authHeaders(),
+  });
+  if (!res.ok) throw new Error('Không thể tải học phần của sinh viên');
+  const overview = await res.json();
+  return overview.courses;
+}
+
+
+export async function inspectSnapshotApi(baseUrl: string, presentationId: string, studentId: string, snapshotId: string): Promise<import('@shared/types').SnapshotInspection> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/snapshots/${snapshotId}/review`, { headers: authHeaders() });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Không thể đọc snapshot; tải lại trước khi xác nhận');
+  }
+  return res.json();
+}
+
+export async function reviewSnapshotApi(baseUrl: string, presentationId: string, studentId: string, snapshotId: string, payload: import('@shared/types').SnapshotReviewPayload): Promise<{ snapshot_id: string; message: string }> {
+  const res = await authenticatedFetch(baseUrl, `${cleanBase(baseUrl)}/api/v1/lecturer/courses/${presentationId}/students/${studentId}/snapshots/${snapshotId}/review`, {
+    method: 'POST', headers: { 'Content-Type': 'application/json', ...authHeaders() }, body: JSON.stringify(payload),
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(typeof error.detail === 'string' ? error.detail : 'Chưa đủ điều kiện xác nhận; kiểm tra phạm vi và dữ liệu');
   }
   return res.json();
 }

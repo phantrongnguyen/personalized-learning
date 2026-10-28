@@ -49,14 +49,16 @@ async def test_sprint_4_student_interactive():
         assert risk_data["risk_level"] == "HIGH_RISK"
         assert len(risk_data["pedagogical_recommendations"]) >= 1
 
-        # 5. Sinh viên xem Biểu đồ Radar Năng lực 6 chiều đối sánh Benchmark Top 25% (/api/v1/student/courses/{id}/radar)
+        # 5. Sinh viên xem Radar hành vi 6 chiều theo mốc tham khảo minh họa (/api/v1/student/courses/{id}/radar)
         radar_res = await client.get(f"/api/v1/student/courses/{enrollment_id}/radar", headers=stu_headers)
         assert radar_res.status_code == 200, radar_res.text
         radar_data = radar_res.json()
         assert len(radar_data["dimensions"]) == 6
         metric_names = [d["metric"] for d in radar_data["dimensions"]]
         assert "Tổng tương tác VLE" in metric_names
-        assert "Kỷ luật đúng hạn" in metric_names
+        assert "Chỉ số nộp trễ quy ước" in metric_names
+        assert radar_data["reference_status"] == "illustrative_unvalidated"
+        assert all("reference_score" in d and "percentile" not in d for d in radar_data["dimensions"])
 
         # 6. Sinh viên xem Checklist nhiệm vụ can thiệp (/api/v1/student/tasks)
         tasks_res = await client.get("/api/v1/student/tasks", headers=stu_headers)

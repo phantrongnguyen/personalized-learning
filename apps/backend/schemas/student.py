@@ -1,7 +1,23 @@
 import uuid
 from datetime import datetime, date
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Literal
 from pydantic import BaseModel, ConfigDict, Field
+from schemas.prediction import RiskLevel, Ratio, PredictionProvenance
+
+
+class CourseReminderOut(BaseModel):
+    id: str
+    enrollment_id: uuid.UUID
+    code_module: str
+    course_name: str
+    code_presentation: str
+    title: str
+    message: str
+    pending_tasks: int
+    due_date: Optional[date] = None
+    days_remaining: Optional[int] = None
+    state: Literal["pending", "due_soon", "overdue"]
+    level: Literal["info", "warning", "danger"]
 
 
 class StudentProfileDetailOut(BaseModel):
@@ -34,27 +50,40 @@ class StudentCourseItemOut(BaseModel):
 class RiskPredictionOut(BaseModel):
     enrollment_id: uuid.UUID
     code_module: str
-    cutoff_stage: str
-    risk_probability: float
-    risk_level: str
-    model_version: str
-    predicted_at: datetime
+    cutoff_stage: Optional[str] = None
+    risk_probability: Ratio | None = None
+    risk_level: RiskLevel = "NOT_PREDICTED"
+    model_version: Optional[str] = None
+    predicted_at: Optional[datetime] = None
+    snapshot_id: Optional[uuid.UUID] = None
+    prediction_run_id: Optional[uuid.UUID] = None
+    provenance: PredictionProvenance | None = None
+    provenance_status: Literal["VERIFIED", "LEGACY_UNVERIFIED", "NOT_PREDICTED"]
     pedagogical_recommendations: List[str] = []
+    data_source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
 
 class RadarDimension(BaseModel):
     metric: str
-    student_value: float
+    student_value: float | None
     benchmark_value: float
-    percentile: float
+    reference_score: float | None = Field(ge=0, le=100, allow_inf_nan=False,
+        description="Tỷ lệ so với mốc tham khảo, giới hạn 0–100; không phải phân vị thống kê")
+    unit: str
 
 
 class RadarDataOut(BaseModel):
     enrollment_id: uuid.UUID
     code_module: str
     dimensions: List[RadarDimension]
+    reference_version: str
+    reference_status: Literal["illustrative_unvalidated"]
+    snapshot_id: uuid.UUID
+    cutoff_stage: str
+    recorded_at: datetime
+    data_source: Optional[str] = None
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -75,11 +104,13 @@ class StudentTaskItemOut(BaseModel):
 
 
 class TaskCompleteIn(BaseModel):
+    enrollment_id: Optional[uuid.UUID] = None
     student_feedback: Optional[str] = Field(None, description="Ghi chú phản hồi khi hoàn thành")
 
 
 class HelpRequestCreateIn(BaseModel):
-    target_role: str = Field(..., description="ADVISOR hoặc LECTURER")
+    enrollment_id: Optional[uuid.UUID] = None
+    target_role: Literal["ADVISOR", "LECTURER"] = Field(..., description="ADVISOR hoặc LECTURER")
     presentation_id: Optional[uuid.UUID] = None
     target_user_id: Optional[uuid.UUID] = None
     subject: str = Field(..., min_length=3)
