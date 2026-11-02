@@ -33,7 +33,7 @@ Nhãn trên hình dùng tiếng Anh để thống nhất font; cột cuối là 
 
 ## Tái tạo và đối chiếu
 
-Chạy tại gốc repo với Python có `pandas`, `numpy`, `scikit-learn`, `matplotlib` (tham khảo `experiments/hco_vnls/requirements.txt`):
+Chạy tại gốc repo với Python có `pandas`, `numpy`, `scikit-learn`, `matplotlib` (tham khảo `packages/ml/requirements.txt`):
 
 ```powershell
 .\.venv\Scripts\python.exe reports/model_final/generate_charts.py `
@@ -42,7 +42,7 @@ Chạy tại gốc repo với Python có `pandas`, `numpy`, `scikit-learn`, `mat
 .\.venv\Scripts\python.exe -m pytest -q reports/model_final/test_generate_charts.py
 ```
 
-Hai file `../output/...` không có trong clone Git mới; cần bản gốc được phép sử dụng, không tự tạo số liệu thay thế. Script kiểm tra checksum model/metadata, số dòng, nhãn, ngưỡng và từng chỉ số; checksum của CSV xuất hiện trong `verified_metrics.json` để so sánh chính xác tệp đầu vào. Nguồn bảng so sánh validation và ablation nằm trong `experiments/hco_vnls/ket_qua`.
+Hai file `../output/...` không có trong clone Git mới; cần bản gốc được phép sử dụng, không tự tạo số liệu thay thế. Script kiểm tra checksum model/metadata, số dòng, nhãn, ngưỡng và từng chỉ số; checksum của CSV xuất hiện trong `verified_metrics.json` để so sánh chính xác tệp đầu vào. Nguồn bảng so sánh validation và ablation nằm trong `packages/ml/history/results`.
 
 ## Điều chưa thể khẳng định
 

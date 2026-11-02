@@ -1,0 +1,19 @@
+{
+  "accuracy": 0.8619089062953292,
+  "precision_risk": 0.9123222748815166,
+  "recall_risk": 0.6569965870307167,
+  "f1_risk": 0.7638888888888888,
+  "weighted_f1": 0.8553179744156014,
+  "average_precision_risk": 0.8815750676130706,
+  "roc_auc": 0.9049323031916888,
+  "brier_score": 0.10136986801098771,
+  "tn": 2201,
+  "fp": 74,
+  "fn": 402,
+  "tp": 770,
+  "alerts": 844,
+  "n": 3447,
+  "threshold": 0.5,
+  "model_sha256": "50811be18f112283f25de864a9d5b99b63501f8f1579c455ac10860a55828df0",
+  "scope": "Historical OULAD test split, newly rerun; not an independent new holdout"
+}

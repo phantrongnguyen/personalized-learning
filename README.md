@@ -120,7 +120,7 @@ Cập nhật 18/10/2026: dự báo mới lưu đủ đầu vào và danh tính a
 
 17 đặc trưng gồm thông tin học phần/nhân khẩu học, tín chỉ, thời điểm đăng ký, tổng click, click tài nguyên/URL, ngày hoạt động, bài nộp/trễ hạn, tỷ lệ hoạt động/nộp bài, số ngày không hoạt động và click trong 7/30 ngày gần nhất. Xem [schema đầu vào](apps/backend/schemas/prediction.py) và [định nghĩa frontend](packages/shared/constants/fields.ts).
 
-Mã huấn luyện cũ trong `packages/ml` và ba notebook cũ đã được loại khỏi nhánh hiện tại. Đường dẫn notebook/dữ liệu ghi trong metadata là nguồn gốc thực nghiệm, không bảo đảm còn có trong checkout. Dữ liệu OULAD đầy đủ cũng không được đóng gói vào repository.
+Mã và notebook huấn luyện hiện được duy trì tại [packages/ml](packages/ml/README.md); xem [kết quả tái chạy ngày 25/10](packages/ml/reports/rerun-20261025/README.md). Đường dẫn notebook/dữ liệu ghi trong metadata là nguồn gốc thực nghiệm, không bảo đảm còn có trong checkout. Dữ liệu OULAD đầy đủ cũng không được đóng gói vào repository.
 
 ## Cấu trúc dự án
 

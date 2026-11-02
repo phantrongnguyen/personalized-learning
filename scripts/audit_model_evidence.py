@@ -4,6 +4,7 @@ import hashlib
 import json
 from pathlib import Path
 import math
+import subprocess
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -40,11 +41,11 @@ def audit(feature_path=None):
     sys.path.insert(0, str(ROOT))
     from reports.model_final.generate_charts import metadata_hash_matches
     if not metadata_hash_matches(metadata_path, published['metadata_sha256']): raise ValueError('Metadata content differs')
-    validation = pd.read_csv(ROOT / 'experiments/hco_vnls/results/hco_vnls_lightgbm_validation.csv')
+    validation = pd.read_csv(ROOT / 'packages/ml/history/results/hco_vnls_lightgbm_validation.csv')
     selected = validation.loc[(validation.cutoff == .75) & (validation.method == 'HCO-VNLS')].iloc[0]
     if selected.selected_columns.split('|') != metadata['feature_columns']: raise ValueError('Selected mask differs')
     if set(metadata['feature_columns']) & {'id_student', 'risk', 'final_result', 'split'}: raise ValueError('Target/identity leakage in selected columns')
-    candidates = [feature_path] if feature_path else [ROOT / f'experiments/hco_vnls/{folder}/du_lieu_cutoff_75.csv' for folder in ('results', 'ket_qua')]
+    candidates = [feature_path] if feature_path else [ROOT / 'packages/ml/history/results/du_lieu_cutoff_75.csv']
     dataset = next((path for path in candidates if path and path.is_file()), None)
     source = {'available': dataset is not None, 'checksum_matches': None, 'split_disjoint_rechecked': False}
     if dataset:
@@ -57,9 +58,10 @@ def audit(feature_path=None):
         if any(overlap.values()): raise ValueError('Students overlap between splits')
         source.update(split_disjoint_rechecked=True, overlap_counts=overlap, rows=frame.groupby('split').size().to_dict())
     notebooks = []
+    origin = json.loads((ROOT / 'packages/ml/history/source-provenance.json').read_text(encoding='utf-8'))
     for name in ('05b_hco_vnls_lightgbm.ipynb','09_kiem_chung_dac_trung_hco_vnls.ipynb','10_dong_goi_model_hco_vnls_lightgbm_75.ipynb'):
-        path = ROOT / 'experiments/hco_vnls/notebooks' / name
-        cells = json.loads(path.read_text(encoding='utf-8'))['cells']
+        original = f"{origin['git_commit']}:{origin['original_root']}/notebooks/{name}"
+        cells = json.loads(subprocess.check_output(['git', 'show', original], cwd=ROOT))['cells']
         code = '\n'.join(''.join(cell.get('source', [])) for cell in cells if cell['cell_type'] == 'code')
         notebooks.append({'name': name, 'code_sha256': hashlib.sha256(code.encode()).hexdigest(),
             'review_scope': 'source inspection only; notebook was not re-executed'})

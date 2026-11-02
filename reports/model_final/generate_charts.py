@@ -21,7 +21,7 @@ from sklearn.metrics import (
 
 ROOT = Path(__file__).resolve().parents[2]
 HERE = Path(__file__).resolve().parent
-RESEARCH = ROOT / "experiments" / "hco_vnls" / "ket_qua"
+RESEARCH = ROOT / "packages" / "ml" / "history" / "results"
 ARTIFACT = ROOT / "apps" / "backend" / "artifacts" / "model_hco_vnls_lightgbm_cutoff75.joblib"
 METADATA = ROOT / "apps" / "backend" / "artifacts" / "THONG_TIN_MODEL_HCO_VNLS_LIGHTGBM_75.json"
 NAVY, TEAL, GOLD, RED = "#142A3B", "#008C87", "#D19435", "#B45353"

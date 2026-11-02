@@ -1,0 +1,21 @@
+{
+  "git_commit": "ac5d3c3e4fbc84d7e446fa086a6525c460998ad8",
+  "original_root": "experiments/hco_vnls",
+  "upstream_sha256": {
+    "research_code\\__init__.py": "e73d02ed7e53d1c596c792f9706a1ede38cc21c8f4dee40f41758243cd06367e",
+    "research_code\\data.py": "79191252b537bd9da94ac85f7ddb0c83402414979d61bdf0919bf754bb79199a",
+    "research_code\\evaluation.py": "9878099edc2082bf458444863424ee62531c7d0562e830b0a2bfe0233cd1ff50",
+    "research_code\\models.py": "e0540d63804beca2ed84e44c4a390d07f04f3b75bea4f7563e5f1fcf0e14af16",
+    "research_code\\optimizers.py": "52a26fd3a84a17e649f58d48d721c7462fb9882c832906c021804b89ca7a82d9",
+    "shared_code\\__init__.py": "5f941bbefc2fa2a2b4732a67b4a5351a87c53e617733ffe565ec12e12b2a229c",
+    "shared_code\\thuc_nghiem.py": "0b1f3933b98b646d1ed6772fc50f3e9951a35eb67d07ee5ec7eed53137a6406c",
+    "notebooks\\01_kiem_tra_du_lieu_va_ro_ri.ipynb": "629f71cc99ba11cd14b1f72ee302585dbf5978b403954e05f857219e395140e7",
+    "notebooks\\02_tao_dac_trung_theo_thoi_gian.ipynb": "1a98411922d13c79b93cdcd63926330ddb10b79061b23927ab2cf3ae98ccf6b1",
+    "notebooks\\05b_hco_vnls_lightgbm.ipynb": "ed72a8a38c149c7767f6b224243e706b5165ae9518976436008fccd4d75c531c",
+    "notebooks\\06_so_sanh_catboost_voi_lightgbm_50_75.ipynb": "b8a44d79c9d36d7df627550ee1c8989540d37652903c8c19f9d2c2ae7b26021f",
+    "notebooks\\07_so_sanh_xgboost_voi_lightgbm_50_75.ipynb": "708852c8cc3f41a9091c673359b87f5375509ea8c6e85b2ef4445b2aafdbcbb7",
+    "notebooks\\09_kiem_chung_dac_trung_hco_vnls.ipynb": "ff43e524f4df4cda217acf0e13e094b242a648ae0a9f9d4a0454f29889170c09",
+    "notebooks\\10_dong_goi_model_hco_vnls_lightgbm_75.ipynb": "5500d249c904d724d60cb8c313a8a25cb3ec617a0ec0be51cee8a04e1f0d3c94"
+  },
+  "note": "Original files recoverable with git show <git_commit>:<original_root>/<relative_path>; hashes preserve pre-migration evidence."
+}

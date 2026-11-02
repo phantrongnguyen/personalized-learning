@@ -39,7 +39,7 @@ def test_no_experts_means_no_scores_and_duplicate_or_invalid_ratings_fail():
 
 def test_group_split_implementation_keeps_repeated_students_together():
     import numpy as np
-    from experiments.hco_vnls.shared_code.thuc_nghiem import chia_nhom
+    from packages.ml.shared_code.thuc_nghiem import chia_nhom
     assignments=chia_nhom(np.repeat(np.arange(100),3), seed=41)
     assert len(assignments)==100 and assignments.id_student.is_unique
     assert assignments.split.value_counts().to_dict()=={'train':70,'validation':15,'test':15}
@@ -49,7 +49,7 @@ def test_group_split_implementation_keeps_repeated_students_together():
 def test_preprocessing_is_fitted_on_training_rows_only():
     import pandas as pd
     from sklearn.tree import DecisionTreeClassifier
-    from experiments.hco_vnls.research_code.models import make_pipeline, ModelConfig
+    from packages.ml.research_code.models import make_pipeline, ModelConfig
     train=pd.DataFrame({'numeric':[1.,3.], 'category':['A','A']})
     validation=pd.DataFrame({'numeric':[1000.], 'category':['B']})
     pipeline=make_pipeline(train,ModelConfig('synthetic-check',DecisionTreeClassifier(random_state=41)))

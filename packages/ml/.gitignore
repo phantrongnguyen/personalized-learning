@@ -1,0 +1,5 @@
+.venv/
+runs/
+results/du_lieu*.csv
+results/phan_tap_sinh_vien.csv
+mo_hinh/
