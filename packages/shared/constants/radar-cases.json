@@ -1,0 +1,31 @@
+[
+  {
+    "name": "at reference with two late submissions",
+    "features": { "total_clicks_to_t": 350, "active_days_to_t": 40, "active_day_ratio": 0.45, "clicks_recent_7": 30, "submission_rate": 0.95, "late_submissions_to_t": 2, "assessments_submitted_to_t": 4 },
+    "scores": [100, 100, 100, 100, 100, 50]
+  },
+  {
+    "name": "zero observations do not prove perfect discipline",
+    "features": { "total_clicks_to_t": 0, "active_days_to_t": 0, "active_day_ratio": 0, "clicks_recent_7": 0, "submission_rate": 0, "late_submissions_to_t": 0, "assessments_submitted_to_t": 0 },
+    "scores": [0, 0, 0, 0, 0, null]
+  },
+  {
+    "name": "missing observations stay unknown",
+    "features": {}, "scores": [null, null, null, null, null, null]
+  },
+  {
+    "name": "invalid observations stay unknown",
+    "features": { "total_clicks_to_t": -1, "active_days_to_t": null, "active_day_ratio": 1.1, "clicks_recent_7": "30", "submission_rate": -0.1, "late_submissions_to_t": 3, "assessments_submitted_to_t": 2 },
+    "scores": [null, null, null, null, null, null]
+  },
+  {
+    "name": "display caps excess at 100 and floors discipline at zero",
+    "features": { "total_clicks_to_t": 700, "active_days_to_t": 80, "active_day_ratio": 0.9, "clicks_recent_7": 60, "submission_rate": 1, "late_submissions_to_t": 5, "assessments_submitted_to_t": 5 },
+    "scores": [100, 100, 100, 100, 100, 0]
+  },
+  {
+    "name": "half reference and one late submission",
+    "features": { "total_clicks_to_t": 175, "active_days_to_t": 20, "active_day_ratio": 0.225, "clicks_recent_7": 15, "submission_rate": 0.475, "late_submissions_to_t": 1, "assessments_submitted_to_t": 1 },
+    "scores": [50, 50, 50, 50, 50, 75]
+  }
+]
