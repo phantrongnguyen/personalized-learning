@@ -93,3 +93,7 @@ data/processed/*
 # Model Checkpoints & Large Artifacts
 packages/ml/artifacts/models/*
 !packages/ml/artifacts/models/.gitkeep
+
+# Backend runtime files
+/apps/backend/uploads/
+/apps/backend/artifacts/archive/
