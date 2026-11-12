@@ -1,3 +1,7 @@
+# Bản khảo sát lưu trữ — không dùng làm hướng dẫn hiện hành
+
+Nội dung dưới đây giữ nguyên các mốc cũ, có thể mâu thuẫn với mã hiện tại. Dùng [README hiện hành](README.md) và [changelog](../../CHANGELOG.md) để tra cứu. Các lệnh và kết luận bên dưới không phải trạng thái hiện hành.
+
 # Backend EduRisk AI — Tài liệu kỹ thuật và đánh giá
 
 Tài liệu thiết kế và tra cứu: [docs/backend](../../docs/api/README.md) · [Mục lục docs](../../docs/README.md).
