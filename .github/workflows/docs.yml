@@ -1,0 +1,21 @@
+name: Documentation consistency
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check links, managed commands and metric provenance
+        run: python scripts/check_docs.py
+      - name: Check documentation guard regressions
+        run: python -m unittest discover -s tests -p test_check_docs.py
