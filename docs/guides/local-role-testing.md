@@ -1,6 +1,8 @@
 # Kiểm thử giao diện sinh viên và giảng viên trên máy local
 
-## Địa chỉ và dữ liệu hiện có
+## Địa chỉ và dữ liệu lúc ghi nhận
+
+Thông tin dưới đây là trạng thái lúc viết kịch bản, không phải kiểm tra trực tiếp database hoặc tiến trình hiện tại. Xem README gốc để khởi động và xác nhận trạng thái trước khi thử.
 
 - Giao diện Vite (code mới nhất đang chạy): **http://127.0.0.1:5173/**.
 - Swagger API: http://127.0.0.1:8000/docs; health: http://127.0.0.1:8000/api/v1/health.
@@ -44,4 +46,4 @@ $sql | & $docker exec -i kltn13_postgres psql -v ON_ERROR_STOP=1 -U postgres -d 
 
 Nếu không có hàng nào được thêm, kiểm tra lại email, hồ sơ lecturer và học phần demo; `ON CONFLICT DO NOTHING` cũng khiến việc chạy lại không tạo hàng trùng. Chưa chạy những lệnh thay đổi DB này thay bạn.
 
-Nếu web chưa mở, khởi động Docker Desktop và làm theo [hướng dẫn chạy local](../../README.md#cài-đặt-và-chạy-local). Từ gốc repo, backend chạy với `cd apps/backend; ../../.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000`; terminal khác chạy `cd apps/frontend; npm run dev -- --host 127.0.0.1`. Không xóa volume DB đang có. Kết quả model đã chốt và các hình phục vụ báo cáo nằm tại [MODEL_FINAL](../../reports/model_final/MODEL_FINAL.md), **không phải** dashboard sinh viên.
+Nếu web chưa mở, khởi động Docker Desktop và làm theo [hướng dẫn chạy local](../../README.md#cài-đặt-local--powershell-từ-gốc-repository). Từ gốc repo, backend chạy với `cd apps/backend; ../../.venv/Scripts/python.exe -m uvicorn main:app --host 127.0.0.1 --port 8000`; terminal khác chạy `cd apps/frontend; npm run dev -- --host 127.0.0.1`. Không xóa volume DB đang có. Kết quả model đã chốt và các hình phục vụ báo cáo nằm tại [MODEL_FINAL](../../reports/model_final/MODEL_FINAL.md), **không phải** dashboard sinh viên.

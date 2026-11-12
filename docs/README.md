@@ -2,6 +2,8 @@
 
 Điểm bắt đầu tra cứu tài liệu hệ thống gợi ý chiến lược học tập cá nhân hóa.
 
+Để hiểu cách dự báo nguy cơ kết hợp với quy tắc và quy trình giao nhiệm vụ, xem [Kiến trúc và cơ chế hệ thống gợi ý](architecture/recommendation-system.md).
+
 | Nhóm | Nội dung | Điểm bắt đầu |
 | --- | --- | --- |
 | Product | Đề cương khóa luận, yêu cầu, use case, quy tắc nghiệp vụ | [Đề cương khóa luận](product/thesis-proposal.md), [Yêu cầu](product/requirements.md), [use case](product/use-cases.md), [quy tắc](product/business-rules.md) |
@@ -20,5 +22,9 @@
 - Dùng liên kết tương đối; cập nhật liên kết khi đổi vị trí file.
 - README tại mỗi ứng dụng tập trung vào cài đặt, chạy và build; tài liệu chi tiết đặt trong `docs`.
 - Schema chi tiết hiện được duy trì tại `database/database_design_plan.md`; trang database trong `docs` liên kết tới nguồn này.
-- Kết quả thực nghiệm và nhật ký công việc tiếp tục đặt tại `reports/`, `experiments/`.
+- Kết quả thực nghiệm và nhật ký công việc tiếp tục đặt tại `reports/`, `packages/ml/reports/`.
 - Các trang tổng quan mới là đầu mối tra cứu, không thay thế đặc tả chi tiết được liên kết. Khi mô tả cũ khác triển khai, đối chiếu mã nguồn và tài liệu cập nhật trước khi sử dụng.
+
+## Nguồn chuẩn và lịch sử
+
+[README gốc](../README.md#tài-liệu-chuẩn-theo-chủ-đề) phân công một nguồn chuẩn cho mỗi chủ đề; [quy ước tài liệu](documentation-policy.md) định nghĩa cách duy trì, kiểm tra liên kết/lệnh và provenance metric. [Changelog](../CHANGELOG.md) giữ diễn biến; tài liệu theo ngày chỉ là bằng chứng lịch sử, không phải hướng dẫn hiện hành. Thực nghiệm hiện hành nằm ở [THESIS_EXPERIMENTS](../reports/evaluation/THESIS_EXPERIMENTS.md), có phân biệt artifact app với rerun 25/10.

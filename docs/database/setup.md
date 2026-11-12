@@ -1,6 +1,8 @@
 # HƯỚNG DẪN CHI TIẾT KHỞI ĐỘNG VÀ TRUY CẬP DATABASE POSTGRESQL DOCKER
 ### Hệ Thống Gợi Ý Chiến Lược Học Tập Cá Nhân Hóa (KLTN 13 - HUIT)
 
+**Nguồn cấu hình chuẩn:** [Docker](../../docker/README.md) và [migration/backup](migrations.md), đối chiếu 04/11/2026. Giá trị tài khoản/cổng bên dưới là ví dụ phát triển; lấy giá trị thực từ `.env`, không ghi đè cấu hình đang dùng. Volume mới chạy SQL `01`–`04`; database có dữ liệu nâng cấp bằng Alembic theo tài liệu migration.
+
 Tài liệu này hướng dẫn chi tiết từng bước cách khởi động hệ quản trị cơ sở dữ liệu **PostgreSQL 15** và công cụ quản trị **pgAdmin 4** bằng Docker, cùng 4 cách truy cập vào cơ sở dữ liệu để làm việc và kiểm tra dữ liệu.
 
 ---
@@ -38,7 +40,7 @@ docker compose up -d postgres pgadmin
 ```
 
 > **Ghi chú:**  
-> - Khi chạy lần đầu, Docker sẽ tự động mount thư mục `docker/postgres/init-scripts/` để chạy `01_init_schema.sql` (tạo 14 bảng, indexes) và `02_seed_data.sql` (tạo vai trò, tài khoản admin, model ML, môn học OULAD).  
+> - Khi chạy lần đầu, container chạy `01_init_schema.sql` (19 bảng nghiệp vụ và index), `02_seed_data.sql` (seed), `03_prediction_integrity.sql` (trigger provenance), `04_schema_version.sql` (marker Alembic).
 > - Dữ liệu được lưu trữ bền vững trong Docker Volume `postgres_data`, không bị mất khi tắt máy.
 
 ### 1.4. Kiểm tra trạng thái hoạt động
@@ -81,7 +83,7 @@ personalized_learning_db=#
 ```
 
 #### 2. Các câu lệnh thao tác cơ bản:
-* **Xem toàn bộ danh sách 14 bảng:**
+* **Xem toàn bộ danh sách 19 bảng nghiệp vụ (cùng bảng alembic_version):**
   ```sql
   \dt
   ```
@@ -140,7 +142,7 @@ Mở Chrome / Edge / Firefox và nhập đường link:
 #### Bước 2.4: Xem và truy vấn dữ liệu trên pgAdmin
 * Điều hướng theo cây thư mục bên trái:  
   `Servers` $\rightarrow$ `KLTN13 Postgres` $\rightarrow$ `Databases` $\rightarrow$ `personalized_learning_db` $\rightarrow$ `Schemas` $\rightarrow$ `public` $\rightarrow$ `Tables`.
-* Bạn sẽ thấy danh sách toàn bộ **14 bảng dữ liệu**.
+* Bạn sẽ thấy danh sách toàn bộ **19 bảng nghiệp vụ (cùng bảng alembic_version) dữ liệu**.
 * Để truy vấn: Chuột phải vào bất kỳ bảng nào $\rightarrow$ Chọn **View/Edit Data** $\rightarrow$ **All Rows**.
 * Để tự gõ câu lệnh SQL: Nhấn vào biểu tượng **Query Tool** (hình tam giác/bút) trên thanh công cụ.
 
