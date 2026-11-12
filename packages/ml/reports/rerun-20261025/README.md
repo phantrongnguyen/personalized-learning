@@ -2,7 +2,13 @@
 
 Pipeline hoàn tất từ dữ liệu thô; giữ cấu hình lịch sử. Test là split OULAD lịch sử, không phải holdout độc lập mới.
 
+## Danh tính và phạm vi run
+
+Ngày hoàn tất **25/10/2026** theo [provenance](provenance.json). Dữ liệu **OULAD**, chia theo ID sinh viên seed 41, train/validation/test theo giao thức lịch sử. Artifact refit train+validation tại cutoff 75%, threshold 0,5 có SHA-256 `50811be18f112283f25de864a9d5b99b63501f8f1579c455ac10860a55828df0` theo [test_metrics.json](test_metrics.json). Artifact app giữ SHA `90c3f6e7bfdac2d9e62bcb836572f1a57c69fee3e4ef3dec22bd60b9850792db`; metric trùng không làm hai artifact đồng nhất. [Thực nghiệm hiện hành](../../../../reports/evaluation/THESIS_EXPERIMENTS.md) là nguồn chuẩn về phạm vi kết luận.
+
 ## LightGBM trên validation
+
+Ngữ cảnh **mọi hàng của bảng dưới**: run 25/10/2026, OULAD validation, model **train-only**, threshold 0,5; cutoff ghi riêng từng hàng. SHA estimator train-only từng hàng **không được công bố**, không dùng SHA artifact refit làm checksum thay thế. Validation 50% có 3.638 lượt; 75% có 3.415 lượt theo [all_models_comparison.csv](all_models_comparison.csv); cohort thay đổi theo cutoff. Nguồn số liệu: [bảng so sánh](all_models_comparison.csv), môi trường/dữ liệu/checksum: [provenance](provenance.json).
 
 | Cutoff | Phương pháp | Đặc trưng | Accuracy | Recall | AP |
 | --- | --- | ---: | ---: | ---: | ---: |
@@ -17,17 +23,7 @@ Pipeline hoàn tất từ dữ liệu thô; giữ cấu hình lịch sử. Test 
 
 ## Test artifact sau fit train + validation
 
-- accuracy: 0.8619089062953292
-- precision_risk: 0.9123222748815166
-- recall_risk: 0.6569965870307167
-- f1_risk: 0.7638888888888888
-- average_precision_risk: 0.8815750676130706
-- roc_auc: 0.9049323031916888
-- brier_score: 0.10136986801098771
-- tn: 2201
-- fp: 74
-- fn: 402
-- tp: 770
+Ngữ cảnh: SHA `50811be18f112283f25de864a9d5b99b63501f8f1579c455ac10860a55828df0`, OULAD **test lịch sử 3.447 lượt**, cutoff **75%**, threshold **0,5**, hoàn tất **25/10/2026**. [Bảng metric chuẩn app/rerun](../../../../reports/evaluation/THESIS_EXPERIMENTS.md#3-kết-quả-dự-báo-lịch-sử) được sinh trực tiếp từ JSON nguồn; số đầy đủ và confusion counts nằm trong [test_metrics.json](test_metrics.json).
 
 ## Bằng chứng và giới hạn
 
